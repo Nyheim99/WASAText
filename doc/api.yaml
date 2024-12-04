@@ -30,7 +30,7 @@ paths:
                 maxLength: 16
         required: true
       responses:
-        '201':
+        '200':
           description: User log-in action successful
           content:
             application/json:
@@ -38,7 +38,317 @@ paths:
               type: object
               properties:
                 identifier:
-                  # change here if you decide to use an integer
-                  # or any other type of identifier
                   type: string
                   example: "abcdef012345"
+  /user/name:
+    put:
+      tags: ["user"]
+      summary: Update user's username
+      description: Allows a user to change their username.
+      operationId: setMyUserName
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Maria"
+                  minLength: 3
+                  maxLength: 16
+      responses:
+        '200':
+          description: Successfully updated your username.
+
+  /user/photo:
+    put:
+      tags: ["user"]
+      summary: Set or update user's profile photo
+      description: Allows the user to upload or change their profile picture.
+      operationId: setMyPhoto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photoUrl:
+                  type: string
+                  example: "https://domain.com/photo.jpg"
+      responses:
+        '200':
+          description: Profile photo updated successfully.
+
+  /conversations:
+    get:
+      tags: ["conversations"]
+      summary: Retrieve the user's list of conversations
+      operationId: getMyConversations
+      responses:
+        '201':
+          description: List of conversations retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    conversationId:
+                      type: string
+                    name:
+                      type: string
+                    lastMessage:
+                      type: string
+                    lastMessageTime:
+                      type: string
+                      format: date-time
+                    photoUrl:
+                      type: string
+                      example: "https://domain.com/photo.jpg"
+
+  /conversations/{conversationId}:
+    parameters:
+        - name: conversationId
+          in: path
+          required: true
+          description: The Id of the conversation
+          schema:
+            type: integer
+            decription: example: conversations/16532
+    get:
+      tags: ["conversations"]
+      summary: Retrieve all messages in a conversation
+      operationId: getConversation
+      responses:
+        '201':
+          description: Messages retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    messageId:
+                      type: string
+                    sender:
+                      type: string
+                    content:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+                    status:
+                      type: string
+                      enum: ["sent", "received", "read"]
+
+  /conversations/{conversationId}/messages:
+    parameters:
+        - name: conversationId
+          in: path
+          required: true
+          description: The Id of the conversation
+          schema:
+            type: integer
+            decription: example: conversations/16532
+    post:
+      tags: ["messages"]
+      summary: Send a new message
+      operationId: sendMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  example: "Hello, how are you today?"
+      responses:
+        '200':
+          description: Message sent successfully.
+
+  /conversations/{conversationId}/messages/{messageId}/forward:
+    parameters:
+        - name: conversationId
+          in: path
+          required: true
+          description: The Id of the conversation
+          schema:
+            type: integer
+            decription: example: conversations/16532
+        - name: messageId
+          in: path
+          required: true
+          description: The Id of the message
+          schema:
+            type: integer
+            decription: example: conversations/16532/messages/56933
+    post:
+      tags: ["messages"]
+      summary: Forward a message
+      operationId: forwardMessage
+      responses:
+        '200':
+          description: Message forwarded successfully.
+
+  /conversations/{conversationId}/messages/{messageId}/comment:
+    parameters:
+        - name: conversationId
+          in: path
+          required: true
+          description: The Id of the conversation
+          schema:
+            type: integer
+            decription: example: conversations/16532
+        - name: messageId
+          in: path
+          required: true
+          description: The Id of the message
+          schema:
+            type: integer
+            decription: example: conversations/16532/messages/56933
+    post:
+      tags: ["messages"]
+      summary: Add a comment to a message
+      operationId: commentMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+                  example: "This sounds really nice!"
+      responses:
+        '201':
+          description: Comment added successfully.
+    delete:
+      tags: ["messages"]
+      summary: Remove a comment from a message
+      operationId: uncommentMessage
+      responses:
+        '204':
+          description: Comment removed successfully.
+
+  /conversations/{conversationId}/messages/{messageId}:
+    parameters:
+        - name: conversationId
+          in: path
+          required: true
+          description: The Id of the conversation
+          schema:
+            type: integer
+            decription: example: conversations/16532
+        - name: messageId
+          in: path
+          required: true
+          description: The Id of the message
+          schema:
+            type: integer
+            decription: example: conversations/16532/messages/56933
+    delete:
+      tags: ["messages"]
+      summary: Delete a message
+      operationId: deleteMessage
+      responses:
+        '204':
+          description: Message deleted successfully.
+
+  /groups:
+    post:
+      tags: ["groups"]
+      summary: Create a new group
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                members:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Group created successfully.
+
+  /groups/{groupId}/members:
+    post:
+      tags: ["groups"]
+      summary: Add a user to a group
+      operationId: addToGroup
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: User added to group successfully.
+
+  /groups/{groupId}/members/{userId}:
+    delete:
+      tags: ["groups"]
+      summary: Remove a user from a group
+      operationId: leaveGroup
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User removed from group successfully.
+
+  /groups/{groupId}/photo:
+    put:
+      tags: ["groups"]
+      summary: Update group photo
+      operationId: setGroupPhoto
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photoUrl:
+                  type: string
+                  example: "https://example.com/photo.jpg"
+      responses:
+        '200':
+          description: Group photo updated successfully.
