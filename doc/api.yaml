@@ -38,8 +38,8 @@ paths:
                 type: object
                 properties:
                   identifier:
-                    type: string
-                    example: "abcdef012345"
+                    type: integer
+                    example: 1
   /users/:
     get:
       operationId: getUsers
@@ -261,7 +261,7 @@ paths:
     delete:
       parameters:
         - $ref: "#/components/parameters/conversationId"
-        - $ref: "#/components/parameters/MessageId"
+        - $ref: "#/components/parameters/messageId"
       operationId: deleteMessage
       summary: Delete a message
       description: Deletes a message from a conversation
@@ -272,7 +272,7 @@ paths:
     patch:
       parameters:
         - $ref: "#/components/parameters/conversationId"
-        - $ref: "#/components/parameters/MessageId"
+        - $ref: "#/components/parameters/messageId"
       operationId: updateMessage
       summary: Update message status
       description: |-
@@ -291,7 +291,7 @@ paths:
   /conversations/{conversationId}/messages/{messageId}/forward:
     parameters:
       - $ref: "#/components/parameters/conversationId"
-      - $ref: "#/components/parameters/MessageId"
+      - $ref: "#/components/parameters/messageId"
     patch:
       operationId: forwardMessage
       summary: Forwards a message
@@ -310,7 +310,7 @@ paths:
   /conversations/{conversationId}/messages/{messageId}/comments:
     parameters:
       - $ref: "#/components/parameters/conversationId"
-      - $ref: "#/components/parameters/MessageId"
+      - $ref: "#/components/parameters/messageId"
     post:
       operationId: commentMessage
       summary: Comment a message
@@ -353,7 +353,7 @@ components:
       description: "This object represents a single User"
       type: object
       properties:
-        id:
+        userId:
           description: "Unique user identifer."
           type: integer
           example: 1
@@ -379,12 +379,12 @@ components:
       description: "This object represents a single message"
       type: object
       properties:
-        id:
+        messageId:
           description: Unique message identifier
           type: integer
           example: 1
           readOnly: true
-        sender:
+        userId:
           description: "Id of user who sent the message"
           type: integer
           example: 1
@@ -435,8 +435,8 @@ components:
           description: "The emoticon used in the comment"
           type: string
           example: "😃"
-        username: 
-          description: "The username of the person who commented"
+        userId: 
+          description: "The user Id of the person who commented"
           type: string
           example: "Marie"
     Conversation:
@@ -444,12 +444,16 @@ components:
       description: "This object represents a conversation between two users"
       type: object
       properties:
-        id:
+        conversationId:
           description: "Unique conversation identifier"
           type: integer
           example: 1
           readOnly: true
-        type:
+        name:
+          description: "Name of the group"
+          type: string
+          example: "WASA Co-Students"
+        conversationType:
           description: |-
             Indicates wether conversation is a group or private conversation
           type: string
@@ -469,10 +473,7 @@ components:
           description: "Url of the group's picture"
           type: string
           example: "https://example.com/photo.jpg"
-        name:
-          description: "Name of the group"
-          type: string
-          example: "WASA Co-Students"
+  
   parameters:
     userId:
       schema:
@@ -482,7 +483,7 @@ components:
       name: userId
       in: path
       required: true
-      description: user Id
+      description: "User Id"
     conversationId:
       schema:
         type: integer
@@ -491,8 +492,8 @@ components:
       name: conversationId
       in: path
       required: true
-      description: conversation Id
-    MessageId:
+      description: "Conversation Id"
+    messageId:
       schema:
         type: integer
         example: 1
@@ -500,4 +501,4 @@ components:
       name: messageId
       in: path
       required: true
-      description: Message Id
+      description: "Message Id"
