@@ -55,20 +55,67 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building a AppDatabase")
 	}
 
-	// Check if table exists. If not, the database is empty, and we need to create the structure
-	var tableName string
-	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='example_table';`).Scan(&tableName)
-	if errors.Is(err, sql.ErrNoRows) {
-		sqlStmt := `CREATE TABLE example_table (id INTEGER NOT NULL PRIMARY KEY, name TEXT);`
-		_, err = db.Exec(sqlStmt)
-		if err != nil {
-			return nil, fmt.Errorf("error creating database structure: %w", err)
-		}
+	if err := createTables(db); err != nil {
+		return nil, fmt.Errorf("error creating tables: %w", err)
 	}
 
 	return &appdbimpl{
 		c: db,
 	}, nil
+}
+
+func createTables(db *sql.DB) error {
+	schema := []string{
+		`CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT UNIQUE NOT NULL,
+			photo_url TEXT
+		)`,
+		`CREATE TABLE IF NOT EXISTS conversations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			type TEXT NOT NULL CHECK (type IN ('group', 'private')),
+			name TEXT,
+			photo_url TEXT,
+			last_message_id INTEGER,
+			FOREIGN KEY(last_message_id) REFERENCES messages(id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS messages (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			sender_id INTEGER NOT NULL,
+			conversation_id INTEGER NOT NULL,
+			content TEXT NOT NULL,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			status TEXT NOT NULL CHECK (status IN ('sent', 'read')),
+			is_reply BOOLEAN DEFAULT FALSE,
+			original_message_id INTEGER,
+			is_forwarded BOOLEAN DEFAULT FALSE,
+			FOREIGN KEY(sender_id) REFERENCES users(id),
+			FOREIGN KEY(conversation_id) REFERENCES conversations(id),
+			FOREIGN KEY(original_message_id) REFERENCES messages(id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS group_members (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			conversation_id INTEGER NOT NULL,
+			user_id INTEGER NOT NULL,
+			FOREIGN KEY(conversation_id) REFERENCES conversations(id),
+			FOREIGN KEY(user_id) REFERENCES users(id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS comments (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			message_id INTEGER NOT NULL,
+			username TEXT NOT NULL,
+			emoticon TEXT NOT NULL,
+			FOREIGN KEY(message_id) REFERENCES messages(id)
+		)`,
+	}
+
+	for _, stmt := range schema {
+		if _, err := db.Exec(stmt); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (db *appdbimpl) Ping() error {
