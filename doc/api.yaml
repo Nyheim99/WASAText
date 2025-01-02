@@ -19,27 +19,27 @@ paths:
         description: User details
         content:
           application/json:
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-                example: Maria
-                pattern: 'ˆ.*?$'
-                minLength: 3
-                maxLength: 16
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Maria
+                  pattern: 'ˆ.*?$'
+                  minLength: 3
+                  maxLength: 16
         required: true
       responses:
         '201':
           description: User log-in action successful
           content:
             application/json:
-            schema:
-              type: object
-              properties:
-                identifier:
-                  type: string
-                  example: "abcdef012345"
+              schema:
+                type: object
+                properties:
+                  identifier:
+                    type: string
+                    example: "abcdef012345"
   /users/:
     get:
       operationId: getUsers
@@ -65,9 +65,9 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/User" }
   /users/{userId}:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
     get:
+      parameters:
+        - $ref: "#/components/parameters/userId"
       operationId: getMyConversations
       summary: Get all the user's conversations
       description: |-
@@ -81,9 +81,9 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/User" }
   /users/{userId}/username:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
     put:
+      parameters:
+        - $ref: "#/components/parameters/userId"
       operationId: setMyUserName
       summary: Update the user's username
       description: |-
@@ -100,9 +100,9 @@ paths:
               schema: { $ref: "#/components/schemas/User" }
         "404": { description: User not found }
   /users/{userId}/photo:
-    parameters:
-      - $ref: "#/components/parameters/UserId"
     put:
+      parameters:
+        - $ref: "#/components/parameters/userId"
       operationId: setMyPhoto
       summary: Update the user's profile picture
       description: |-
@@ -135,9 +135,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Conversation"}
   /conversations/{conversationId}:
-    parameters:
-      - $ref: "#/components/parameters/ConversationId"
     get:
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
       operationId: getConversation
       summary: Get a list of messages in a conversation.
       description: |-
@@ -153,7 +153,7 @@ paths:
         "404": { description: Conversation not found }
   /conversations/{conversationId}/name:
     parameters:
-      - $ref: "#/components/parameters/ConversationId"
+      - $ref: "#/components/parameters/conversationId"
     put:
       operationId: setGroupName
       summary: Update the group's name
@@ -172,7 +172,7 @@ paths:
         "404": { description: Group not found }
   /conversations/{conversationId}/photo:     
     parameters:
-      - $ref: "#/components/parameters/ConversationId"
+      - $ref: "#/components/parameters/conversationId"
     put:
       operationId: setGroupPhoto
       summary: Update the group's photo
@@ -191,7 +191,7 @@ paths:
         "404": { description: Group not found } 
   /conversations/{conversationId}/members:
     parameters:
-      - $ref: "#/components/parameters/ConversationId"
+      - $ref: "#/components/parameters/conversationId"
     post:
       operationId: addToGroup
       summary: Add a user to the group conversation
@@ -232,17 +232,6 @@ paths:
       description: |-
         Removes a user from the group conversation specified by "conversationId".
         Users can leave themselves or an admin can remove other users.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userId:
-                  type: integer
-                  description: "The ID of the user to remove from the group"
-                  example: 42
       responses:
         "204":
           description: User removed from the group successfully
@@ -250,7 +239,7 @@ paths:
           description: Unable to remove user (e.g., user not in group)      
   /conversations/{conversationId}/messages:
     parameters:
-      - $ref: "#/components/parameters/ConversationId"
+      - $ref: "#/components/parameters/conversationId"
     post:
       operationId: sendMessage
       summary: Send a message 
@@ -269,20 +258,21 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Message"}
   /conversations/{conversationId}/messages/{messageId}:
-    parameters:
-        - $ref: "#/components/parameters/ConversationId"
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
         - $ref: "#/components/parameters/MessageId"
-    operationId: deleteMessage
-    summary: Delete a message
-    description: Deletes a message from a conversation
-    responses:
-      "204": { description: Message deleted successfully }
-      "404": { description: Message not found }
+      operationId: deleteMessage
+      summary: Delete a message
+      description: Deletes a message from a conversation
+      responses:
+        "204": { description: Message deleted successfully }
+        "404": { description: Message not found }
   /conversations/{conversationId}/messages/{messageId}/status:
-    parameters:
-      - $ref: "#/components/parameters/ConversationId"
-      - $ref: "#/components/parameters/MessageId"
     patch:
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+        - $ref: "#/components/parameters/MessageId"
       operationId: updateMessage
       summary: Update message status
       description: |-
@@ -300,7 +290,7 @@ paths:
         "404": { description: Message not found }
   /conversations/{conversationId}/messages/{messageId}/forward:
     parameters:
-      - $ref: "#/components/parameters/ConversationId"
+      - $ref: "#/components/parameters/conversationId"
       - $ref: "#/components/parameters/MessageId"
     patch:
       operationId: forwardMessage
@@ -319,7 +309,7 @@ paths:
         "404": { description: Message not found }
   /conversations/{conversationId}/messages/{messageId}/comments:
     parameters:
-      - $ref: "#/components/parameters/ConversationId"
+      - $ref: "#/components/parameters/conversationId"
       - $ref: "#/components/parameters/MessageId"
     post:
       operationId: commentMessage
@@ -483,31 +473,31 @@ components:
           description: "Name of the group"
           type: string
           example: "WASA Co-Students"
-parameters:
-  UserId:
-    schema:
-      type: integer
-      example: 1
-      readOnly: true
-    name: userId
-    in: path
-    required: true
-    description: User Id
-  ConversationId:
-    schema:
-      type: integer
-      example: 1
-      readOnly: true
-    name: conversationId
-    in: path
-    required: true
-    description: Conversation Id
-  MessageId:
-    schema:
-      type: integer
-      example: 1
-      readOnly: true
-    name: messageId
-    in: path
-    required: true
-    description: Message Id
+  parameters:
+    userId:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: userId
+      in: path
+      required: true
+      description: user Id
+    conversationId:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: conversationId
+      in: path
+      required: true
+      description: conversation Id
+    MessageId:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: messageId
+      in: path
+      required: true
+      description: Message Id
