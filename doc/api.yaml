@@ -22,7 +22,7 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                username:
                   type: string
                   example: Maria
                   pattern: 'ˆ.*?$'
