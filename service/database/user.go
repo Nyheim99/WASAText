@@ -57,3 +57,24 @@ func (db *appdbimpl) GetUserConversations(userID int64) ([]Conversation, error) 
 
 	return conversations, nil
 }
+
+func (db *appdbimpl) UpdateUserName(userID int64, newUserName string) error {
+    // Check if the username already exists
+    var count int
+    err := db.c.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", newUserName).Scan(&count)
+    if err != nil {
+        return err
+    }
+
+    if count > 0 {
+        return fmt.Errorf("username already in use")
+    }
+
+    // Update the username
+    _, err = db.c.Exec("UPDATE users SET username = ? WHERE id = ?", newUserName, userID)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}

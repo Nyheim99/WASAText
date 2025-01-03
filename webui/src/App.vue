@@ -6,20 +6,5 @@ export default {};
 </script>
 
 <template>
-	<main class="main-container">
-		<RouterView />
-	</main>
+	<RouterView />
 </template>
-
-<style>
-html,
-body,
-#app {
-	background-color: lightgray;
-	height: 100%;
-}
-.main-container {
-	height: 100%;
-	padding: 20px
-}
-</style>

@@ -80,7 +80,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/User" }
-  /users/{userId}/username:
+  /user/username:
     put:
       parameters:
         - $ref: "#/components/parameters/userId"
@@ -98,7 +98,12 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/User" }
-        "404": { description: User not found }
+        "400":
+          description: Invalid input. For example, username is too short or too long.
+        "404":
+          description: User not found.
+        "409":
+          description: Username already in use.
   /users/{userId}/photo:
     put:
       parameters:

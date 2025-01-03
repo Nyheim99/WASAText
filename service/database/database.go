@@ -43,6 +43,7 @@ type AppDatabase interface {
 	DoesUserExist(userID int64) (bool, error)
 	GetUsers(conversationID *int64) ([]User, error)
 	GetUserConversations(userID int64) ([]Conversation, error)
+	UpdateUserName(userID int64, newUserName string) error
 
 	Ping() error
 }

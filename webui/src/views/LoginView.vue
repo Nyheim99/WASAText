@@ -32,79 +32,18 @@ const handleLogin = async () => {
 </script>
 
 <template>
-	<div class="login-wrapper">
-		<div id="login-page" class="login-container">
-			<h1>Login</h1>
+  <div class="d-flex justify-content-center align-items-center vh-100 bg-transparent">
+    <div class="card p-4 shadow-sm" style="max-width: 300px;">
+      <h1 class="text-center mb-3">Login</h1>
 
-			<input
-				type="text"
-				v-model="username"
-				placeholder="Enter your username"
-				class="username-input"
-			/>
+      <input
+        type="text"
+        v-model="username"
+        placeholder="Enter your username"
+        class="form-control mb-3"
+      />
 
-			<button @click="handleLogin" class="login-button">Login</button>
-		</div>
-	</div>
+      <button @click="handleLogin" class="btn btn-primary w-100">Login</button>
+    </div>
+  </div>
 </template>
-
-<style>
-body,
-html {
-	margin: 0;
-	padding: 0;
-	height: 100%;
-	font-family: Arial, sans-serif;
-}
-
-.login-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  background-color: #f5f5f5;
-}
-
-.login-container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	text-align: center;
-	background-color: white;
-	padding: 20px;
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-	border-radius: 10px;
-	max-width: 300px;
-	margin: auto;
-}
-
-h1 {
-	font-size: 2rem;
-	margin-bottom: 10px;
-	color: #333;
-}
-
-.username-input {
-	width: 100%;
-	padding: 10px;
-	margin-bottom: 15px;
-	border: 1px solid #ccc;
-	border-radius: 5px;
-	font-size: 1rem;
-}
-
-.login-button {
-	padding: 10px 20px;
-	background-color: #007bff;
-	color: white;
-	border: none;
-	border-radius: 5px;
-	font-size: 1rem;
-	cursor: pointer;
-	transition: background-color 0.3s;
-}
-
-.login-button:hover {
-	background-color: #0056b3;
-}
-</style>
