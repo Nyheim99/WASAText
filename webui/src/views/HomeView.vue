@@ -1,49 +1,70 @@
 <script>
 import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import axios from "../services/axios";
+import Sidebar from "../components/Sidebar.vue";
+import ConversationList from "../components/ConversationList.vue";
 
 export default {
+  components: {
+    Sidebar,
+    ConversationList,
+  },
   setup() {
     const router = useRouter();
+	const conversations = ref([]);
 
     const logout = () => {
-      // Remove userId from localStorage
       localStorage.removeItem("userId");
-
-      // Redirect to login page
       router.push("/login");
     };
 
+	const fetchConversations = async () => {
+      try {
+        const response = await axios.get("/user/conversations");
+        conversations.value = response.data || [];
+      } catch (error) {
+        console.error("Failed to fetch conversations:", error.message);
+        conversations.value = [];
+      }
+    };
+
+    onMounted(() => {
+      fetchConversations();
+    });
+
     return {
       logout,
+      conversations,
     };
   },
 };
-
 </script>
 
 <template>
-	<div>
-		<h1>Welcome to the Home Page!</h1>
-		<p>You are logged in.</p>
-		<!-- Logout Button -->
-		<button @click="logout">Logout</button>
-	</div>
+  <div class="home-container">
+    <Sidebar :logout="logout" />
+
+	<ConversationList :conversations="conversations" />
+
+    <div class="chat-main-panel">
+      <h2>Chat Window</h2>
+      <p>Select a chat to start messaging!</p>
+    </div>
+  </div>
 </template>
 
 <style>
-/* Add some styling to the logout button */
-button {
-  background-color: #ff4d4d;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 5px;
-  margin-top: 20px;
+.home-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr 6fr;
+  height: calc(100vh - 40px);
+  box-sizing: border-box;
 }
 
-button:hover {
-  background-color: #ff1a1a;
+.chat-main-panel {
+  background-color: #ffffff;
+  padding: 20px;
+  overflow-y: auto;
 }
 </style>

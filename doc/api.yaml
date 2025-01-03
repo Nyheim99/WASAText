@@ -40,7 +40,7 @@ paths:
                   identifier:
                     type: integer
                     example: 1
-  /users/:
+  /users:
     get:
       operationId: getUsers
       summary: Get a list of users
@@ -64,7 +64,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/User" }
-  /users/{userId}:
+  /user/conversations:
     get:
       parameters:
         - $ref: "#/components/parameters/userId"
@@ -368,12 +368,6 @@ components:
           description: "Url of user's profile picture"
           type: string
           example: "https://example.com/photo.jpg"
-        conversations:
-          description: "A list of all conversations the user is part of"
-          type: array
-          items: 
-            description: "Unique identifier of a conversation"
-            type: integer
     Message:
       title: Message
       description: "This object represents a single message"

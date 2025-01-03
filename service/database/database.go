@@ -41,6 +41,8 @@ type AppDatabase interface {
 	GetUserByUsername(username string) (int64, error)
 	CreateUser(username string) (int64, error)
 	DoesUserExist(userID int64) (bool, error)
+	GetUsers(conversationID *int64) ([]User, error)
+	GetUserConversations(userID int64) ([]Conversation, error)
 
 	Ping() error
 }
@@ -62,8 +64,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT UNIQUE NOT NULL,
-			photoUrl TEXT,
-			conversations TEXT
+			photoUrl TEXT DEFAULT ''
 		);`,
 		// Messages table
 		`CREATE TABLE IF NOT EXISTS messages (

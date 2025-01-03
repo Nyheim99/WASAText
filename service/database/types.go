@@ -4,7 +4,6 @@ type User struct {
 	UserID        int64   `json:"userId"`
 	Username      string  `json:"username"`
 	PhotoUrl      string  `json:"photoUrl"`
-	Conversations []int64 `json:"conversations"`
 }
 
 type Comment struct {

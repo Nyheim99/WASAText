@@ -30,3 +30,30 @@ func (db *appdbimpl) DoesUserExist(userID int64) (bool, error) {
     err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)", userID).Scan(&exists)
     return exists, err
 }
+
+func (db *appdbimpl) GetUserConversations(userID int64) ([]Conversation, error) {
+	rows, err := db.c.Query(`
+		SELECT c.id, c.name, c.conversationType, c.photoUrl, c.lastMessageId
+		FROM conversations c
+		JOIN conversation_participants cp ON c.id = cp.conversationId
+		WHERE cp.userId = ?`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var conversations []Conversation
+	for rows.Next() {
+		var conv Conversation
+		if err := rows.Scan(&conv.ConversationID, &conv.Name, &conv.ConversationType, &conv.PhotoUrl, &conv.LastMessageID); err != nil {
+			return nil, err
+		}
+		conversations = append(conversations, conv)
+	}
+
+    if conversations == nil {
+    	conversations = []Conversation{}
+	}	
+
+	return conversations, nil
+}
