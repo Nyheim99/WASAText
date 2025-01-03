@@ -15,7 +15,18 @@ func (db *appdbimpl) GetUserByUsername(username string) (int64, error) {
 // CreateUser inserts a new user into the database
 func (db *appdbimpl) CreateUser(username string) (int64, error) {
     result, err := db.c.Exec("INSERT INTO users (username) VALUES (?)", username)
+    if err != nil {
+        return 0, err
+    }
     identifier, err := result.LastInsertId()
-    return identifier, err
+    if err != nil {
+        return 0, err
+    }
+    return identifier, nil
 }
 
+func (db *appdbimpl) DoesUserExist(userID int64) (bool, error) {
+    var exists bool
+    err := db.c.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)", userID).Scan(&exists)
+    return exists, err
+}

@@ -2,36 +2,44 @@ package api
 
 import (
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
-	"github.com/gofrs/uuid"
 	"github.com/julienschmidt/httprouter"
-	"github.com/sirupsen/logrus"
-	"net/http"
+    "net/http"
+    "fmt"
 )
 
 // httpRouterHandler is the signature for functions that accepts a reqcontext.RequestContext in addition to those
 // required by the httprouter package.
 type httpRouterHandler func(http.ResponseWriter, *http.Request, httprouter.Params, reqcontext.RequestContext)
 
-// wrap parses the request and adds a reqcontext.RequestContext instance related to the request.
-func (rt *_router) wrap(fn httpRouterHandler) func(http.ResponseWriter, *http.Request, httprouter.Params) {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		reqUUID, err := uuid.NewV4()
-		if err != nil {
-			rt.baseLogger.WithError(err).Error("can't generate a request UUID")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		var ctx = reqcontext.RequestContext{
-			ReqUUID: reqUUID,
-		}
+func (rt *_router) validateAuthorization(next httprouter.Handle) httprouter.Handle {
+    return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+        // Extract Authorization header
+        authHeader := r.Header.Get("Authorization")
+        if authHeader == "" {
+            http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+            return
+        }
 
-		// Create a request-specific logger
-		ctx.Logger = rt.baseLogger.WithFields(logrus.Fields{
-			"reqid":     ctx.ReqUUID.String(),
-			"remote-ip": r.RemoteAddr,
-		})
+        // Parse user identifier from the header
+        var userID int64
+        n, err := fmt.Sscanf(authHeader, "Bearer %d", &userID)
+        if err != nil || n != 1 {
+            http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+            return
+        }
 
-		// Call the next handler in chain (usually, the handler function for the path)
-		fn(w, r, ps, ctx)
-	}
+        // Validate the user exists in the database
+        exists, err := rt.db.DoesUserExist(userID)
+        if err != nil {
+            http.Error(w, "Database error", http.StatusInternalServerError)
+            return
+        }
+        if !exists {
+            http.Error(w, "Invalid user identifier", http.StatusUnauthorized)
+            return
+        }
+
+        // Pass control to the next handler
+        next(w, r, ps)
+    }
 }

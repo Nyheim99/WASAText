@@ -8,8 +8,10 @@ type User struct {
 }
 
 type Comment struct {
-	Emoticon string `json:"emoticon"`
+	CommentID int64  `json:"commentId" db:"id"`
+	MessageID int64  `json:"messageId" db:"messageId"`
 	UserID   string `json:"userId"`
+	Emoticon string `json:"emoticon"`
 }
 
 type Message struct {

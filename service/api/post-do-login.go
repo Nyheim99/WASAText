@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"encoding/json"
+	"fmt"
 )
 
 type loginRequest struct {
@@ -46,6 +47,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	// Respond with the user's identifier
 	response := loginResponse{Identifier: identifier}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Authorization", fmt.Sprintf("Bearer %d", identifier))
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }

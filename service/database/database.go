@@ -40,6 +40,7 @@ import (
 type AppDatabase interface {
 	GetUserByUsername(username string) (int64, error)
 	CreateUser(username string) (int64, error)
+	DoesUserExist(userID int64) (bool, error)
 
 	Ping() error
 }
@@ -55,18 +56,60 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building a AppDatabase")
 	}
 
-	// Check if table exists. If not, the database is empty, and we need to create the structure
-	var users string
-	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='users';`).Scan(&users)
-	if errors.Is(err, sql.ErrNoRows) {
-		sqlStmt := 
-		`CREATE TABLE users (
+	// Table creation SQL scripts
+	sqlStmts := []string{
+		// Users table
+		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT UNIQUE NOT NULL,
 			photoUrl TEXT,
 			conversations TEXT
-		);`
-		_, err = db.Exec(sqlStmt)
+		);`,
+		// Messages table
+		`CREATE TABLE IF NOT EXISTS messages (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			userId INTEGER NOT NULL,
+			content TEXT NOT NULL,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			status TEXT CHECK(status IN ('sent', 'read')) NOT NULL,
+			isReply BOOLEAN DEFAULT FALSE,
+			originalMessageId INTEGER,
+			isForwarded BOOLEAN DEFAULT FALSE,
+			FOREIGN KEY (userId) REFERENCES users(id),
+			FOREIGN KEY (originalMessageId) REFERENCES messages(id)
+		);`,
+		// Conversations table
+		`CREATE TABLE IF NOT EXISTS conversations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT,
+			conversationType TEXT CHECK(conversationType IN ('group', 'private')) NOT NULL,
+			photoUrl TEXT,
+			lastMessageId INTEGER,
+			FOREIGN KEY (lastMessageId) REFERENCES messages(id)
+		);`,
+		// Conversation Participants table
+		`CREATE TABLE IF NOT EXISTS conversation_participants (
+			conversationId INTEGER NOT NULL,
+			userId INTEGER NOT NULL,
+			PRIMARY KEY (conversationId, userId),
+			FOREIGN KEY (conversationId) REFERENCES conversations(id),
+			FOREIGN KEY (userId) REFERENCES users(id)
+		);`,
+		// Comments table
+		`CREATE TABLE IF NOT EXISTS comments (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			messageId INTEGER NOT NULL,
+			userId INTEGER NOT NULL,
+			emoticon TEXT,
+			content TEXT,
+			FOREIGN KEY (messageId) REFERENCES messages(id),
+			FOREIGN KEY (userId) REFERENCES users(id)
+		);`,
+	}
+
+	// Execute each SQL statement
+	for _, sqlStmt := range sqlStmts {
+		_, err := db.Exec(sqlStmt)
 		if err != nil {
 			return nil, fmt.Errorf("error creating database structure: %w", err)
 		}
