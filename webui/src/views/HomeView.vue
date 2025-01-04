@@ -55,7 +55,7 @@ export default {
 				user.value = response.data;
 			} catch (error) {
 				console.error("Failed to fetch user:", error);
-			}
+			} 
 		};
 
 		const fetchConversations = async () => {
@@ -100,8 +100,8 @@ export default {
 			<div class="col-auto p-0">
 				<Sidebar
 					:logout="logout"
-					:updateUsername="updateUsername"
 					:user="user"
+					:updateUsername="updateUsername"
 				/>
 			</div>
 			<div class="col-3">

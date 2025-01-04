@@ -15,3 +15,5 @@ docker-compose.log
 .vscode/*
 !.vscode/extensions.json
 *.db
+
+service/profile_pictures

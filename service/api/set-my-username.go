@@ -10,7 +10,7 @@ import (
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
 )
 
-type updateUsernameRequest struct {
+type setMyUsernameRequest struct {
 	Username string `json:"username"`
 }
 
@@ -25,7 +25,7 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 	userId := reqCtx.UserID
 
 	// Parse the request body
-	var req updateUsernameRequest
+	var req setMyUsernameRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -54,7 +54,7 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 	}
 
 	// Update the username in the database
-	err = rt.db.UpdateUserName(userId, req.Username)
+	err = rt.db.SetMyUserName(userId, req.Username)
 	if err != nil {
 		http.Error(w, "Failed to update username", http.StatusInternalServerError)
 		fmt.Println("Database error:", err)

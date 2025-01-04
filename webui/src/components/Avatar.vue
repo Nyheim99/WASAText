@@ -43,18 +43,18 @@ export default {
 				return;
 			}
 
-            const response = await props.updateUsername(newUsername.value);
+			const response = await props.updateUsername(newUsername.value);
 
-            if (response === true) {
-                newUsername.value = "";
-                showValidation.value = false;
-                const modal = document.getElementById("usernameModal");
-                const bootstrapModal = bootstrap.Modal.getInstance(modal);
-                bootstrapModal.hide();
-            } else {
-                validationMessage.value = response;
-                showValidation.value = true;
-            }
+			if (response === true) {
+				newUsername.value = "";
+				showValidation.value = false;
+				const modal = document.getElementById("usernameModal");
+				const bootstrapModal = bootstrap.Modal.getInstance(modal);
+				bootstrapModal.hide();
+			} else {
+				validationMessage.value = response;
+				showValidation.value = true;
+			}
 		};
 
 		return {
@@ -76,7 +76,12 @@ export default {
 			data-bs-auto-close="outside"
 			data-bs-offset="0, 10"
 			aria-expanded="false"
-			style="width: 40px; height: 40px; border-radius: 50%"
+			style="
+				width: 60px;
+				height: 60px;
+				border-radius: 50%;
+				overflow: hidden;
+			"
 		>
 			<img
 				:src="src"
