@@ -13,10 +13,49 @@ export default {
 	setup() {
 		const router = useRouter();
 		const conversations = ref([]);
+		const user = ref({});
+		const feedbackMessage = ref("");
+		const showFeedback = ref(false);
 
 		const logout = () => {
 			localStorage.removeItem("userId");
 			router.push("/login");
+		};
+
+		const updateUsername = async (newUsername) => {
+			try {
+				const response = await axios.put("/user/username", {
+					username: newUsername,
+				});
+				console.log("Username updated successfully:", response.data);
+				feedbackMessage.value = "Username updated successfully!";
+				showFeedback.value = true;
+
+				user.value.username = newUsername;
+
+				setTimeout(() => {
+					showFeedback.value = false;
+				}, 3000);
+
+				return true;
+			} catch (error) {
+				console.error(
+					"Failed to update username:",
+					error.response?.data || error.message
+				);
+				return error.response?.status === 409
+					? "Username is already in use."
+					: "Invalid username or another error occurred.";
+			}
+		};
+
+		const fetchUser = async () => {
+			try {
+				const response = await axios.get("/user");
+				user.value = response.data;
+			} catch (error) {
+				console.error("Failed to fetch user:", error);
+			}
 		};
 
 		const fetchConversations = async () => {
@@ -30,12 +69,17 @@ export default {
 		};
 
 		onMounted(() => {
+			fetchUser();
 			fetchConversations();
 		});
 
 		return {
 			logout,
+			updateUsername,
+			user,
 			conversations,
+			feedbackMessage,
+			showFeedback,
 		};
 	},
 };
@@ -43,9 +87,22 @@ export default {
 
 <template>
 	<div class="container-fluid d-flex vh-100 flex-column p-3">
+		<div
+			v-if="showFeedback"
+			class="alert alert-success position-fixed top-2 start-50 translate-middle-x shadow"
+			role="alert"
+			style="z-index: 1050"
+		>
+			{{ feedbackMessage }}
+		</div>
+
 		<div class="row flex-grow-1 g-3">
-			<div class="col-auto">
-				<Sidebar :logout="logout" />
+			<div class="col-auto p-0">
+				<Sidebar
+					:logout="logout"
+					:updateUsername="updateUsername"
+					:user="user"
+				/>
 			</div>
 			<div class="col-3">
 				<ConversationList :conversations="conversations" />

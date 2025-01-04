@@ -41,9 +41,11 @@ type AppDatabase interface {
 	GetUserByUsername(username string) (int64, error)
 	CreateUser(username string) (int64, error)
 	DoesUserExist(userID int64) (bool, error)
+	GetUser(userId int64) (*User, error)
 	GetUsers(conversationID *int64) ([]User, error)
 	GetUserConversations(userID int64) ([]Conversation, error)
-	UpdateUserName(userID int64, newUserName string) error
+	DoesUsernameExist(username string) (bool, error)
+	UpdateUserName(userID int64, username string) error
 
 	Ping() error
 }
@@ -64,7 +66,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		// Users table
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT UNIQUE NOT NULL,
+			username TEXT UNIQUE NOT NULL CHECK (LENGTH(username) BETWEEN 3 AND 16),
 			photoUrl TEXT DEFAULT ''
 		);`,
 		// Messages table

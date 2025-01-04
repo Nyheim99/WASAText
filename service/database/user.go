@@ -1,6 +1,8 @@
 package database
 
-import "database/sql"
+import (
+    "database/sql"
+)
 
 // GetUserByUsername retrieves a user by their username
 func (db *appdbimpl) GetUserByUsername(username string) (int64, error) {
@@ -31,6 +33,18 @@ func (db *appdbimpl) DoesUserExist(userID int64) (bool, error) {
     return exists, err
 }
 
+func (db *appdbimpl) GetUser(userId int64) (*User, error) {
+	var user User
+	query := `SELECT id, username, photoUrl FROM users WHERE id = ?`
+	err := db.c.QueryRow(query, userId).Scan(&user.UserID, &user.Username, &user.PhotoUrl)
+	if err == sql.ErrNoRows {
+		return nil, nil // User not found
+	} else if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (db *appdbimpl) GetUserConversations(userID int64) ([]Conversation, error) {
 	rows, err := db.c.Query(`
 		SELECT c.id, c.name, c.conversationType, c.photoUrl, c.lastMessageId
@@ -58,23 +72,16 @@ func (db *appdbimpl) GetUserConversations(userID int64) ([]Conversation, error) 
 	return conversations, nil
 }
 
-func (db *appdbimpl) UpdateUserName(userID int64, newUserName string) error {
-    // Check if the username already exists
-    var count int
-    err := db.c.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", newUserName).Scan(&count)
-    if err != nil {
-        return err
-    }
+func (db *appdbimpl) DoesUsernameExist(username string) (bool, error) {
+	var count int
+	err := db.c.QueryRow(`SELECT COUNT(*) FROM users WHERE username = ?`, username).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
 
-    if count > 0 {
-        return fmt.Errorf("username already in use")
-    }
-
-    // Update the username
-    _, err = db.c.Exec("UPDATE users SET username = ? WHERE id = ?", newUserName, userID)
-    if err != nil {
-        return err
-    }
-
-    return nil
+func (db *appdbimpl) UpdateUserName(userID int64, username string) error {
+	_, err := db.c.Exec(`UPDATE users SET username = ? WHERE id = ?`, username, userID)
+	return err
 }
