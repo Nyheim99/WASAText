@@ -85,3 +85,8 @@ func (db *appdbimpl) SetMyUserName(userID int64, username string) error {
 	_, err := db.c.Exec(`UPDATE users SET username = ? WHERE id = ?`, username, userID)
 	return err
 }
+
+func (db *appdbimpl) SetMyPhoto(userID int64, photoURL string) error {
+	_, err := db.c.Exec(`UPDATE users SET photoUrl = ? WHERE id = ?`, photoURL, userID)
+	return err
+}

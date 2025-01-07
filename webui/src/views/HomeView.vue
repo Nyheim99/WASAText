@@ -49,13 +49,37 @@ export default {
 			}
 		};
 
+		const updatePhoto = async (file) => {
+			const formData = new FormData();
+			formData.append("photo", file);
+
+			try {
+				const response = await axios.put("/user/photo", formData, {
+					headers: { "Content-Type": "multipart/form-data" },
+				});
+
+				console.log("Profile picture updated:", response.data);
+				user.value.photoUrl = response.data.photoUrl;
+				return { success: true };
+			} catch (error) {
+				console.error(
+					"Failed to update profile picture:",
+					error.response?.data || error.message
+				);
+				return {
+					success: false,
+					error: "Failed to upload profile picture.",
+				};
+			}
+		};
+
 		const fetchUser = async () => {
 			try {
 				const response = await axios.get("/user");
 				user.value = response.data;
 			} catch (error) {
 				console.error("Failed to fetch user:", error);
-			} 
+			}
 		};
 
 		const fetchConversations = async () => {
@@ -76,6 +100,7 @@ export default {
 		return {
 			logout,
 			updateUsername,
+			updatePhoto,
 			user,
 			conversations,
 			feedbackMessage,
@@ -102,6 +127,7 @@ export default {
 					:logout="logout"
 					:user="user"
 					:updateUsername="updateUsername"
+					:updatePhoto="updatePhoto"
 				/>
 			</div>
 			<div class="col-3">

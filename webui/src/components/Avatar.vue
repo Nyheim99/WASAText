@@ -1,21 +1,22 @@
 <script>
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import AvatarIcon from "../assets/person-circle.svg";
 
 export default {
 	props: {
-		src: {
-			type: String,
-			required: true,
-		},
 		logout: Function,
 		updateUsername: Function,
+		updatePhoto: Function,
 		user: {
 			type: Object,
 			required: true,
 		},
 	},
 	setup(props) {
+		const cacheBuster = ref(Date.now());
 		const newUsername = ref("");
+		const fileInput = ref(null);
+    const uploading = ref(false);
 		const showValidation = ref(false);
 		const validationMessage = ref("");
 
@@ -57,11 +58,60 @@ export default {
 			}
 		};
 
+		const validateImage = (file) => {
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedTypes.includes(file.type)) {
+        validationMessage.value = "Only JPEG and PNG files are allowed.";
+        return false;
+      }
+      return true;
+    };
+
+		const handleUpdatePhoto = async () => {
+      const file = fileInput.value?.files[0];
+      if (!file) {
+        validationMessage.value = "Please select a file.";
+        showValidation.value = true;
+        return;
+      }
+
+      if (!validateImage(file)) {
+        showValidation.value = true;
+        return;
+      }
+
+      uploading.value = true;
+      const response = await props.updatePhoto(file);
+      uploading.value = false;
+
+      if (response.success) {
+				cacheBuster.value = Date.now();
+        const modal = document.getElementById("photoModal");
+        const bootstrapModal = bootstrap.Modal.getInstance(modal);
+        bootstrapModal.hide();
+      } else {
+        validationMessage.value = response.error;
+        showValidation.value = true;
+      }
+    };
+
+		const getAvatarSrc = computed(() => {
+      if (!props.user.photoUrl || props.user.photoUrl === "") {
+        return AvatarIcon;
+      }
+      return `http://localhost:3000${props.user.photoUrl}?t=${cacheBuster.value}`;
+    });
+
 		return {
+			AvatarIcon,
+			getAvatarSrc,
 			newUsername,
+			fileInput,
+			uploading,
 			showValidation,
 			validationMessage,
 			handleUpdateUsername,
+			handleUpdatePhoto
 		};
 	},
 };
@@ -84,7 +134,7 @@ export default {
 			"
 		>
 			<img
-				:src="src"
+				:src="getAvatarSrc"
 				alt="User Avatar"
 				style="width: 100%; height: 100%; object-fit: cover"
 			/>
@@ -94,6 +144,16 @@ export default {
 				<span class="dropdown-item-text"> @{{ user.username }} </span>
 			</li>
 			<li><hr class="dropdown-divider" /></li>
+			<li>
+        <button
+          class="dropdown-item"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#photoModal"
+        >
+          Update Profile Picture
+        </button>
+      </li>
 			<li>
 				<button
 					class="dropdown-item"
@@ -112,6 +172,64 @@ export default {
 			</li>
 		</ul>
 	</div>
+
+	<div
+    class="modal fade"
+    id="photoModal"
+    tabindex="-1"
+    aria-labelledby="photoModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="photoModalLabel">
+            Upload a new profile picture
+          </h1>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group flex-nowrap">
+            <input
+              type="file"
+              ref="fileInput"
+              accept="image/jpeg, image/png"
+              class="form-control"
+            />
+          </div>
+          <p
+            class="text-danger small mt-2"
+            aria-live="assertive"
+            v-if="showValidation"
+          >
+            {{ validationMessage }}
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            @click="handleUpdatePhoto"
+            :disabled="uploading"
+          >
+            {{ uploading ? "Uploading..." : "Upload" }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 	<div
 		class="modal fade"

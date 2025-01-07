@@ -146,7 +146,7 @@ paths:
             schema:
               type: object
               properties:
-                profilePicture:
+                photo:
                   type: string
                   format: binary
                   description: The profile picture to be uploaded.

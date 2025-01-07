@@ -1,11 +1,11 @@
 <script>
 import Avatar from "./Avatar.vue";
-import AvatarIcon from "../assets/person-circle.svg";
 
 export default {
 	props: {
 		logout: Function,
 		updateUsername: Function,
+		updatePhoto: Function,
 		user: {
 			type: Object,
 			required: true,
@@ -14,21 +14,16 @@ export default {
 	components: {
 		Avatar,
 	},
-	setup() {
-		return {
-			AvatarIcon,
-		};
-	},
 };
 </script>
 
 <template>
 	<div class="h-100 rounded d-flex flex-column justify-content-end">
 		<Avatar
-			:src="AvatarIcon"
 			:logout="logout"
 			:user="user"
 			:updateUsername="updateUsername"
+			:updatePhoto="updatePhoto"
 		/>
 	</div>
 </template>

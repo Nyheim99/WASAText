@@ -78,6 +78,9 @@ func New(cfg Config) (Router, error) {
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
 
+	staticDir := "./service/profile_pictures"
+  router.ServeFiles("/service/profile_pictures/*filepath", http.Dir(staticDir))
+	
 	return &_router{
 		router:     router,
 		baseLogger: cfg.Logger,
