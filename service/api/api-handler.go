@@ -14,8 +14,13 @@ func (rt *_router) Handler() http.Handler {
 
 	rt.router.PUT("/user/username", rt.validateAuthorization(rt.setMyUserName))
 	rt.router.PUT("/user/photo", rt.validateAuthorization(rt.setMyPhoto))
+
+	rt.router.POST("/conversations", rt.validateAuthorization(rt.createConversation))
+	
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
+
+	
 
 	return rt.router
 }

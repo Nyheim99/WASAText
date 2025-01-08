@@ -12,7 +12,6 @@ export default {
 	},
 	setup() {
 		const router = useRouter();
-		const conversations = ref([]);
 		const user = ref({});
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
@@ -20,6 +19,15 @@ export default {
 		const logout = () => {
 			localStorage.removeItem("userId");
 			router.push("/login");
+		};
+
+		const handleFeedback = (message) => {
+			feedbackMessage.value = message;
+			showFeedback.value = true;
+
+			setTimeout(() => {
+				showFeedback.value = false;
+			}, 3000);
 		};
 
 		const updateUsername = async (newUsername) => {
@@ -82,19 +90,8 @@ export default {
 			}
 		};
 
-		const fetchConversations = async () => {
-			try {
-				const response = await axios.get("/user/conversations");
-				conversations.value = response.data || [];
-			} catch (error) {
-				console.error("Failed to fetch conversations:", error.message);
-				conversations.value = [];
-			}
-		};
-
 		onMounted(() => {
 			fetchUser();
-			fetchConversations();
 		});
 
 		return {
@@ -102,7 +99,7 @@ export default {
 			updateUsername,
 			updatePhoto,
 			user,
-			conversations,
+			handleFeedback,
 			feedbackMessage,
 			showFeedback,
 		};
@@ -131,7 +128,7 @@ export default {
 				/>
 			</div>
 			<div class="col-3">
-				<ConversationList :conversations="conversations" />
+				<ConversationList v-if="user.id" @feedback="handleFeedback" :user="user" />
 			</div>
 			<div class="col">
 				<div class="bg-white shadow-sm rounded p-4 overflow-auto h-100">
