@@ -17,12 +17,6 @@ const handleLogin = async () => {
 
 		console.log("Login successful:", response.data);
 
-    const usersResponse = await axios.get("/users");
-    console.log("Fetched users:", usersResponse.data);
-
-    const conversationsResponse = await axios.get("/user/conversations")
-    console.log("Fetched conversations:", conversationsResponse.data);
-
 		router.push("/");
 	} catch (error) {
 		console.error("Login failed:", error.response?.data || error.message);

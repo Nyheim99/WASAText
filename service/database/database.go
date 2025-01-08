@@ -40,13 +40,12 @@ import (
 type AppDatabase interface {
 	GetUserByUsername(username string) (int64, error)
 	CreateUser(username string) (int64, error)
-	DoesUserExist(userID int64) (bool, error)
-	GetUser(userId int64) (*User, error)
-	GetUsers(conversationID *int64) ([]User, error)
-	GetUserConversations(userID int64) ([]Conversation, error)
 	DoesUsernameExist(username string) (bool, error)
 	SetMyUserName(userID int64, username string) error
 	SetMyPhoto(userID int64, photoURL string) error
+	GetUser(userId int64) (*User, error)
+	GetUsers(conversationID *int64) ([]User, error)
+	GetUserConversations(userID int64) ([]Conversation, error)
 
 	Ping() error
 }
@@ -59,60 +58,55 @@ type appdbimpl struct {
 // `db` is required - an error will be returned if `db` is `nil`.
 func New(db *sql.DB) (AppDatabase, error) {
 	if db == nil {
-		return nil, errors.New("database is required when building a AppDatabase")
+		return nil, errors.New("database is required when building an AppDatabase")
 	}
 
-	// Table creation SQL scripts
 	sqlStmts := []string{
-		// Users table
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT UNIQUE NOT NULL CHECK (LENGTH(username) BETWEEN 3 AND 16),
-			photoUrl TEXT DEFAULT ''
+			photo_url TEXT DEFAULT ''
 		);`,
-		// Messages table
-		`CREATE TABLE IF NOT EXISTS messages (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			userId INTEGER NOT NULL,
-			content TEXT NOT NULL,
-			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-			status TEXT CHECK(status IN ('sent', 'read')) NOT NULL,
-			isReply BOOLEAN DEFAULT FALSE,
-			originalMessageId INTEGER,
-			isForwarded BOOLEAN DEFAULT FALSE,
-			FOREIGN KEY (userId) REFERENCES users(id),
-			FOREIGN KEY (originalMessageId) REFERENCES messages(id)
-		);`,
-		// Conversations table
 		`CREATE TABLE IF NOT EXISTS conversations (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT,
-			conversationType TEXT CHECK(conversationType IN ('group', 'private')) NOT NULL,
-			photoUrl TEXT,
-			lastMessageId INTEGER,
-			FOREIGN KEY (lastMessageId) REFERENCES messages(id)
+			name TEXT, -- Name for groups or NULL for private conversations
+			conversation_type TEXT CHECK(conversation_type IN ('private', 'group')) NOT NULL,
+			photo_url TEXT, -- Group photo URL or NULL for private conversations
+			last_message_id INTEGER,
+			FOREIGN KEY (last_message_id) REFERENCES messages(id)
 		);`,
-		// Conversation Participants table
 		`CREATE TABLE IF NOT EXISTS conversation_participants (
-			conversationId INTEGER NOT NULL,
-			userId INTEGER NOT NULL,
-			PRIMARY KEY (conversationId, userId),
-			FOREIGN KEY (conversationId) REFERENCES conversations(id),
-			FOREIGN KEY (userId) REFERENCES users(id)
+			conversation_id INTEGER NOT NULL,
+			user_id INTEGER NOT NULL,
+			PRIMARY KEY (conversation_id, user_id),
+			FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+			FOREIGN KEY (user_id) REFERENCES users(id)
 		);`,
-		// Comments table
-		`CREATE TABLE IF NOT EXISTS comments (
+		`CREATE TABLE IF NOT EXISTS messages (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			messageId INTEGER NOT NULL,
-			userId INTEGER NOT NULL,
-			emoticon TEXT,
-			content TEXT,
-			FOREIGN KEY (messageId) REFERENCES messages(id),
-			FOREIGN KEY (userId) REFERENCES users(id)
+			conversation_id INTEGER NOT NULL,
+			sender_id INTEGER NOT NULL,
+			content TEXT, -- Text message content
+			photo_url TEXT, -- URL for photo messages or NULL for text messages
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			status TEXT CHECK(status IN ('sent', 'received', 'read')) DEFAULT 'sent',
+			is_reply BOOLEAN DEFAULT FALSE,
+			original_message_id INTEGER, -- Reference to the replied-to message
+			is_forwarded BOOLEAN DEFAULT FALSE,
+			FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+			FOREIGN KEY (sender_id) REFERENCES users(id),
+			FOREIGN KEY (original_message_id) REFERENCES messages(id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS reactions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			message_id INTEGER NOT NULL,
+			user_id INTEGER NOT NULL,
+			emoticon TEXT NOT NULL, -- Emoji reactions
+			FOREIGN KEY (message_id) REFERENCES messages(id),
+			FOREIGN KEY (user_id) REFERENCES users(id)
 		);`,
 	}
 
-	// Execute each SQL statement
 	for _, sqlStmt := range sqlStmts {
 		_, err := db.Exec(sqlStmt)
 		if err != nil {

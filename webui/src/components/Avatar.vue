@@ -161,7 +161,7 @@ export default {
 					data-bs-toggle="modal"
 					data-bs-target="#usernameModal"
 				>
-					Update username
+					Update Username
 				</button>
 			</li>
 			<li><hr class="dropdown-divider" /></li>
