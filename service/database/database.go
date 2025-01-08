@@ -45,7 +45,6 @@ type AppDatabase interface {
 	SetMyPhoto(userID int64, photoURL string) error
 	GetUser(userId int64) (*User, error)
 	GetUsers() ([]User, error)
-	GetUserConversations(userID int64) ([]Conversation, error)
 
 	GetOrCreatePrivateConversation(currentUserID, recipientID int64) (int64, error)
 	CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error)

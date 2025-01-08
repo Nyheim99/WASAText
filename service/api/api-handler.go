@@ -10,7 +10,6 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.POST("/session", rt.doLogin)
 	rt.router.GET("/user", rt.validateAuthorization(rt.getUser))
 	rt.router.GET("/users", rt.validateAuthorization(rt.getUsers))
-	rt.router.GET("/user/conversations", rt.validateAuthorization(rt.getUserConversations))
 
 	rt.router.PUT("/user/username", rt.validateAuthorization(rt.setMyUserName))
 	rt.router.PUT("/user/photo", rt.validateAuthorization(rt.setMyPhoto))

@@ -44,29 +44,6 @@ func (db *appdbimpl) GetUser(userId int64) (*User, error) {
     return &user, nil
 }
 
-func (db *appdbimpl) GetUserConversations(userID int64) ([]Conversation, error) {
-    rows, err := db.c.Query(`
-        SELECT c.id, c.name, c.conversation_type, c.photo_url, c.last_message_id
-        FROM conversations c
-        JOIN conversation_participants cp ON c.id = cp.conversation_id
-        WHERE cp.user_id = ?`, userID)
-    if err != nil {
-        return nil, fmt.Errorf("error retrieving user conversations: %w", err)
-    }
-    defer rows.Close()
-
-    var conversations []Conversation
-    for rows.Next() {
-        var conv Conversation
-        if err := rows.Scan(&conv.ID, &conv.Name, &conv.ConversationType, &conv.PhotoURL, &conv.LastMessageID); err != nil {
-            return nil, fmt.Errorf("error scanning conversation: %w", err)
-        }
-        conversations = append(conversations, conv)
-    }
-
-    return conversations, nil
-}
-
 func (db *appdbimpl) SetMyUserName(userID int64, username string) error {
     _, err := db.c.Exec(`UPDATE users SET username = ? WHERE id = ?`, username, userID)
     if err != nil {
