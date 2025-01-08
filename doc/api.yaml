@@ -4,7 +4,7 @@ info:
   description: |-
     This document describes the API is for the 
     WASAText application.
-  version: 1.0.1
+  version: 1.0.2
 paths:
   /session:
     post:
@@ -25,7 +25,7 @@ paths:
                 username:
                   type: string
                   example: Maria
-                  pattern: "ˆ.*?$"
+                  pattern: "^[a-zA-Z0-9]*$"
                   minLength: 3
                   maxLength: 16
         required: true
@@ -40,6 +40,10 @@ paths:
                   identifier:
                     type: integer
                     example: 1
+        "400":
+          description: Invalid username
+        "500":
+          description: Server error occurred during login.
   /users:
     get:
       operationId: getUsers
@@ -51,11 +55,10 @@ paths:
         - name: conversationId
           in: query
           required: false
-          description: Id of conversation
+          description: ID of conversation
           schema:
             type: integer
             example: 1
-            readOnly: true
       responses:
         "200":
           description: List of users
@@ -64,6 +67,9 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/User" }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /user:
     get:
       operationId: getUser
@@ -81,24 +87,32 @@ paths:
           description: "Unauthorized"
         "404":
           description: "User not found"
+        "500":
+          description: "Internal server error. Please try again later."
+
+
   /user/conversations:
     get:
-      parameters:
-        - $ref: "#/components/parameters/userId"
       operationId: getMyConversations
       summary: Get all the user's conversations
       description: |-
         Return the list of all conversations the user is apart of
       responses:
         "200":
-          description: List of users
+          description: List of conversations
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: "#/components/schemas/User" }
+                items: { $ref: "#/components/schemas/Conversation" }
+        "401":
+          description: "Unauthorized"
+        "500":
+          description: "Internal server error. Please try again later."
+
+
   /user/username:
-    put:
+    patch:
       operationId: setMyUserName
       summary: Update the user's username
       description: |-
@@ -127,15 +141,22 @@ paths:
                 properties:
                   message:
                     type: string
-          example: Username updated successfully
+                  username:
+                    type: string
+          example:
+            message: Username updated successfully
+            username: Marco
         "400":
           description: Invalid input.
         "404":
           description: User not found.
         "409":
           description: Username already in use.
+        "500":
+          description: "Internal server error. Please try again later."
+
   /user/photo:
-    put:
+    patch:
       operationId: setMyPhoto
       summary: Upload or replace the user's profile picture
       description: Uploads a new profile picture for the user or replaces the existing one.
@@ -161,13 +182,14 @@ paths:
                   message:
                     type: string
                     example: Profile picture uploaded successfully
-                  photoUrl:
+                  photo_url:
                     type: string
                     example: /service/profile_pictures/user_1.jpg
         "400":
           description: Invalid file upload
         "500":
           description: Server error occurred
+
   /conversations:
     post:
       operationId: newConversation
@@ -184,6 +206,9 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Conversation" }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /conversations/{conversationId}:
     get:
       parameters:
@@ -201,47 +226,31 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Message" }
         "404": { description: Conversation not found }
-  /conversations/{conversationId}/name:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-    put:
-      operationId: setGroupName
-      summary: Update the group's name
-      description: |-
-        Updates the group's name
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Conversation" }
-      responses:
-        "200":
-          description: Group name updated successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Conversation" }
-        "404": { description: Group not found }
-  /conversations/{conversationId}/photo:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-    put:
-      operationId: setGroupPhoto
-      summary: Update the group's photo
-      description: |-
-        Updates the group's photo
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Conversation" }
-      responses:
-        "200":
-          description: Group photo updated successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Conversation" }
-        "404": { description: Group not found }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /conversations/{conversationId}/members:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
+    get:
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+      operationId: getGroupMembers
+      summary: List all group members
+      description: Retrieves all users in the specified group conversation.
+      responses:
+        "200":
+          description: List of group members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Invalid group ID
+        "404":
+          description: Group not found
+        "500":
+          description: "Internal server error. Please try again later."
+
     post:
       operationId: addToGroup
       summary: Add a user to the group conversation
@@ -275,7 +284,10 @@ paths:
                     type: integer
                     example: 42
         "400":
-          description: Unable to add user (e.g., private conversation, already in group, etc.)
+          description: Unable to add user
+        "500":
+          description: "Internal server error. Please try again later."
+
     delete:
       operationId: leaveGroup
       summary: Remove a user from the group conversation
@@ -287,6 +299,53 @@ paths:
           description: User removed from the group successfully
         "400":
           description: Unable to remove user (e.g., user not in group)
+        "500":
+          description: "Internal server error. Please try again later."
+
+  /conversations/{conversationId}/name:
+    parameters:
+      - $ref: "#/components/parameters/conversationId"
+    put:
+      operationId: setGroupName
+      summary: Update the group's name
+      description: |-
+        Updates the group's name
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Conversation" }
+      responses:
+        "200":
+          description: Group name updated successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+        "404": { description: Group not found }
+        "500":
+          description: "Internal server error. Please try again later."
+
+  /conversations/{conversationId}/photo:
+    parameters:
+      - $ref: "#/components/parameters/conversationId"
+    patch:
+      operationId: setGroupPhoto
+      summary: Update the group's photo
+      description: |-
+        Updates the group's photo
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Conversation" }
+      responses:
+        "200":
+          description: Group photo updated successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+        "404": { description: Group not found }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /conversations/{conversationId}/messages:
     parameters:
       - $ref: "#/components/parameters/conversationId"
@@ -307,6 +366,9 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Message" }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /conversations/{conversationId}/messages/{messageId}:
     delete:
       parameters:
@@ -318,6 +380,9 @@ paths:
       responses:
         "204": { description: Message deleted successfully }
         "404": { description: Message not found }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /conversations/{conversationId}/messages/{messageId}/status:
     patch:
       parameters:
@@ -338,6 +403,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Message" }
         "404": { description: Message not found }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /conversations/{conversationId}/messages/{messageId}/forward:
     parameters:
       - $ref: "#/components/parameters/conversationId"
@@ -357,6 +425,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Message" }
         "404": { description: Message not found }
+        "500":
+          description: "Internal server error. Please try again later."
+
   /conversations/{conversationId}/messages/{messageId}/comments:
     parameters:
       - $ref: "#/components/parameters/conversationId"
@@ -377,6 +448,9 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Comment" }
+        "500":
+          description: "Internal server error. Please try again later."
+
     delete:
       operationId: uncommentMessage
       summary: Remove a comment from a message
@@ -395,6 +469,8 @@ paths:
           description: Comment removed successfully
         "404":
           description: Comment not found
+        "500":
+          description: "Internal server error. Please try again later."
 
 components:
   schemas:
@@ -403,19 +479,18 @@ components:
       description: "This object represents a single User"
       type: object
       properties:
-        userId:
-          description: "Unique user identifer"
+        id:
+          description: "Unique user identifier"
           type: integer
           example: 1
-          readOnly: true
         username:
           type: string
           description: "The user's username"
           example: Maria
-          pattern: "ˆ.*?$"
+          pattern: "^[a-zA-Z0-9]*$"
           minLength: 3
           maxLength: 16
-        photoUrl:
+        photo_url:
           description: "URL of user's profile picture"
           type: string
           example: "https://example.com/photo.jpg"
@@ -424,12 +499,12 @@ components:
       description: "This object represents a single message"
       type: object
       properties:
-        messageId:
+        id:
           description: Unique message identifier
           type: integer
           example: 1
           readOnly: true
-        userId:
+        user_id:
           description: "Id of user who sent the message"
           type: integer
           example: 1
@@ -446,21 +521,21 @@ components:
           type: string
           enum: ["sent", "read"]
           example: sent
-        isReply:
+        is_reply:
           description: |-
             Indicates whether the message is a reply to another message (true) 
             or standalone (false).
           type: boolean
           example: true
           default: false
-        originalMessageId:
+        original_message_id:
           description: |-
             The unique identifier of the original message this message is replying to. 
             If the message is standalone, this will be null or omitted.
           type: integer
           nullable: true
           example: 42
-        isForwarded:
+        is_forwarded:
           description: |-
             Indicates whether a message is forwarded (true) or not (false)
           type: boolean
@@ -480,41 +555,35 @@ components:
           description: "The emoticon used in the comment"
           type: string
           example: "😃"
-        userId:
-          description: "The user Id of the person who commented"
-          type: string
-          example: "Marie"
+        user_id:
+          description: "ID of the user who commented"
+          type: integer
+          example: 2
     Conversation:
       title: Conversation
       description: "This object represents a conversation between two users"
       type: object
       properties:
-        conversationId:
+        conversation_id:
           description: "Unique conversation identifier"
           type: integer
           example: 1
-          readOnly: true
         name:
           description: "Name of the group"
           type: string
           example: "WASA Co-Students"
-        conversationType:
+          maxLength: 20
+        conversation_type:
           description: |-
             Indicates wether conversation is a group or private conversation
           type: string
           enum: ["group", "private"]
           example: group
-        users:
-          description: "Users in the conversation"
-          type: array
-          items:
-            type: integer
-          example: [28, 48]
-        lastMessageId:
+        last_message_id:
           description: "Id of last message in conversation"
           type: integer
           example: 789
-        photoUrl:
+        photo_url:
           description: "Url of the group's picture"
           type: string
           example: "https://example.com/photo.jpg"
@@ -524,7 +593,6 @@ components:
       schema:
         type: integer
         example: 1
-        readOnly: true
       name: userId
       in: path
       required: true
@@ -533,7 +601,6 @@ components:
       schema:
         type: integer
         example: 1
-        readOnly: true
       name: conversationId
       in: path
       required: true
@@ -542,7 +609,6 @@ components:
       schema:
         type: integer
         example: 1
-        readOnly: true
       name: messageId
       in: path
       required: true
