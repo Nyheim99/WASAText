@@ -59,7 +59,7 @@ export default {
 				});
 
 				console.log("Profile picture updated:", response.data);
-				user.value.photoUrl = response.data.photoUrl;
+				user.value.photo_url = response.data.photo_url;
 				return { success: true };
 			} catch (error) {
 				console.error(

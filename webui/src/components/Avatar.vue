@@ -96,10 +96,10 @@ export default {
     };
 
 		const getAvatarSrc = computed(() => {
-      if (!props.user.photoUrl || props.user.photoUrl === "") {
+      if (!props.user.photo_url || props.user.photo_url === "") {
         return AvatarIcon;
       }
-      return `http://localhost:3000${props.user.photoUrl}?t=${cacheBuster.value}`;
+      return `http://localhost:3000${props.user.photo_url}?t=${cacheBuster.value}`;
     });
 
 		return {

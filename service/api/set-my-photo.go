@@ -84,6 +84,6 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message":  "Profile picture uploaded successfully",
-		"photoUrl": photoURL,
+		"photo_url": photoURL,
 	})
 }
