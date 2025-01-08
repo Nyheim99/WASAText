@@ -50,6 +50,8 @@ type AppDatabase interface {
 	CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error)
 	AddMessage(conversationID, senderID int64, content string) (int64, error)
 
+	GetMyConversations(userID int64) ([]ConversationPreview, error)
+
 	Ping() error
 }
 
@@ -72,9 +74,9 @@ func New(db *sql.DB) (AppDatabase, error) {
 		);`,
 		`CREATE TABLE IF NOT EXISTS conversations (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT, -- Name for groups or NULL for private conversations
+			name TEXT DEFAULT '',
 			conversation_type TEXT CHECK(conversation_type IN ('private', 'group')) NOT NULL,
-			photo_url TEXT, -- Group photo URL or NULL for private conversations
+			photo_url TEXT DEFAULT '',
 			last_message_id INTEGER,
 			FOREIGN KEY (last_message_id) REFERENCES messages(id)
 		);`,
@@ -89,12 +91,12 @@ func New(db *sql.DB) (AppDatabase, error) {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			conversation_id INTEGER NOT NULL,
 			sender_id INTEGER NOT NULL,
-			content TEXT, -- Text message content
-			photo_url TEXT, -- URL for photo messages or NULL for text messages
+			content TEXT DEFAULT '',
+			photo_url TEXT DEFAULT '',
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			status TEXT CHECK(status IN ('sent', 'received', 'read')) DEFAULT 'sent',
 			is_reply BOOLEAN DEFAULT FALSE,
-			original_message_id INTEGER, -- Reference to the replied-to message
+			original_message_id INTEGER,
 			is_forwarded BOOLEAN DEFAULT FALSE,
 			FOREIGN KEY (conversation_id) REFERENCES conversations(id),
 			FOREIGN KEY (sender_id) REFERENCES users(id),

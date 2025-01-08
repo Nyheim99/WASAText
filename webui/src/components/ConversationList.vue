@@ -20,12 +20,26 @@ export default {
 		const selectedUser = ref(null);
 		const selectedUsers = ref(new Set());
 		const privateMessage = ref("");
-    const groupMessage = ref("");
+		const groupMessage = ref("");
 		const allUsers = ref([]);
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
 		const groupName = ref("");
 		const groupPhoto = ref(null);
+		const conversations = ref([]);
+		const loadingConversations = ref(true);
+
+		const fetchConversations = async () => {
+			try {
+				loadingConversations.value = true;
+				const response = await axios.get("/conversations");
+				conversations.value = response.data.conversations;
+			} catch (error) {
+				console.error("Failed to fetch conversations:", error.message);
+			} finally {
+				loadingConversations.value = false;
+			}
+		};
 
 		const fetchUsers = async () => {
 			try {
@@ -175,6 +189,7 @@ export default {
 
 		onMounted(() => {
 			fetchUsers();
+			fetchConversations();
 		});
 
 		return {
@@ -192,7 +207,7 @@ export default {
 			createPrivateConversation,
 			createGroupConversation,
 			privateMessage,
-      groupMessage,
+			groupMessage,
 			groupName,
 			groupPhoto,
 			toggleUserSelection,
@@ -336,20 +351,19 @@ export default {
 									</li>
 								</ul>
 							</div>
-              <div v-if="selectedUser" class="mt-3">
-							<h6>
-								Send a message to {{ selectedUser.username }}
-							</h6>
-							<textarea
-								v-model="privateMessage"
-								class="form-control"
-								placeholder="Write your message here..."
-								rows="3"
-							></textarea>
+							<div v-if="selectedUser" class="mt-3">
+								<h6>
+									Send a message to
+									{{ selectedUser.username }}
+								</h6>
+								<textarea
+									v-model="privateMessage"
+									class="form-control"
+									placeholder="Write your message here..."
+									rows="3"
+								></textarea>
+							</div>
 						</div>
-						</div>
-
-						
 
 						<div v-if="modalMode === 'group'">
 							<input

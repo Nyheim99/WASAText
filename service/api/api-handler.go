@@ -15,6 +15,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.PUT("/user/photo", rt.validateAuthorization(rt.setMyPhoto))
 
 	rt.router.POST("/conversations", rt.validateAuthorization(rt.createConversation))
+	rt.router.GET("/conversations", rt.validateAuthorization(rt.getMyConversations))
 	
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
