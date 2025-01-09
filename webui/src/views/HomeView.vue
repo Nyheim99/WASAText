@@ -127,7 +127,7 @@ export default {
 					:updatePhoto="updatePhoto"
 				/>
 			</div>
-			<div class="col-3">
+			<div class="col-auto">
 				<ConversationList v-if="user.id" @feedback="handleFeedback" :user="user" />
 			</div>
 			<div class="col">

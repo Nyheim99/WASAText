@@ -1,7 +1,7 @@
 <script>
 import WriteIcon from "../assets/pencil-square.svg";
 import AvatarIcon from "../assets/person-circle.svg";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import axios from "../services/axios";
 const backendBaseURL = "http://localhost:3000";
 
@@ -40,6 +40,45 @@ export default {
 				loadingConversations.value = false;
 			}
 		};
+
+		const formatTimestamp = (timestamp) => {
+			const now = new Date();
+			const messageTime = new Date(timestamp);
+			const diffInMs = now - messageTime;
+
+			const seconds = diffInMs / 1000;
+			const minutes = seconds / 60;
+			const hours = minutes / 60;
+			const days = hours / 24;
+			const weeks = days / 7;
+			const months = days / 30;
+			const years = days / 365;
+
+			if (hours < 12) {
+				return messageTime.toLocaleTimeString("en-US", {
+					hour: "2-digit",
+					minute: "2-digit",
+				});
+			} else if (hours < 24) {
+				return `${Math.floor(hours)}H`;
+			} else if (days < 7) {
+				return `${Math.floor(days)}d`;
+			} else if (weeks < 4) {
+				return `${Math.floor(weeks)}w`;
+			} else if (months < 12) {
+				return `${Math.floor(months)}m`;
+			} else {
+				return `${Math.floor(years)}y`;
+			}
+		};
+
+		const sortedConversations = computed(() =>
+			conversations.value.sort(
+				(a, b) =>
+					new Date(b.last_message_timestamp) -
+					new Date(a.last_message_timestamp)
+			)
+		);
 
 		const fetchUsers = async () => {
 			try {
@@ -215,6 +254,8 @@ export default {
 			feedbackMessage,
 			showFeedback,
 			allUsers,
+			formatTimestamp,
+			sortedConversations,
 			resolvePhotoURL: (photoURL) =>
 				photoURL && photoURL.trim() !== ""
 					? `${backendBaseURL}${photoURL}`
@@ -488,9 +529,46 @@ export default {
 			</div>
 		</div>
 
-		<p class="text-muted text-center">
-			No conversations found. Click the button above to start a new
-			conversation!
-		</p>
+		<!-- Loading Spinner -->
+		<div v-if="loadingConversations" class="text-center">
+			<div class="spinner-border text-primary" role="status">
+				<span class="visually-hidden">Loading...</span>
+			</div>
+		</div>
+
+		<!-- Conversations List -->
+		<div v-else>
+			<div
+				v-for="conversation in sortedConversations"
+				:key="conversation.conversation_id"
+				class="container d-flex align-items-center p-2 border-bottom"
+			>
+				<!-- Display photo -->
+				<img
+					:src="resolvePhotoURL(conversation.display_photo_url)"
+					alt="Avatar"
+					class="rounded-circle me-2"
+					style="width: 40px; height: 40px; object-fit: cover"
+				/>
+
+				<!-- Details -->
+				<div class="flex-grow-1">
+					<h6 class="mb-1">{{ conversation.display_name }}</h6>
+					<p class="mb-0 text-muted" style="font-size: 0.9rem">
+						<span v-if="conversation.last_message_content">
+							{{ conversation.last_message_content }}
+						</span>
+						<span v-else>
+							<img :src="PhotoIcon" alt="Photo" width="16" />
+						</span>
+					</p>
+				</div>
+
+				<!-- Timestamp -->
+				<small class="text-muted">
+					{{ formatTimestamp(conversation.last_message_timestamp) }}
+				</small>
+			</div>
+		</div>
 	</div>
 </template>
