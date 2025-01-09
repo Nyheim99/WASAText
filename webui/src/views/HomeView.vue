@@ -4,17 +4,20 @@ import { ref, onMounted } from "vue";
 import axios from "../services/axios";
 import Sidebar from "../components/Sidebar.vue";
 import ConversationList from "../components/ConversationList.vue";
+import Conversation from "../components/Conversation.vue";
 
 export default {
 	components: {
 		Sidebar,
 		ConversationList,
+		Conversation,
 	},
 	setup() {
 		const router = useRouter();
 		const user = ref({});
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
+		const selectedConversationId = ref(null);
 
 		const logout = () => {
 			localStorage.removeItem("userId");
@@ -90,6 +93,10 @@ export default {
 			}
 		};
 
+		const selectConversation = (conversationId) => {
+      selectedConversationId.value = conversationId;
+    };
+
 		onMounted(() => {
 			fetchUser();
 		});
@@ -102,6 +109,8 @@ export default {
 			handleFeedback,
 			feedbackMessage,
 			showFeedback,
+			selectedConversationId,
+      selectConversation,
 		};
 	},
 };
@@ -128,13 +137,19 @@ export default {
 				/>
 			</div>
 			<div class="col-auto">
-				<ConversationList v-if="user.id" @feedback="handleFeedback" :user="user" />
+				<ConversationList
+					v-if="user.id"
+					@feedback="handleFeedback"
+					@select-conversation="selectConversation"
+					:user="user"
+				/>
 			</div>
 			<div class="col">
-				<div class="bg-white shadow-sm rounded p-4 overflow-auto h-100">
-					<h2>Chat Window</h2>
-					<p>Select a chat to start messaging!</p>
-				</div>
+				<Conversation
+					v-if="selectedConversationId"
+          :conversation-id="selectedConversationId"
+          :user="user"
+				/>
 			</div>
 		</div>
 	</div>

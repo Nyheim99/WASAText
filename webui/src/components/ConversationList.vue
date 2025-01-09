@@ -6,7 +6,7 @@ import axios from "../services/axios";
 const backendBaseURL = "http://localhost:3000";
 
 export default {
-	emits: ["feedback"],
+	emits: ["feedback", "select-conversation"],
 	props: {
 		user: {
 			type: Object,
@@ -28,6 +28,7 @@ export default {
 		const groupPhoto = ref(null);
 		const conversations = ref([]);
 		const loadingConversations = ref(true);
+		const selectedConversationId = ref(null);
 
 		const fetchConversations = async () => {
 			try {
@@ -79,6 +80,11 @@ export default {
 					new Date(a.last_message_timestamp)
 			)
 		);
+
+		const selectConversation = (conversationId) => {
+			selectedConversationId.value = conversationId;
+			emit("select-conversation", conversationId);
+		};
 
 		const fetchUsers = async () => {
 			try {
@@ -256,6 +262,7 @@ export default {
 			allUsers,
 			formatTimestamp,
 			sortedConversations,
+			loadingConversations,
 			resolvePhotoURL: (photoURL) =>
 				photoURL && photoURL.trim() !== ""
 					? `${backendBaseURL}${photoURL}`
@@ -542,6 +549,9 @@ export default {
 				v-for="conversation in sortedConversations"
 				:key="conversation.conversation_id"
 				class="container d-flex align-items-center p-2 border-bottom"
+				@click="
+					$emit('select-conversation', conversation.conversation_id)
+				"
 			>
 				<!-- Display photo -->
 				<img
