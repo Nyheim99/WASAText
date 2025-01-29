@@ -106,6 +106,17 @@ type ConversationPreview struct {
 	LastMessageTimestamp string `json:"last_message_timestamp"`
 }
 
+func (db *appdbimpl) SetGroupPhoto(conversationID int64, photoURL string) error {
+	_, err := db.c.Exec(
+		`UPDATE conversations SET photo_url = $1 WHERE id = $2`,
+		photoURL, conversationID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update group photo: %w", err)
+	}
+	return nil
+}
+
 // GetMyConversations retrieves a list of conversations for a given user, sorted by the latest message timestamp.
 func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, error) {
 	query := `

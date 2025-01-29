@@ -7,7 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
+	"strings"
+	"mime/multipart"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
@@ -83,65 +84,78 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	if conversationType == "group" {
-		// Extract additional group-specific fields
-		groupName := r.FormValue("group_name")
-		participants := r.FormValue("participants")
+		if conversationType == "group" {
+			groupName := r.FormValue("group_name")
+			participants := r.FormValue("participants")
 
-		if groupName == "" || participants == "" {
-			http.Error(w, "group_name and participants are required for group conversation", http.StatusBadRequest)
-			return
-		}
-
-		var participantIDs []int64
-		err := json.Unmarshal([]byte(participants), &participantIDs)
-		if err != nil {
-			http.Error(w, "Invalid participants format", http.StatusBadRequest)
-			return
-		}
-
-		// Handle optional group photo
-		var photoURL string
-		file, _, err := r.FormFile("group_photo")
-		if err == nil {
-			photoURL, err = rt.saveUploadedFile(file, "groups")
-			if err != nil {
-				http.Error(w, "Failed to save group photo", http.StatusInternalServerError)
-				return
+			if groupName == "" || participants == "" {
+					http.Error(w, "group_name and participants are required for group conversation", http.StatusBadRequest)
+					return
 			}
-		}
 
-		// Create group conversation
-		conversationID, err := rt.db.CreateGroupConversation(currentUserID, groupName, photoURL, participantIDs)
-		if err != nil {
-			http.Error(w, "Failed to create group conversation", http.StatusInternalServerError)
+			var participantIDs []int64
+			err := json.Unmarshal([]byte(participants), &participantIDs)
+			if err != nil {
+					http.Error(w, "Invalid participants format", http.StatusBadRequest)
+					return
+			}
+
+			conversationID, err := rt.db.CreateGroupConversation(currentUserID, groupName, "", participantIDs)
+			if err != nil {
+					http.Error(w, "Failed to create group conversation", http.StatusInternalServerError)
+					return
+			}
+
+			// Handle optional group photo
+			var photoURL string
+			file, handler, err := r.FormFile("group_photo")
+			if err == nil {
+					defer file.Close()
+					photoURL, err = rt.saveUploadedFile(file, handler, conversationID)
+					if err != nil {
+							http.Error(w, "Failed to save group photo", http.StatusInternalServerError)
+							return
+					}
+					err = rt.db.SetGroupPhoto(conversationID, photoURL)
+					if err != nil {
+							http.Error(w, "Failed to update group photo", http.StatusInternalServerError)
+							return
+					}
+			}
+
+
+			messageID, err := rt.db.AddMessage(conversationID, currentUserID, message)
+			if err != nil {
+					http.Error(w, "Failed to add message", http.StatusInternalServerError)
+					return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(NewConversationResponse{
+					ConversationID: conversationID,
+					MessageID:      messageID,
+			})
 			return
-		}
-
-		// Add initial message to group conversation
-		messageID, err := rt.db.AddMessage(conversationID, currentUserID, message)
-		if err != nil {
-			http.Error(w, "Failed to add message", http.StatusInternalServerError)
-			return
-		}
-
-		// Respond
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(NewConversationResponse{
-			ConversationID: conversationID,
-			MessageID:      messageID,
-		})
-		return
 	}
 
 	http.Error(w, "Unsupported conversation type", http.StatusBadRequest)
 }
 
-// Helper function to save uploaded file
-func (rt *_router) saveUploadedFile(file io.Reader, dir string) (string, error) {
-	fileName := fmt.Sprintf("%d.jpg", time.Now().UnixNano())
-	savePath := filepath.Join("service/photos", dir, fileName)
+// Helper function to save uploaded group photos
+func (rt *_router) saveUploadedFile(file io.Reader, handler *multipart.FileHeader, conversationID int64) (string, error) {
+	// Extract and validate file extension
+	fileExt := strings.ToLower(filepath.Ext(handler.Filename))
+	allowedExtensions := map[string]bool{".jpg": true, ".jpeg": true, ".png": true}
+	if !allowedExtensions[fileExt] {
+		return "", fmt.Errorf("invalid file type. Only JPG and PNG are allowed")
+	}
+
+	// Define file name as "group_<conversationID>.<ext>"
+	fileName := fmt.Sprintf("group_%d%s", conversationID, fileExt)
+
+	// Define file path
+	savePath := filepath.Join("service/photos/groups", fileName)
 
 	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(savePath), os.ModePerm); err != nil {
@@ -159,5 +173,6 @@ func (rt *_router) saveUploadedFile(file io.Reader, dir string) (string, error) 
 		return "", fmt.Errorf("unable to save file: %w", err)
 	}
 
-	return fmt.Sprintf("/service/photos/%s/%s", dir, fileName), nil
+	// Return correct photo URL
+	return fmt.Sprintf("/service/photos/groups/%s", fileName), nil
 }
