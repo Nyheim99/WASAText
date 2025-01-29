@@ -17,7 +17,7 @@ export default {
 		const user = ref({});
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
-		const selectedConversationId = ref(null);
+		const selectedConversation = ref(null);
 
 		const logout = () => {
 			localStorage.removeItem("userId");
@@ -93,9 +93,9 @@ export default {
 			}
 		};
 
-		const selectConversation = (conversationId) => {
-      selectedConversationId.value = conversationId;
-    };
+		const selectConversation = (conversation) => {
+			selectedConversation.value = conversation;
+		};
 
 		onMounted(() => {
 			fetchUser();
@@ -109,8 +109,8 @@ export default {
 			handleFeedback,
 			feedbackMessage,
 			showFeedback,
-			selectedConversationId,
-      selectConversation,
+			selectedConversation,
+			selectConversation,
 		};
 	},
 };
@@ -146,9 +146,9 @@ export default {
 			</div>
 			<div class="col">
 				<Conversation
-					v-if="selectedConversationId"
-          :conversation-id="selectedConversationId"
-          :user="user"
+					v-if="selectedConversation"
+					:conversation="selectedConversation"
+					:user="user"
 				/>
 			</div>
 		</div>

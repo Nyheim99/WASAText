@@ -1,9 +1,22 @@
 <script>
+import AvatarIcon from "/person-circle.svg";
+
 export default {
 	props: {
-		conversationId: {
-			type: Number,
+		conversation: {
+			type: Object,
 			required: true,
+		},
+	},
+
+	mounted() {
+		console.log("Received conversation:", this.conversation);
+	},
+	computed: {
+		conversationPhoto() {
+			return this.conversation.display_photo_url?.startsWith("/")
+				? `${__API_URL__}${this.conversation.display_photo_url}`
+				: this.conversation.display_photo_url || AvatarIcon;
 		},
 	},
 };
@@ -11,7 +24,16 @@ export default {
 
 <template>
 	<div class="bg-white shadow-sm rounded p-4 overflow-auto h-100">
-		<h2>Conversation</h2>
-		<p>Conversation ID: {{ conversationId }}</p>
+		<div class="d-flex align-items-center mb-2">
+			<img
+				:src="conversationPhoto"
+				alt="Conversation Avatar"
+				class="rounded-circle"
+				style="width: 50px; height: 50px; object-fit: cover"
+			/>
+			<h2 class="px-2">{{ conversation.display_name }}</h2>
+		</div>
+		<hr class="mx-n4" />
+		<p>Conversation ID: {{ conversation.conversation_id }}</p>
 	</div>
 </template>

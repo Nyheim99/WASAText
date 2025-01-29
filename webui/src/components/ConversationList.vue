@@ -1,9 +1,8 @@
 <script>
-import WriteIcon from "../assets/pencil-square.svg";
-import AvatarIcon from "../assets/person-circle.svg";
+import WriteIcon from "/pencil-square.svg";
+import AvatarIcon from "/person-circle.svg";
 import { ref, onMounted, computed } from "vue";
 import axios from "../services/axios";
-const backendBaseURL = "http://localhost:3000";
 
 export default {
 	emits: ["feedback", "select-conversation"],
@@ -28,7 +27,7 @@ export default {
 		const groupPhoto = ref(null);
 		const conversations = ref([]);
 		const loadingConversations = ref(true);
-		const selectedConversationId = ref(null);
+		const selectedConversation = ref(null);
 
 		const fetchConversations = async () => {
 			try {
@@ -37,10 +36,9 @@ export default {
 				conversations.value = response.data.conversations;
 
 				if (conversations.value.length > 0) {
-            selectedConversationId.value = conversations.value[0].conversation_id;
-            emit("select-conversation", selectedConversationId.value);
-        }
-				
+					selectedConversation.value = conversations.value[0];
+					emit("select-conversation", selectedConversation.value);
+				}
 			} catch (error) {
 				console.error("Failed to fetch conversations:", error.message);
 			} finally {
@@ -233,6 +231,12 @@ export default {
 			}
 		};
 
+		const resolvePhotoURL = (photoURL) => {
+    return photoURL && photoURL.startsWith("/")
+        ? `${__API_URL__}${photoURL}`
+        : photoURL || AvatarIcon;
+};
+
 		onMounted(() => {
 			fetchUsers();
 			fetchConversations();
@@ -264,11 +268,8 @@ export default {
 			formatTimestamp,
 			sortedConversations,
 			loadingConversations,
-			selectedConversationId,
-			resolvePhotoURL: (photoURL) =>
-				photoURL && photoURL.trim() !== ""
-					? `${backendBaseURL}${photoURL}`
-					: AvatarIcon,
+			selectedConversation,
+			resolvePhotoURL,
 		};
 	},
 };
@@ -549,10 +550,14 @@ export default {
 				v-for="conversation in sortedConversations"
 				:key="conversation.conversation_id"
 				class="container d-flex align-items-center p-2 border-bottom"
-				:class="{ 'bg-light': selectedConversationId === conversation.conversation_id }"
+				:class="{
+					'bg-light':
+						selectedConversation?.conversation_id ===
+						conversation.conversation_id,
+				}"
 				@click="
-					selectedConversationId = conversation.conversation_id;
-					$emit('select-conversation', conversation.conversation_id)
+					selectedConversation = conversation;
+					$emit('select-conversation', conversation);
 				"
 			>
 				<img
