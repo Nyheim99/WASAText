@@ -49,16 +49,7 @@ paths:
       operationId: getUsers
       summary: Get a list of users
       description: |-
-        Return a list of all users in the system. Optionally a
-        conversation Id can be provided to only get users in a group
-      parameters:
-        - name: conversationId
-          in: query
-          required: false
-          description: ID of conversation
-          schema:
-            type: integer
-            example: 1
+        Return a list of all users in the system.
       responses:
         "200":
           description: List of users
@@ -91,7 +82,7 @@ paths:
           description: "Internal server error. Please try again later."
 
   /user/username:
-    patch:
+    put:
       operationId: setMyUserName
       summary: Update the user's username
       description: |-
@@ -135,7 +126,7 @@ paths:
           description: "Internal server error. Please try again later."
 
   /user/photo:
-    patch:
+    put:
       operationId: setMyPhoto
       summary: Upload or replace the user's profile picture
       description: Uploads a new profile picture for the user or replaces the existing one.
@@ -253,7 +244,7 @@ components:
           description: "Status of the message"
           type: string
           enum: ["sent", "read"]
-          example: sent
+          example: "sent"
         is_reply:
           description: |-
             Indicates whether the message is a reply to another message (true) 
@@ -311,7 +302,7 @@ components:
             Indicates wether conversation is a group or private conversation
           type: string
           enum: ["group", "private"]
-          example: group
+          example: "group"
         last_message_id:
           description: "Id of last message in conversation"
           type: integer
