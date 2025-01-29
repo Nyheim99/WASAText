@@ -90,27 +90,6 @@ paths:
         "500":
           description: "Internal server error. Please try again later."
 
-
-  /user/conversations:
-    get:
-      operationId: getMyConversations
-      summary: Get all the user's conversations
-      description: |-
-        Return the list of all conversations the user is apart of
-      responses:
-        "200":
-          description: List of conversations
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/Conversation" }
-        "401":
-          description: "Unauthorized"
-        "500":
-          description: "Internal server error. Please try again later."
-
-
   /user/username:
     patch:
       operationId: setMyUserName
@@ -191,8 +170,25 @@ paths:
           description: Server error occurred
 
   /conversations:
+    get:
+      operationId: getMyConversations
+      summary: Get all the user's conversations
+      description: |-
+        Return the list of all conversations the user is apart of
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Conversation" }
+        "401":
+          description: "Unauthorized"
+        "500":
+          description: "Internal server error. Please try again later."
     post:
-      operationId: newConversation
+      operationId: createConversation
       summary: Create a new conversation or group
       description: |-
         Create a new conversation with someone or a new group
@@ -206,269 +202,6 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Conversation" }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/conversationId"
-      operationId: getConversation
-      summary: Get a list of messages in a conversation.
-      description: |-
-        Get a list of all messages in a conversation.
-      responses:
-        "200":
-          description: List of messages
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/Message" }
-        "404": { description: Conversation not found }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/members:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/conversationId"
-      operationId: getGroupMembers
-      summary: List all group members
-      description: Retrieves all users in the specified group conversation.
-      responses:
-        "200":
-          description: List of group members
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/User" }
-        "400":
-          description: Invalid group ID
-        "404":
-          description: Group not found
-        "500":
-          description: "Internal server error. Please try again later."
-
-    post:
-      operationId: addToGroup
-      summary: Add a user to the group conversation
-      description: |-
-        Adds a new user to the group conversation specified by 
-        "conversationId". This operation is not applicable to 
-        private conversations.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userId:
-                  type: integer
-                  description: "The ID of the user to add to the group"
-                  example: 42
-      responses:
-        "200":
-          description: User added to the group successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  conversationId:
-                    type: integer
-                    example: 1
-                  userId:
-                    type: integer
-                    example: 42
-        "400":
-          description: Unable to add user
-        "500":
-          description: "Internal server error. Please try again later."
-
-    delete:
-      operationId: leaveGroup
-      summary: Remove a user from the group conversation
-      description: |-
-        Removes a user from the group conversation specified by "conversationId".
-        Users can leave themselves or an admin can remove other users.
-      responses:
-        "204":
-          description: User removed from the group successfully
-        "400":
-          description: Unable to remove user (e.g., user not in group)
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/name:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-    put:
-      operationId: setGroupName
-      summary: Update the group's name
-      description: |-
-        Updates the group's name
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Conversation" }
-      responses:
-        "200":
-          description: Group name updated successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Conversation" }
-        "404": { description: Group not found }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/photo:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-    patch:
-      operationId: setGroupPhoto
-      summary: Update the group's photo
-      description: |-
-        Updates the group's photo
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Conversation" }
-      responses:
-        "200":
-          description: Group photo updated successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Conversation" }
-        "404": { description: Group not found }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/messages:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-    post:
-      operationId: sendMessage
-      summary: Send a message
-      description: |-
-        Send a new message using the properties in the request body. The server
-        will create a timestamp and an Id, set the status to sent and assign
-        the sender
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Message" }
-      responses:
-        "201":
-          description: Message sent successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Message" }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/messages/{messageId}:
-    delete:
-      parameters:
-        - $ref: "#/components/parameters/conversationId"
-        - $ref: "#/components/parameters/messageId"
-      operationId: deleteMessage
-      summary: Delete a message
-      description: Deletes a message from a conversation
-      responses:
-        "204": { description: Message deleted successfully }
-        "404": { description: Message not found }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/messages/{messageId}/status:
-    patch:
-      parameters:
-        - $ref: "#/components/parameters/conversationId"
-        - $ref: "#/components/parameters/messageId"
-      operationId: updateMessage
-      summary: Update message status
-      description: |-
-        Updates the status of a message from "sent" to "read"
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Message" }
-      responses:
-        "200":
-          description: Message status updated successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Message" }
-        "404": { description: Message not found }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/messages/{messageId}/forward:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-      - $ref: "#/components/parameters/messageId"
-    patch:
-      operationId: forwardMessage
-      summary: Forwards a message
-      description: "Forwards a message to another conversation"
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Message" }
-      responses:
-        "200":
-          description: Message forwarded successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Message" }
-        "404": { description: Message not found }
-        "500":
-          description: "Internal server error. Please try again later."
-
-  /conversations/{conversationId}/messages/{messageId}/comments:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-      - $ref: "#/components/parameters/messageId"
-    post:
-      operationId: commentMessage
-      summary: Comment a message
-      description: |-
-        Creates a new comment for a message including the username of the
-        user who commented as well as the emoticon they used
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Comment" }
-      responses:
-        "201":
-          description: Comment added successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Comment" }
-        "500":
-          description: "Internal server error. Please try again later."
-
-    delete:
-      operationId: uncommentMessage
-      summary: Remove a comment from a message
-      description: |-
-        Deletes an existing comment from a message. The comment to be deleted
-        is specified by its unique ID.
-      parameters:
-        - name: commentId
-          in: query
-          required: true
-          schema:
-            type: integer
-          description: "The unique ID of the comment to be removed"
-      responses:
-        "204":
-          description: Comment removed successfully
-        "404":
-          description: Comment not found
         "500":
           description: "Internal server error. Please try again later."
 
