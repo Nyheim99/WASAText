@@ -35,6 +35,12 @@ export default {
 				loadingConversations.value = true;
 				const response = await axios.get("/conversations");
 				conversations.value = response.data.conversations;
+
+				if (conversations.value.length > 0) {
+            selectedConversationId.value = conversations.value[0].conversation_id;
+            emit("select-conversation", selectedConversationId.value);
+        }
+				
 			} catch (error) {
 				console.error("Failed to fetch conversations:", error.message);
 			} finally {
