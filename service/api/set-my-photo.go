@@ -47,10 +47,10 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 
 	// Define file save path
 	fileName := fmt.Sprintf("user_%d%s", userID, fileExt)
-	savePath := filepath.Join("service/profile_pictures", fileName)
+	savePath := filepath.Join("service/photos/users", fileName)
 
 	// Ensure directory exists
-	err = os.MkdirAll("service/profile_pictures", os.ModePerm)
+	err = os.MkdirAll("service/photos/users", os.ModePerm)
 	if err != nil {
 		http.Error(w, "Server error: unable to create directory", http.StatusInternalServerError)
 		return
@@ -71,7 +71,7 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	// Update the photo URL in the database
-	photoURL := fmt.Sprintf("/service/profile_pictures/%s", fileName)
+	photoURL := fmt.Sprintf("/service/photos/users/%s", fileName)
 	err = rt.db.SetMyPhoto(userID, photoURL)
 	if err != nil {
 		http.Error(w, "Failed to update profile picture", http.StatusInternalServerError)

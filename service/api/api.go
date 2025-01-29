@@ -42,6 +42,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"path/filepath"
+	"log"
 )
 
 // Config is used to provide dependencies and configuration to the New function.
@@ -78,8 +81,17 @@ func New(cfg Config) (Router, error) {
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
 
-	staticDir := "./service/profile_pictures"
-  router.ServeFiles("/service/profile_pictures/*filepath", http.Dir(staticDir))
+	staticUsersDir, err := filepath.Abs("service/photos/users")
+	if err != nil {
+		log.Fatal("Failed to resolve user photos directory:", err)
+	}
+	router.ServeFiles("/service/photos/users/*filepath", http.Dir(staticUsersDir))
+
+	staticGroupsDir, err := filepath.Abs("service/photos/groups")
+	if err != nil {
+		log.Fatal("Failed to resolve group photos directory:", err)
+	}
+	router.ServeFiles("/service/photos/groups/*filepath", http.Dir(staticGroupsDir))
 	
 	return &_router{
 		router:     router,

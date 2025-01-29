@@ -104,7 +104,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		var photoURL string
 		file, _, err := r.FormFile("group_photo")
 		if err == nil {
-			photoURL, err = rt.saveUploadedFile(file, "group_pictures")
+			photoURL, err = rt.saveUploadedFile(file, "groups")
 			if err != nil {
 				http.Error(w, "Failed to save group photo", http.StatusInternalServerError)
 				return
@@ -140,8 +140,8 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 
 // Helper function to save uploaded file
 func (rt *_router) saveUploadedFile(file io.Reader, dir string) (string, error) {
-	fileName := fmt.Sprintf("%s_%d.jpg", dir, time.Now().UnixNano())
-	savePath := filepath.Join("service", dir, fileName)
+	fileName := fmt.Sprintf("%d.jpg", time.Now().UnixNano())
+	savePath := filepath.Join("service/photos", dir, fileName)
 
 	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(savePath), os.ModePerm); err != nil {
@@ -159,5 +159,5 @@ func (rt *_router) saveUploadedFile(file io.Reader, dir string) (string, error) 
 		return "", fmt.Errorf("unable to save file: %w", err)
 	}
 
-	return fmt.Sprintf("/service/%s/%s", dir, fileName), nil
+	return fmt.Sprintf("/service/photos/%s/%s", dir, fileName), nil
 }

@@ -16,5 +16,4 @@ docker-compose.log
 !.vscode/extensions.json
 *.db
 
-service/profile_pictures
-service/group_pictures
+service/photos
