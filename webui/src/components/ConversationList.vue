@@ -81,11 +81,6 @@ export default {
 			)
 		);
 
-		const selectConversation = (conversationId) => {
-			selectedConversationId.value = conversationId;
-			emit("select-conversation", conversationId);
-		};
-
 		const fetchUsers = async () => {
 			try {
 				const response = await axios.get("/users");
@@ -263,6 +258,7 @@ export default {
 			formatTimestamp,
 			sortedConversations,
 			loadingConversations,
+			selectedConversationId,
 			resolvePhotoURL: (photoURL) =>
 				photoURL && photoURL.trim() !== ""
 					? `${backendBaseURL}${photoURL}`
@@ -536,24 +532,23 @@ export default {
 			</div>
 		</div>
 
-		<!-- Loading Spinner -->
 		<div v-if="loadingConversations" class="text-center">
 			<div class="spinner-border text-primary" role="status">
 				<span class="visually-hidden">Loading...</span>
 			</div>
 		</div>
 
-		<!-- Conversations List -->
 		<div v-else>
 			<div
 				v-for="conversation in sortedConversations"
 				:key="conversation.conversation_id"
 				class="container d-flex align-items-center p-2 border-bottom"
+				:class="{ 'bg-light': selectedConversationId === conversation.conversation_id }"
 				@click="
+					selectedConversationId = conversation.conversation_id;
 					$emit('select-conversation', conversation.conversation_id)
 				"
 			>
-				<!-- Display photo -->
 				<img
 					:src="resolvePhotoURL(conversation.display_photo_url)"
 					alt="Avatar"
@@ -561,7 +556,6 @@ export default {
 					style="width: 40px; height: 40px; object-fit: cover"
 				/>
 
-				<!-- Details -->
 				<div class="flex-grow-1">
 					<h6 class="mb-1">{{ conversation.display_name }}</h6>
 					<p class="mb-0 text-muted" style="font-size: 0.9rem">
@@ -574,7 +568,6 @@ export default {
 					</p>
 				</div>
 
-				<!-- Timestamp -->
 				<small class="text-muted">
 					{{ formatTimestamp(conversation.last_message_timestamp) }}
 				</small>
