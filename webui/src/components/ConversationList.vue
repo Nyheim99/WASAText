@@ -1,6 +1,7 @@
 <script>
 import WriteIcon from "/pencil-square.svg";
-import AvatarIcon from "/person-circle.svg";
+import AvatarIcon from "/person-fill.svg";
+import PeopleIcon from "/people-fill.svg";
 import { ref, onMounted, computed } from "vue";
 import axios from "../services/axios";
 
@@ -231,11 +232,12 @@ export default {
 			}
 		};
 
-		const resolvePhotoURL = (photoURL) => {
-    return photoURL && photoURL.startsWith("/")
-        ? `${__API_URL__}${photoURL}`
-        : photoURL || AvatarIcon;
-};
+		const resolvePhotoURL = (photoURL, conversationType) => {
+			if (photoURL && photoURL.startsWith("/")) {
+				return `${__API_URL__}${photoURL}`;
+			}
+			return conversationType === "group" ? PeopleIcon : AvatarIcon;
+		};
 
 		onMounted(() => {
 			fetchUsers();
@@ -561,7 +563,12 @@ export default {
 				"
 			>
 				<img
-					:src="resolvePhotoURL(conversation.display_photo_url)"
+					:src="
+						resolvePhotoURL(
+							conversation.display_photo_url,
+							conversation.conversation_type
+						)
+					"
 					alt="Avatar"
 					class="rounded-circle me-2"
 					style="width: 40px; height: 40px; object-fit: cover"

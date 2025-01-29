@@ -1,6 +1,6 @@
 <script>
 import { ref, computed } from "vue";
-import AvatarIcon from "/person-circle.svg";
+import AvatarIcon from "/person-fill.svg";
 
 export default {
 	props: {

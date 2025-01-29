@@ -1,5 +1,6 @@
 <script>
-import AvatarIcon from "/person-circle.svg";
+import AvatarIcon from "/person-fill.svg";
+import PeopleIcon from "/people-fill.svg";
 
 export default {
 	props: {
@@ -14,9 +15,12 @@ export default {
 	},
 	computed: {
 		conversationPhoto() {
-			return this.conversation.display_photo_url?.startsWith("/")
-				? `${__API_URL__}${this.conversation.display_photo_url}`
-				: this.conversation.display_photo_url || AvatarIcon;
+			if (this.conversation.display_photo_url?.startsWith("/")) {
+				return `${__API_URL__}${this.conversation.display_photo_url}`;
+			}
+			return this.conversation.conversation_type === "group"
+				? PeopleIcon
+				: AvatarIcon;
 		},
 	},
 };
