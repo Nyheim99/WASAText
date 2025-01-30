@@ -55,6 +55,7 @@ type AppDatabase interface {
 	SetGroupName(conversationID int64, name string) error
 	SetGroupPhoto(conversationID int64, photoURL string) error
 
+	GetConversation(conversationID int64) (*ConversationDetails, error)
 	GetMyConversations(userID int64) ([]ConversationPreview, error)
 
 	Ping() error

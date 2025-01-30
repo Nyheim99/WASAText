@@ -10,6 +10,11 @@ export default {
 			type: Object,
 			required: true,
 		},
+		conversationDetails: {
+			type: Object,
+			required: false,
+			default: null,
+		},
 		user: {
 			type: Object,
 			required: true,

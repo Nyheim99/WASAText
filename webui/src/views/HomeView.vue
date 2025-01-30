@@ -19,6 +19,7 @@ export default {
 		const showFeedback = ref(false);
 		const conversations = ref([]);
 		const selectedConversation = ref(null);
+		const selectedConversationDetails = ref(null);
 		const allUsers = ref([]);
 
 		const fetchUser = async () => {
@@ -54,6 +55,19 @@ export default {
 
 		const selectConversation = (conversation) => {
 			selectedConversation.value = conversation;
+			fetchConversationDetails(conversation.conversation_id);
+		};
+
+		const fetchConversationDetails = async (conversationId) => {
+			try {
+				const response = await axios.get(
+					`/conversations/${conversationId}`
+				);
+				selectedConversationDetails.value = response.data;
+				console.log("Fetched conversation details:", response.data);
+			} catch (error) {
+				console.error("Failed to fetch conversation details:", error);
+			}
 		};
 
 		const logout = () => {
@@ -157,11 +171,7 @@ export default {
 			await fetchConversations();
 
 			if (conversations.value.length > 0) {
-				selectedConversation.value = conversations.value[0];
-				console.log(
-					"Selected conversation:",
-					selectedConversation.value
-				);
+				selectConversation(conversations.value[0]);
 			}
 		});
 
@@ -177,6 +187,7 @@ export default {
 			showFeedback,
 			selectConversation,
 			selectedConversation,
+			selectedConversationDetails,
 			updateConversationPhoto,
 			updateConversationName,
 		};
@@ -219,6 +230,7 @@ export default {
 				<Conversation
 					v-if="selectedConversation"
 					:conversation="selectedConversation"
+					:conversationDetails="selectedConversationDetails"
 					:user="user"
 					@group-photo-updated="updateConversationPhoto"
 					@group-name-updated="updateConversationName"

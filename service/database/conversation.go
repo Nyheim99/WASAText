@@ -197,3 +197,52 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 
 	return conversations, nil
 }
+
+type ConversationDetails struct {
+	ConversationID   int64  `json:"conversation_id"`
+	ConversationType string `json:"conversation_type"`
+	DisplayName      string `json:"display_name"`
+	PhotoURL         string `json:"display_photo_url"`
+	Participants     []User `json:"participants,omitempty"`
+}
+
+func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails, error) {
+	var conversation ConversationDetails
+
+	err := db.c.QueryRow(`
+		SELECT id, conversation_type, name, photo_url
+		FROM conversations
+		WHERE id = ?`, conversationID).Scan(
+		&conversation.ConversationID,
+		&conversation.ConversationType,
+		&conversation.DisplayName,
+		&conversation.PhotoURL,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("conversation not found")
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to retrieve conversation: %w", err)
+	}
+
+	if conversation.ConversationType == "group" {
+		rows, err := db.c.Query(`
+			SELECT users.id, users.username, users.photo_url
+			FROM conversation_participants
+			JOIN users ON conversation_participants.user_id = users.id
+			WHERE conversation_participants.conversation_id = ?`, conversationID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve participants: %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var participant User
+			if err := rows.Scan(&participant.ID, &participant.Username, &participant.PhotoURL); err != nil {
+				return nil, fmt.Errorf("failed to scan participant: %w", err)
+			}
+			conversation.Participants = append(conversation.Participants, participant)
+		}
+	}
+
+	return &conversation, nil
+}

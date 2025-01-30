@@ -196,6 +196,52 @@ paths:
         "500":
           description: "Internal server error. Please try again later."
 
+  /conversations/{conversationId}:
+    get:
+      operationId: getConversation
+      summary: Get conversation details
+      description: |
+        Retrieves metadata for a specific conversation, including its type, name, and photo.
+        If the conversation is a group, the list of participants will also be included.
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+      responses:
+        "200":
+          description: Successfully retrieved conversation details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation_id:
+                    type: integer
+                    description: Unique conversation identifier
+                    example: 2
+                  conversation_type:
+                    type: string
+                    description: Type of the conversation
+                    enum: ["group", "private"]
+                    example: "group"
+                  display_name:
+                    type: string
+                    description: Name of the group or the other participant (for private chats)
+                    example: "WASAChat"
+                  display_photo_url:
+                    type: string
+                    description: URL of the conversation photo
+                    example: "/service/photos/groups/group_2.jpg"
+                  participants:
+                    type: array
+                    description: List of participants (only for group conversations)
+                    items:
+                      $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid conversation ID
+        "404":
+          description: Conversation not found
+        "500":
+          description: Internal server error
+
   /conversations/{conversationId}/photo:
     put:
       operationId: setGroupPhoto

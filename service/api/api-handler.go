@@ -16,6 +16,8 @@ func (rt *_router) Handler() http.Handler {
 
 	rt.router.POST("/conversations", rt.validateAuthorization(rt.createConversation))
 	rt.router.GET("/conversations", rt.validateAuthorization(rt.getMyConversations))
+
+	rt.router.GET("/conversations/:conversationID", rt.validateAuthorization(rt.getConversation))
 	
 	rt.router.PUT("/conversations/:conversationID/photo", rt.validateAuthorization(rt.setGroupPhoto))
 	rt.router.PUT("/conversations/:conversationID/name", rt.validateAuthorization(rt.setGroupName))
