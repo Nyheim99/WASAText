@@ -639,30 +639,30 @@ func (c *SQLiteConn) RegisterFunc(name string, impl any, pure bool) error {
 	}
 
 	for i := 0; i < numArgs; i++ {
-		conv, err := callbackArg(t.In(i))
+		conversation, err := callbackArg(t.In(i))
 		if err != nil {
 			return err
 		}
-		fi.argConverters = append(fi.argConverters, conv)
+		fi.argConverters = append(fi.argConverters, conversation)
 	}
 
 	if t.IsVariadic() {
-		conv, err := callbackArg(t.In(numArgs).Elem())
+		conversation, err := callbackArg(t.In(numArgs).Elem())
 		if err != nil {
 			return err
 		}
-		fi.variadicConverter = conv
+		fi.variadicConverter = conversation
 		// Pass -1 to sqlite so that it allows any number of
 		// arguments. The call helper verifies that the minimum number
 		// of arguments is present for variadic functions.
 		numArgs = -1
 	}
 
-	conv, err := callbackRet(t.Out(0))
+	conversation, err := callbackRet(t.Out(0))
 	if err != nil {
 		return err
 	}
-	fi.retConverter = conv
+	fi.retConverter = conversation
 
 	// fi must outlast the database connection, or we'll have dangling pointers.
 	c.funcs = append(c.funcs, &fi)
@@ -747,18 +747,18 @@ func (c *SQLiteConn) RegisterAggregator(name string, impl any, pure bool) error 
 		stepNArgs--
 	}
 	for i := start; i < start+stepNArgs; i++ {
-		conv, err := callbackArg(step.In(i))
+		conversation, err := callbackArg(step.In(i))
 		if err != nil {
 			return err
 		}
-		ai.stepArgConverters = append(ai.stepArgConverters, conv)
+		ai.stepArgConverters = append(ai.stepArgConverters, conversation)
 	}
 	if step.IsVariadic() {
-		conv, err := callbackArg(step.In(start + stepNArgs).Elem())
+		conversation, err := callbackArg(step.In(start + stepNArgs).Elem())
 		if err != nil {
 			return err
 		}
-		ai.stepVariadicConverter = conv
+		ai.stepVariadicConverter = conversation
 		// Pass -1 to sqlite so that it allows any number of
 		// arguments. The call helper verifies that the minimum number
 		// of arguments is present for variadic functions.
@@ -785,11 +785,11 @@ func (c *SQLiteConn) RegisterAggregator(name string, impl any, pure bool) error 
 		return errors.New("second return value of SQLite aggregator Done() function must be error")
 	}
 
-	conv, err := callbackRet(done.Out(0))
+	conversation, err := callbackRet(done.Out(0))
 	if err != nil {
 		return err
 	}
-	ai.doneRetConverter = conv
+	ai.doneRetConverter = conversation
 	ai.active = make(map[int64]reflect.Value)
 	ai.next = 1
 

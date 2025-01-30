@@ -195,6 +195,47 @@ paths:
               schema: { $ref: "#/components/schemas/Conversation" }
         "500":
           description: "Internal server error. Please try again later."
+  
+  /conversations/{conversationId}/photo:
+    put:
+      operationId: setGroupPhoto
+      summary: Upload or update a group's profile picture
+      description: |-
+        Uploads a new profile picture for a group conversation or replaces the existing one.
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: The group photo to be uploaded.
+      responses:
+        "200":
+          description: Group photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Group photo uploaded successfully
+                  photo_url:
+                    type: string
+                    example: /service/photos/groups/group_1.jpg
+        "400":
+          description: Invalid file upload
+        "404":
+          description: Group conversation not found.
+        "500":
+          description: Server error occurred
+
 
 components:
   schemas:

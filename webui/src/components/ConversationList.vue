@@ -2,7 +2,7 @@
 import WriteIcon from "/pencil-square.svg";
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
-import { ref, onMounted, computed } from "vue";
+import { ref, computed } from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -12,40 +12,35 @@ export default {
 			type: Object,
 			required: true,
 		},
+		conversations: {
+			type: Array,
+			required: true,
+		},
+		allUsers: {
+			type: Array,
+			required: true,
+		},
+		selectedConversation: {
+			type: Object,
+			required: false,
+			default: () => ({}),
+		},
 	},
 	setup(props, { emit }) {
 		const modalMode = ref("private");
 		const searchQuery = ref("");
 		const searchResults = ref([]);
+
 		const selectedUser = ref(null);
-		const selectedUsers = ref(new Set());
 		const privateMessage = ref("");
-		const groupMessage = ref("");
-		const allUsers = ref([]);
+		
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
+
+		const selectedUsers = ref(new Set());
 		const groupName = ref("");
 		const groupPhoto = ref(null);
-		const conversations = ref([]);
-		const loadingConversations = ref(true);
-		const selectedConversation = ref(null);
-
-		const fetchConversations = async () => {
-			try {
-				loadingConversations.value = true;
-				const response = await axios.get("/conversations");
-				conversations.value = response.data.conversations;
-
-				if (conversations.value.length > 0) {
-					selectedConversation.value = conversations.value[0];
-					emit("select-conversation", selectedConversation.value);
-				}
-			} catch (error) {
-				console.error("Failed to fetch conversations:", error.message);
-			} finally {
-				loadingConversations.value = false;
-			}
-		};
+		const groupMessage = ref("");
 
 		const formatTimestamp = (timestamp) => {
 			const now = new Date();
@@ -79,24 +74,12 @@ export default {
 		};
 
 		const sortedConversations = computed(() =>
-			conversations.value.sort(
+			[...props.conversations].sort(
 				(a, b) =>
 					new Date(b.last_message_timestamp) -
 					new Date(a.last_message_timestamp)
 			)
 		);
-
-		const fetchUsers = async () => {
-			try {
-				const response = await axios.get("/users");
-				const filteredUsers = response.data.filter(
-					(user) => user.id !== props.user.id
-				);
-				allUsers.value = filteredUsers;
-			} catch (error) {
-				console.error("Failed to fetch users:", error.message);
-			}
-		};
 
 		const toggleUserSelection = (user) => {
 			if (selectedUsers.value.has(user)) {
@@ -239,11 +222,6 @@ export default {
 			return conversationType === "group" ? PeopleIcon : AvatarIcon;
 		};
 
-		onMounted(() => {
-			fetchUsers();
-			fetchConversations();
-		});
-
 		return {
 			WriteIcon,
 			AvatarIcon,
@@ -266,11 +244,8 @@ export default {
 			isUserSelected,
 			feedbackMessage,
 			showFeedback,
-			allUsers,
 			formatTimestamp,
 			sortedConversations,
-			loadingConversations,
-			selectedConversation,
 			resolvePhotoURL,
 		};
 	},
@@ -541,13 +516,7 @@ export default {
 			</div>
 		</div>
 
-		<div v-if="loadingConversations" class="text-center">
-			<div class="spinner-border text-primary" role="status">
-				<span class="visually-hidden">Loading...</span>
-			</div>
-		</div>
-
-		<div v-else>
+		<div>
 			<div
 				v-for="conversation in sortedConversations"
 				:key="conversation.conversation_id"
@@ -557,10 +526,7 @@ export default {
 						selectedConversation?.conversation_id ===
 						conversation.conversation_id,
 				}"
-				@click="
-					selectedConversation = conversation;
-					$emit('select-conversation', conversation);
-				"
+				@click="$emit('select-conversation', conversation)"
 			>
 				<img
 					:src="

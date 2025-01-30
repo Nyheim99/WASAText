@@ -17,7 +17,44 @@ export default {
 		const user = ref({});
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
+		const conversations = ref([]);
 		const selectedConversation = ref(null);
+		const allUsers = ref([]);
+
+		const fetchUser = async () => {
+			try {
+				const response = await axios.get("/user");
+				user.value = response.data;
+			} catch (error) {
+				console.error("Failed to fetch user:", error);
+			}
+		};
+
+		const fetchUsers = async () => {
+			const userId = localStorage.getItem("userId");
+
+			try {
+				const response = await axios.get("/users");
+				allUsers.value = response.data.filter(
+					(u) => u.id !== Number(userId)
+				);
+			} catch (error) {
+				console.error("Failed to fetch users:", error);
+			}
+		};
+
+		const fetchConversations = async () => {
+			try {
+				const response = await axios.get("/conversations");
+				conversations.value = response.data.conversations;
+			} catch (error) {
+				console.error("Failed to fetch conversations:", error);
+			}
+		};
+
+		const selectConversation = (conversation) => {
+			selectedConversation.value = conversation;
+		};
 
 		const logout = () => {
 			localStorage.removeItem("userId");
@@ -84,21 +121,39 @@ export default {
 			}
 		};
 
-		const fetchUser = async () => {
-			try {
-				const response = await axios.get("/user");
-				user.value = response.data;
-			} catch (error) {
-				console.error("Failed to fetch user:", error);
+		const updateConversationPhoto = (payload) => {
+			if (
+				selectedConversation.value &&
+				selectedConversation.value.conversation_id ===
+					payload.conversationId
+			) {
+				selectedConversation.value.display_photo_url =
+					payload.newPhotoUrl;
+			}
+
+			const conversationIndex = conversations.value.findIndex(
+				(conversation) =>
+					conversation.conversation_id === payload.conversationId
+			);
+
+			if (conversationIndex !== -1) {
+				conversations.value[conversationIndex].display_photo_url =
+					payload.newPhotoUrl;
 			}
 		};
 
-		const selectConversation = (conversation) => {
-			selectedConversation.value = conversation;
-		};
+		onMounted(async () => {
+			await fetchUser();
+			await fetchUsers();
+			await fetchConversations();
 
-		onMounted(() => {
-			fetchUser();
+			if (conversations.value.length > 0) {
+				selectedConversation.value = conversations.value[0];
+				console.log(
+					"Selected conversation:",
+					selectedConversation.value
+				);
+			}
 		});
 
 		return {
@@ -106,11 +161,14 @@ export default {
 			updateUsername,
 			updatePhoto,
 			user,
+			allUsers,
+			conversations,
 			handleFeedback,
 			feedbackMessage,
 			showFeedback,
-			selectedConversation,
 			selectConversation,
+			selectedConversation,
+			updateConversationPhoto,
 		};
 	},
 };
@@ -142,6 +200,9 @@ export default {
 					@feedback="handleFeedback"
 					@select-conversation="selectConversation"
 					:user="user"
+					:conversations="conversations"
+					:allUsers="allUsers"
+					:selectedConversation="selectedConversation"
 				/>
 			</div>
 			<div class="col">
@@ -149,6 +210,7 @@ export default {
 					v-if="selectedConversation"
 					:conversation="selectedConversation"
 					:user="user"
+					@group-photo-updated="updateConversationPhoto"
 				/>
 			</div>
 		</div>

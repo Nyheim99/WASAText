@@ -519,11 +519,11 @@ func goVFilter(pCursor unsafe.Pointer, idxNum C.int, idxName *C.char, argc C.int
 	args := (*[(math.MaxInt32 - 1) / unsafe.Sizeof((*C.sqlite3_value)(nil))]*C.sqlite3_value)(unsafe.Pointer(argv))[:argc:argc]
 	vals := make([]any, 0, argc)
 	for _, v := range args {
-		conv, err := callbackArgGeneric(v)
+		conversation, err := callbackArgGeneric(v)
 		if err != nil {
 			return mPrintf("%s", err.Error())
 		}
-		vals = append(vals, conv.Interface())
+		vals = append(vals, conversation.Interface())
 	}
 	err := vtc.vTabCursor.Filter(int(idxNum), C.GoString(idxName), vals)
 	if err != nil {
@@ -591,13 +591,13 @@ func goVUpdate(pVTab unsafe.Pointer, argc C.int, argv **C.sqlite3_value, pRowid 
 		args := (*[(math.MaxInt32 - 1) / unsafe.Sizeof((*C.sqlite3_value)(nil))]*C.sqlite3_value)(unsafe.Pointer(argv))[:argc:argc]
 		vals := make([]any, 0, argc)
 		for _, v := range args {
-			conv, err := callbackArgGeneric(v)
+			conversation, err := callbackArgGeneric(v)
 			if err != nil {
 				return mPrintf("%s", err.Error())
 			}
 
 			// work around for SQLITE_NULL
-			x := conv.Interface()
+			x := conversation.Interface()
 			if z, ok := x.([]byte); ok && z == nil {
 				x = nil
 			}

@@ -49,15 +49,15 @@ func (rt *_router) getMyConversations(w http.ResponseWriter, r *http.Request, ps
 
 	// Map database results to API struct
 	apiConversations := make([]ConversationPreview, len(dbConversations))
-	for i, conv := range dbConversations {
+	for i, conversation := range dbConversations {
 		apiConversations[i] = ConversationPreview{
-			ConversationID:      conv.ConversationID,
-			ConversationType:    conv.ConversationType,
-			DisplayName:         conv.DisplayName,
-			DisplayPhotoURL:     conv.DisplayPhotoURL,
-			LastMessageContent:  conv.LastMessageContent,
-			LastMessagePhotoURL: conv.LastMessagePhotoURL,
-			LastMessageTimestamp: conv.LastMessageTimestamp,
+			ConversationID:      conversation.ConversationID,
+			ConversationType:    conversation.ConversationType,
+			DisplayName:         conversation.DisplayName,
+			DisplayPhotoURL:     conversation.DisplayPhotoURL,
+			LastMessageContent:  conversation.LastMessageContent,
+			LastMessagePhotoURL: conversation.LastMessagePhotoURL,
+			LastMessageTimestamp: conversation.LastMessageTimestamp,
 		}
 	}
 

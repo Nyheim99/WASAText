@@ -7,24 +7,26 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/Nyheim99/WASAText/service/api/reqcontext"
 )
 
-func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	// Parse the user from the request context
-	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
-	if !ok || reqCtx == nil {
-		http.Error(w, "Request context missing", http.StatusInternalServerError)
+func (rt *_router) setGroupPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	conversationID := ps.ByName("conversationID")
+	if conversationID == "" {
+		http.Error(w, "Conversation ID is required", http.StatusBadRequest)
 		return
 	}
 
-	userID := reqCtx.UserID
+	convID, err := strconv.ParseInt(conversationID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid conversation ID", http.StatusBadRequest)
+		return
+	}
 
-	// Parse multipart form
-	err := r.ParseMultipartForm(10 << 20)
+	err = r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "Invalid file upload", http.StatusBadRequest)
 		return
@@ -37,7 +39,6 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	defer file.Close()
 
-	// Validate file type
 	allowedExtensions := map[string]bool{".jpg": true, ".jpeg": true, ".png": true}
 	fileExt := strings.ToLower(filepath.Ext(handler.Filename))
 	if !allowedExtensions[fileExt] {
@@ -45,18 +46,15 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	// Define file save path
-	fileName := fmt.Sprintf("user_%d%s", userID, fileExt)
-	savePath := filepath.Join("service/photos/users", fileName)
+	fileName := fmt.Sprintf("group_%d%s", convID, fileExt)
+	savePath := filepath.Join("service/photos/groups", fileName)
 
-	// Ensure directory exists
-	err = os.MkdirAll("service/photos/users", os.ModePerm)
+	err = os.MkdirAll("service/photos/groups", os.ModePerm)
 	if err != nil {
 		http.Error(w, "Server error: unable to create directory", http.StatusInternalServerError)
 		return
 	}
 
-	// Save the new file
 	out, err := os.Create(savePath)
 	if err != nil {
 		http.Error(w, "Server error: unable to save file", http.StatusInternalServerError)
@@ -70,21 +68,18 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	// Update the photo URL in the database
-	photoURL := fmt.Sprintf("/service/photos/users/%s", fileName)
-
-	err = rt.db.SetMyPhoto(userID, photoURL)
+	photoURL := fmt.Sprintf("/service/photos/groups/%s", fileName)
+	err = rt.db.SetGroupPhoto(convID, photoURL)
 	if err != nil {
-		http.Error(w, "Failed to update profile picture", http.StatusInternalServerError)
+		http.Error(w, "Failed to update group photo", http.StatusInternalServerError)
 		fmt.Println("Database error:", err)
 		return
 	}
 
-	// Respond with success
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
-		"message":  "Profile picture uploaded successfully",
+		"message":   "Group profile picture uploaded successfully",
 		"photo_url": photoURL,
 	})
 }

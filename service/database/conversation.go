@@ -163,20 +163,20 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 	var conversations []ConversationPreview
 
 	for rows.Next() {
-		var conv ConversationPreview
+		var conversation ConversationPreview
 		if err := rows.Scan(
-			&conv.ConversationID,
-			&conv.ConversationType,
-			&conv.DisplayName,
-			&conv.DisplayPhotoURL,
-			&conv.LastMessageContent,
-			&conv.LastMessagePhotoURL,
-			&conv.LastMessageTimestamp,
+			&conversation.ConversationID,
+			&conversation.ConversationType,
+			&conversation.DisplayName,
+			&conversation.DisplayPhotoURL,
+			&conversation.LastMessageContent,
+			&conversation.LastMessagePhotoURL,
+			&conversation.LastMessageTimestamp,
 		); err != nil {
 			fmt.Printf("Row scan error: %v\n", err)
 			return nil, fmt.Errorf("failed to scan conversation row: %w", err)
 		}
-		conversations = append(conversations, conv)
+		conversations = append(conversations, conversation)
 	}
 
 	if err := rows.Err(); err != nil {
