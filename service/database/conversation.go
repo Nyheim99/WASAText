@@ -246,3 +246,41 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 
 	return &conversation, nil
 }
+
+func (db *appdbimpl) AddToGroup(conversationID int64, newParticipants []int64) error {
+	if len(newParticipants) == 0 {
+		return fmt.Errorf("no participants to add")
+	}
+
+	var conversationType string
+	err := db.c.QueryRow(`
+		SELECT conversation_type FROM conversations WHERE id = ?
+	`, conversationID).Scan(&conversationType)
+
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("conversation does not exist")
+	} else if err != nil {
+		return fmt.Errorf("failed to retrieve conversation: %w", err)
+	}
+
+	if conversationType != "group" {
+		return fmt.Errorf("cannot add members to a private conversation")
+	}
+
+	query := "INSERT INTO conversation_participants (conversation_id, user_id) VALUES "
+	args := []interface{}{}
+	for _, userID := range newParticipants {
+		query += "(?, ?),"
+		args = append(args, conversationID, userID)
+	}
+
+	query = query[:len(query)-1]
+
+	_, err = db.c.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to add participants: %w", err)
+	}
+
+	return nil
+}
+ 

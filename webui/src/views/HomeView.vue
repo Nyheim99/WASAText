@@ -64,7 +64,7 @@ export default {
 					`/conversations/${conversationId}`
 				);
 				selectedConversationDetails.value = response.data;
-				console.log("Fetched conversation details:", response.data);
+				console.log("Updated conversation details:", response.data);
 			} catch (error) {
 				console.error("Failed to fetch conversation details:", error);
 			}
@@ -190,6 +190,7 @@ export default {
 			selectedConversationDetails,
 			updateConversationPhoto,
 			updateConversationName,
+			fetchConversationDetails,
 		};
 	},
 };
@@ -232,8 +233,10 @@ export default {
 					:conversation="selectedConversation"
 					:conversationDetails="selectedConversationDetails"
 					:user="user"
+					:allUsers="allUsers"
 					@group-photo-updated="updateConversationPhoto"
 					@group-name-updated="updateConversationName"
+					@group-members-updated="fetchConversationDetails"
 				/>
 			</div>
 		</div>

@@ -22,6 +22,8 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.PUT("/conversations/:conversationID/photo", rt.validateAuthorization(rt.setGroupPhoto))
 	rt.router.PUT("/conversations/:conversationID/name", rt.validateAuthorization(rt.setGroupName))
 
+	rt.router.POST("/conversations/:conversationID/members", rt.validateAuthorization(rt.addToGroup))
+
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)
 

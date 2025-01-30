@@ -323,6 +323,60 @@ paths:
         "500":
           description: "Internal server error. Please try again later."
 
+  /conversations/{conversationId}/members:
+    post:
+      operationId: addToGroup
+      summary: Add users to a group conversation
+      description: |
+        Adds new participants to an existing group conversation.
+        The request must be sent by an existing member of the group.
+      tags:
+        - Conversations
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                participants:
+                  type: array
+                  items:
+                    type: integer
+                    description: ID of the user to be added
+                  example: [3, 4, 5]
+      responses:
+        "200":
+          description: Successfully added users to the group conversation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation_id:
+                    type: integer
+                    description: Unique identifier of the conversation
+                    example: 1
+                  added_users:
+                    type: array
+                    items:
+                      type: integer
+                      description: ID of users that were added
+                    example: [3, 4, 5]
+        "400":
+          description: |
+            - Invalid conversation ID
+            - No participants provided
+            - Conversation is not a group
+        "403":
+          description: User is not a member of the conversation
+        "404":
+          description: Conversation not found
+        "500":
+          description: Internal server error
+
 components:
   schemas:
     User:

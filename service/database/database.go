@@ -58,6 +58,8 @@ type AppDatabase interface {
 	GetConversation(conversationID int64) (*ConversationDetails, error)
 	GetMyConversations(userID int64) ([]ConversationPreview, error)
 
+	AddToGroup(conversationID int64, newParticipants []int64) error
+
 	Ping() error
 }
 

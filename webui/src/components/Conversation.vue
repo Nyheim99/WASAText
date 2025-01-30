@@ -1,7 +1,7 @@
 <script>
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch } from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -19,8 +19,16 @@ export default {
 			type: Object,
 			required: true,
 		},
+		allUsers: {
+			type: Array,
+			required: true,
+		},
 	},
-	emits: ["group-photo-updated", "group-name-updated"],
+	emits: [
+		"group-photo-updated",
+		"group-name-updated",
+		"group-members-updated",
+	],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
 		const uploading = ref(false);
@@ -28,6 +36,10 @@ export default {
 		const cacheBuster = ref(Date.now());
 		const newGroupName = ref("");
 		const updatingName = ref(false);
+
+		const usersNotInGroup = ref([]);
+		const selectedUsers = ref(new Set());
+		const addingMembers = ref(false);
 
 		const conversationPhoto = () => {
 			if (props.conversation.display_photo_url?.startsWith("/")) {
@@ -52,16 +64,6 @@ export default {
 			newGroupName.value = props.conversation.display_name || "";
 		};
 
-		onMounted(() => {
-			const modal = document.getElementById("groupNameModal");
-			if (modal) {
-				modal.addEventListener(
-					"shown.bs.modal",
-					setGroupNameOnModalOpen
-				);
-			}
-		});
-
 		onBeforeUnmount(() => {
 			const modal = document.getElementById("groupNameModal");
 			if (modal) {
@@ -71,6 +73,115 @@ export default {
 				);
 			}
 		});
+
+		onMounted(() => {
+			updateUsersNotInGroup();
+			const modal = document.getElementById("groupNameModal");
+			if (modal) {
+				modal.addEventListener(
+					"shown.bs.modal",
+					setGroupNameOnModalOpen
+				);
+			}
+		});
+
+		const updateUsersNotInGroup = () => {
+			if (
+				!props.conversationDetails ||
+				!props.conversationDetails.participants
+			) {
+				usersNotInGroup.value = [];
+				return;
+			}
+
+			const groupMemberIds = new Set(
+				props.conversationDetails.participants.map((u) => u.id)
+			);
+
+			usersNotInGroup.value = props.allUsers.filter(
+				(user) => !groupMemberIds.has(user.id)
+			);
+		};
+
+		const toggleUserSelection = (userId) => {
+			if (selectedUsers.value.has(userId)) {
+				selectedUsers.value.delete(userId);
+			} else {
+				selectedUsers.value.add(userId);
+			}
+		};
+
+		const getUsername = (userId) => {
+			const user = props.allUsers.find((user) => user.id === userId);
+			return user ? user.username : "Unknown";
+		};
+
+		const handleAddMembers = async () => {
+			if (selectedUsers.value.size === 0) {
+				alert("Please select at least one user.");
+				return;
+			}
+
+			addingMembers.value = true;
+
+			try {
+				// Send API request to add members
+				const response = await axios.post(
+					`/conversations/${props.conversation.conversation_id}/members`,
+					{
+						participants: [...selectedUsers.value],
+					}
+				);
+
+				console.log("Added members:", response.data);
+
+				emit(
+					"group-members-updated",
+					props.conversation.conversation_id
+				);
+
+				// Refresh the conversation details
+				await fetchConversationDetails(
+					props.conversation.conversation_id
+				);
+
+				// Reset selection
+				selectedUsers.value.clear();
+				updateUsersNotInGroup();
+
+				// Close the modal
+				const modal = document.getElementById("addMembersModal");
+				if (modal) {
+					const bootstrapModal = bootstrap.Modal.getInstance(modal);
+					if (bootstrapModal) {
+						bootstrapModal.hide();
+					}
+				}
+			} catch (error) {
+				console.error("Failed to add members:", error);
+				alert(
+					error.response?.data?.message || "Failed to add members."
+				);
+			} finally {
+				addingMembers.value = false;
+			}
+		};
+
+		const fetchConversationDetails = async (conversationId) => {
+			try {
+				const response = await axios.get(
+					`/conversations/${conversationId}`
+				);
+				props.conversationDetails.participants =
+					response.data.participants;
+				console.log("Updated conversation details:", response.data);
+			} catch (error) {
+				console.error(
+					"Failed to fetch updated conversation details:",
+					error
+				);
+			}
+		};
 
 		const handleUpdateGroupName = async () => {
 			if (!newGroupName.value.trim()) {
@@ -183,6 +294,25 @@ export default {
 			}
 		};
 
+		const resolvePhotoURL = (photoURL) => {
+			if (!photoURL) {
+				return AvatarIcon;
+			}
+			if (photoURL.startsWith("/")) {
+				return `${__API_URL__}${photoURL}`;
+			}
+			return photoURL;
+		};
+
+		watch(
+			() => props.conversationDetails,
+			() => {
+				updateUsersNotInGroup();
+				selectedUsers.value.clear();
+			},
+			{ deep: true }
+		);
+
 		return {
 			fileInput,
 			uploading,
@@ -192,6 +322,13 @@ export default {
 			conversationPhoto,
 			handleUpdateGroupPhoto,
 			handleUpdateGroupName,
+			handleAddMembers,
+			getUsername,
+			toggleUserSelection,
+			selectedUsers,
+			addingMembers,
+			usersNotInGroup,
+			resolvePhotoURL,
 		};
 	},
 };
@@ -226,6 +363,14 @@ export default {
 				data-bs-target="#groupPhotoModal"
 			>
 				Update Group Picture
+			</button>
+			<button
+				v-if="conversation.conversation_type === 'group'"
+				class="btn btn-outline-primary"
+				data-bs-toggle="modal"
+				data-bs-target="#addMembersModal"
+			>
+				Add Members
 			</button>
 		</div>
 
@@ -336,6 +481,110 @@ export default {
 						:disabled="uploading"
 					>
 						{{ uploading ? "Uploading..." : "Upload" }}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div
+		class="modal fade"
+		id="addMembersModal"
+		tabindex="-1"
+		aria-labelledby="addMembersModalLabel"
+		aria-hidden="true"
+	>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="addMembersModalLabel">
+						Add Members to Group
+					</h1>
+					<button
+						type="button"
+						class="btn-close"
+						data-bs-dismiss="modal"
+						aria-label="Close"
+					></button>
+				</div>
+				<div class="modal-body">
+					<div class="dropdown">
+						<button
+							class="btn btn-light dropdown-toggle"
+							type="button"
+							id="selectUsersDropdown"
+							data-bs-toggle="dropdown"
+							aria-expanded="false"
+						>
+							Select Users
+						</button>
+						<ul
+							class="dropdown-menu"
+							aria-labelledby="selectUsersDropdown"
+							style="max-height: 300px; overflow-y: auto"
+						>
+							<li
+								v-for="user in usersNotInGroup"
+								:key="user.id"
+								class="dropdown-item d-flex align-items-center justify-content-between"
+							>
+								<div class="d-flex align-items-center">
+									<img
+										:src="resolvePhotoURL(user.photo_url)"
+										alt="User Avatar"
+										class="rounded-circle me-2"
+										style="
+											width: 30px;
+											height: 30px;
+											object-fit: cover;
+										"
+									/>
+									{{ user.username }}
+								</div>
+								<input
+									type="checkbox"
+									:checked="selectedUsers.has(user.id)"
+									@click="toggleUserSelection(user.id)"
+								/>
+							</li>
+						</ul>
+					</div>
+
+					<!-- Selected users display -->
+					<div class="mt-3">
+						<h6>Selected Users:</h6>
+						<div class="d-flex flex-wrap gap-2">
+							<span
+								v-for="userId in selectedUsers"
+								:key="userId"
+								class="badge text-bg-secondary d-flex align-items-center"
+								style="font-size: 14px; padding: 0.5em 0.75em"
+							>
+								{{ getUsername(userId) }}
+								<button
+									class="btn-close btn-close-white ms-2"
+									aria-label="Remove"
+									@click="toggleUserSelection(userId)"
+									style="font-size: 10px; opacity: 0.8"
+								></button>
+							</span>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						type="button"
+						class="btn btn-secondary"
+						data-bs-dismiss="modal"
+					>
+						Close
+					</button>
+					<button
+						type="button"
+						class="btn btn-primary"
+						@click="handleAddMembers"
+						:disabled="addingMembers"
+					>
+						{{ addingMembers ? "Adding..." : "Add to Group" }}
 					</button>
 				</div>
 			</div>

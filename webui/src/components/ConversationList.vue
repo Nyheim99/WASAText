@@ -100,7 +100,7 @@ export default {
 				searchResults.value = [];
 				return;
 			}
-			searchResults.value = allUsers.value.filter((user) =>
+			searchResults.value = props.allUsers.filter((user) =>
 				user.username
 					.toLowerCase()
 					.includes(searchQuery.value.toLowerCase())
@@ -108,7 +108,7 @@ export default {
 		};
 
 		const showAllUsersOnFocus = () => {
-			searchResults.value = allUsers.value;
+			searchResults.value = props.allUsers;
 		};
 
 		const selectUser = (user) => {
