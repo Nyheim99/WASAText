@@ -106,6 +106,17 @@ type ConversationPreview struct {
 	LastMessageTimestamp string `json:"last_message_timestamp"`
 }
 
+func (db *appdbimpl) SetGroupName(conversationID int64, name string) error {
+	_, err := db.c.Exec(
+		`UPDATE conversations SET name = ? WHERE id = ? AND conversation_type = 'group'`,
+		name, conversationID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update group name: %w", err)
+	}
+	return nil
+}
+
 func (db *appdbimpl) SetGroupPhoto(conversationID int64, photoURL string) error {
 	_, err := db.c.Exec(
 		`UPDATE conversations SET photo_url = $1 WHERE id = $2`,

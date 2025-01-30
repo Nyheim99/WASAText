@@ -121,6 +121,15 @@ export default {
 			}
 		};
 
+		const updateConversationName = (payload) => {
+			const conversation = conversations.value.find(
+				(conv) => conv.conversation_id === payload.conversationId
+			);
+			if (conversation) {
+				conversation.display_name = payload.newName;
+			}
+		};
+
 		const updateConversationPhoto = (payload) => {
 			if (
 				selectedConversation.value &&
@@ -169,6 +178,7 @@ export default {
 			selectConversation,
 			selectedConversation,
 			updateConversationPhoto,
+			updateConversationName,
 		};
 	},
 };
@@ -211,6 +221,7 @@ export default {
 					:conversation="selectedConversation"
 					:user="user"
 					@group-photo-updated="updateConversationPhoto"
+					@group-name-updated="updateConversationName"
 				/>
 			</div>
 		</div>

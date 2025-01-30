@@ -1,7 +1,7 @@
 <script>
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
-import { ref } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -15,12 +15,14 @@ export default {
 			required: true,
 		},
 	},
-	emits: ["group-photo-updated"],
+	emits: ["group-photo-updated", "group-name-updated"],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
 		const uploading = ref(false);
 		const validationMessage = ref("");
 		const cacheBuster = ref(Date.now());
+		const newGroupName = ref("");
+		const updatingName = ref(false);
 
 		const conversationPhoto = () => {
 			if (props.conversation.display_photo_url?.startsWith("/")) {
@@ -39,6 +41,84 @@ export default {
 				return false;
 			}
 			return true;
+		};
+
+		const setGroupNameOnModalOpen = () => {
+			newGroupName.value = props.conversation.display_name || "";
+		};
+
+		onMounted(() => {
+			const modal = document.getElementById("groupNameModal");
+			if (modal) {
+				modal.addEventListener(
+					"shown.bs.modal",
+					setGroupNameOnModalOpen
+				);
+			}
+		});
+
+		onBeforeUnmount(() => {
+			const modal = document.getElementById("groupNameModal");
+			if (modal) {
+				modal.removeEventListener(
+					"shown.bs.modal",
+					setGroupNameOnModalOpen
+				);
+			}
+		});
+
+		const handleUpdateGroupName = async () => {
+			if (!newGroupName.value.trim()) {
+				validationMessage.value = "Group name cannot be empty.";
+				return;
+			}
+
+			if (
+				newGroupName.value.length < 3 ||
+				newGroupName.value.length > 20
+			) {
+				validationMessage.value =
+					"Group name must be between 3 and 20 characters.";
+				return;
+			}
+
+			updatingName.value = true;
+
+			try {
+				const response = await axios.put(
+					`/conversations/${props.conversation.conversation_id}/name`,
+					{
+						name: newGroupName.value,
+					}
+				);
+
+				console.log("Group name updated:", response.data);
+
+				props.conversation.display_name = response.data.name;
+
+				emit("group-name-updated", {
+					conversationId: props.conversation.conversation_id,
+					newName: response.data.name,
+				});
+
+				const modal = document.getElementById("groupNameModal");
+				if (modal) {
+					const bootstrapModal = bootstrap.Modal.getInstance(modal);
+					if (bootstrapModal) {
+						bootstrapModal.hide();
+					}
+				}
+
+				newGroupName.value = "";
+				validationMessage.value = "";
+			} catch (error) {
+				console.error("Failed to update group name:", error);
+				validationMessage.value =
+					error.response?.data?.message ||
+					"Failed to update group name.";
+			} finally {
+				updatingName.value = false;
+			}
 		};
 
 		const handleUpdateGroupPhoto = async () => {
@@ -101,9 +181,12 @@ export default {
 		return {
 			fileInput,
 			uploading,
+			newGroupName,
+			updatingName,
 			validationMessage,
 			conversationPhoto,
 			handleUpdateGroupPhoto,
+			handleUpdateGroupName,
 		};
 	},
 };
@@ -124,12 +207,76 @@ export default {
 
 			<button
 				v-if="conversation.conversation_type === 'group'"
+				class="btn btn-outline-primary ms-2"
+				data-bs-toggle="modal"
+				data-bs-target="#groupNameModal"
+			>
+				Update Group Name
+			</button>
+
+			<button
+				v-if="conversation.conversation_type === 'group'"
 				class="btn btn-outline-primary"
 				data-bs-toggle="modal"
 				data-bs-target="#groupPhotoModal"
 			>
 				Update Group Picture
 			</button>
+		</div>
+
+		<div
+			class="modal fade"
+			id="groupNameModal"
+			tabindex="-1"
+			aria-labelledby="groupNameModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h1 class="modal-title fs-5" id="groupNameModalLabel">
+							Update Group Name
+						</h1>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<input
+							type="text"
+							v-model="newGroupName"
+							class="form-control"
+							placeholder="Enter new group name"
+						/>
+						<p
+							class="text-danger small mt-2"
+							v-if="validationMessage"
+						>
+							{{ validationMessage }}
+						</p>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							Close
+						</button>
+						<button
+							type="button"
+							class="btn btn-primary"
+							@click="handleUpdateGroupName"
+							:disabled="updatingName"
+						>
+							{{ updatingName ? "Updating..." : "Update" }}
+						</button>
+					</div>
+				</div>
+			</div>
 		</div>
 
 		<hr class="mx-n4" />

@@ -52,6 +52,7 @@ type AppDatabase interface {
 	CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error)
 	AddMessage(conversationID, senderID int64, content string) (int64, error)
 
+	SetGroupName(conversationID int64, name string) error
 	SetGroupPhoto(conversationID int64, photoURL string) error
 
 	GetMyConversations(userID int64) ([]ConversationPreview, error)
