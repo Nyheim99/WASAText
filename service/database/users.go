@@ -5,7 +5,7 @@ import (
 )
 
 func (db *appdbimpl) GetUsers() ([]User, error) {
-	query := "SELECT id, username, photo_url FROM users"
+	query := "SELECT id, username, photo_url FROM users ORDER BY username ASC"
 
 	rows, err := db.c.Query(query)
 	if err != nil {
@@ -22,8 +22,8 @@ func (db *appdbimpl) GetUsers() ([]User, error) {
 		users = append(users, user)
 	}
 
-	if users == nil {
-		return []User{}, nil
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating through users: %w", err)
 	}
 
 	return users, nil

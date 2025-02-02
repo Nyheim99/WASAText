@@ -9,7 +9,7 @@ func (db *appdbimpl) GetUserByUsername(username string) (int64, error) {
     var identifier int64
     err := db.c.QueryRow("SELECT id FROM users WHERE username = ?", username).Scan(&identifier)
     if err == sql.ErrNoRows {
-        return 0, nil
+        return 0, fmt.Errorf("user not found: %w", err)
     }
     return identifier, err
 }
