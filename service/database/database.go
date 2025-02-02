@@ -107,9 +107,20 @@ func New(db *sql.DB) (AppDatabase, error) {
 			is_reply BOOLEAN DEFAULT FALSE,
 			original_message_id INTEGER,
 			is_forwarded BOOLEAN DEFAULT FALSE,
+			is_deleted BOOLEAN DEFAULT FALSE,
 			FOREIGN KEY (conversation_id) REFERENCES conversations(id),
 			FOREIGN KEY (sender_id) REFERENCES users(id),
 			FOREIGN KEY (original_message_id) REFERENCES messages(id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS message_status (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			message_id INTEGER NOT NULL,
+			recipient_id INTEGER NOT NULL,
+			is_received BOOLEAN DEFAULT FALSE,
+			is_read BOOLEAN DEFAULT FALSE,
+			FOREIGN KEY (message_id) REFERENCES messages(id),
+			FOREIGN KEY (recipient_id) REFERENCES users(id),
+			UNIQUE (message_id, recipient_id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS reactions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,6 +130,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			FOREIGN KEY (message_id) REFERENCES messages(id),
 			FOREIGN KEY (user_id) REFERENCES users(id)
 		);`,
+		`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (conversation_id, timestamp DESC);`,
 	}
 
 	for _, sqlStmt := range sqlStmts {

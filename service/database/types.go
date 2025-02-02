@@ -24,16 +24,27 @@ type ConversationParticipant struct {
 }
 
 type Message struct {
-	ID                int64     `json:"id"`                  
-	ConversationID    int64     `json:"conversation_id"`     
-	SenderID          int64     `json:"sender_id"`          
-	Content           string    `json:"content,omitempty"`    
-	PhotoURL          string    `json:"photo_url,omitempty"`  
-	Timestamp         time.Time `json:"timestamp"`            
-	Status            string    `json:"status"`               
-	IsReply           bool      `json:"is_reply"`             
-	OriginalMessageID int64     `json:"original_message_id"`  
-	IsForwarded       bool      `json:"is_forwarded"`       
+	ID                int64       `json:"id"`                  
+	ConversationID    int64       `json:"conversation_id"`     
+	SenderID          int64       `json:"sender_id"`          
+	SenderUsername    string      `json:"sender_username"`
+	Content           string      `json:"content,omitempty"`    
+	PhotoURL          string      `json:"photo_url,omitempty"`  
+	Timestamp         time.Time   `json:"timestamp"`            
+	Status            string      `json:"status"`               
+	IsReply           bool        `json:"is_reply"`             
+	OriginalMessageID int64       `json:"original_message_id"`  
+	IsForwarded       bool        `json:"is_forwarded"`       
+	IsDeleted         bool        `json:"is_deleted"`
+	Reactions         []Reaction  `json:"reactions"`
+}
+
+type MessageStatus struct {
+	ID          int64  `json:"id"`
+	MessageID   int64  `json:"message_id"`
+	RecipientID int64  `json:"recipient_id"`
+	IsReceived  bool   `json:"is_received"`
+	IsRead      bool   `json:"is_read"`
 }
 
 type Reaction struct {
