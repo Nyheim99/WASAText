@@ -28,6 +28,7 @@ export default {
 		"group-photo-updated",
 		"group-name-updated",
 		"group-members-updated",
+		"group-left",
 	],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
@@ -294,6 +295,30 @@ export default {
 			}
 		};
 
+		const handleLeaveGroup = async () => {
+			try {
+				await axios.delete(
+					`/conversations/${props.conversation.conversation_id}/leave`
+				);
+
+				emit("group-left", props.conversation.conversation_id);
+
+				// Close the modal manually
+				const modalElement = document.getElementById("leaveGroupModal");
+				const modal = bootstrap.Modal.getInstance(modalElement);
+				if (modal) modal.hide();
+
+				// Clear conversation details (remove from UI)
+				props.conversationDetails = null;
+				console.log("Left group successfully");
+			} catch (error) {
+				console.error("Failed to leave group:", error);
+				alert(
+					error.response?.data?.message || "Failed to leave group."
+				);
+			}
+		};
+
 		const resolvePhotoURL = (photoURL) => {
 			if (!photoURL) {
 				return AvatarIcon;
@@ -323,6 +348,7 @@ export default {
 			handleUpdateGroupPhoto,
 			handleUpdateGroupName,
 			handleAddMembers,
+			handleLeaveGroup,
 			getUsername,
 			toggleUserSelection,
 			selectedUsers,
@@ -371,6 +397,14 @@ export default {
 				data-bs-target="#addMembersModal"
 			>
 				Add Members
+			</button>
+			<button
+				v-if="conversation.conversation_type === 'group'"
+				class="btn btn-outline-danger"
+				data-bs-toggle="modal"
+				data-bs-target="#leaveGroupModal"
+			>
+				Leave Group
 			</button>
 		</div>
 
@@ -585,6 +619,49 @@ export default {
 						:disabled="addingMembers"
 					>
 						{{ addingMembers ? "Adding..." : "Add to Group" }}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Leave Group Confirmation Modal -->
+	<div
+		class="modal fade"
+		id="leaveGroupModal"
+		tabindex="-1"
+		aria-labelledby="leaveGroupModalLabel"
+		aria-hidden="true"
+	>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="leaveGroupModalLabel">
+						Leave Group
+					</h5>
+					<button
+						type="button"
+						class="btn-close"
+						data-bs-dismiss="modal"
+						aria-label="Close"
+					></button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to leave this group?</p>
+				</div>
+				<div class="modal-footer">
+					<button
+						type="button"
+						class="btn btn-secondary"
+						data-bs-dismiss="modal"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="btn btn-danger"
+						@click="handleLeaveGroup"
+					>
+						Leave Group
 					</button>
 				</div>
 			</div>

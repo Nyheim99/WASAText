@@ -23,6 +23,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.PUT("/conversations/:conversationID/name", rt.validateAuthorization(rt.setGroupName))
 
 	rt.router.POST("/conversations/:conversationID/members", rt.validateAuthorization(rt.addToGroup))
+	rt.router.DELETE("/conversations/:conversationID/leave", rt.validateAuthorization(rt.leaveGroup))
 
 	// Special routes
 	rt.router.GET("/liveness", rt.liveness)

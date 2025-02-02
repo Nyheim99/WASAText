@@ -123,6 +123,18 @@ export default {
 			}
 		};
 
+		const removeConversation = (conversationId) => {
+			conversations.value = conversations.value.filter(
+				(conv) => conv.conversation_id !== conversationId
+			);
+			selectedConversation.value = null;
+			selectedConversationDetails.value = null;
+
+			if (conversations.value.length > 0) {
+				selectConversation(conversations.value[0]);
+			}
+		};
+
 		const updatePhoto = async (file) => {
 			const formData = new FormData();
 			formData.append("photo", file);
@@ -204,6 +216,7 @@ export default {
 			updateConversationName,
 			fetchConversationDetails,
 			addNewConversation,
+			removeConversation,
 		};
 	},
 };
@@ -251,6 +264,7 @@ export default {
 					@group-photo-updated="updateConversationPhoto"
 					@group-name-updated="updateConversationName"
 					@group-members-updated="fetchConversationDetails"
+					@group-left="removeConversation"
 				/>
 			</div>
 		</div>

@@ -376,6 +376,44 @@ paths:
           description: Conversation not found
         "500":
           description: Internal server error
+  /conversations/{conversationId}/leave:
+    delete:
+      operationId: leaveGroup
+      summary: Leave a group conversation
+      description: |
+        Allows a user to leave a group conversation. 
+        If the group has only one participant remaining after this action, the group will be automatically deleted.
+      tags:
+        - Conversations
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+      responses:
+        "200":
+          description: Successfully left the group conversation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation_id:
+                    type: integer
+                    description: Unique identifier of the conversation
+                    example: 10
+                  status:
+                    type: string
+                    description: Confirmation message
+                    example: "User successfully left the group"
+        "400":
+          description: |
+            - Invalid conversation ID
+            - Conversation is not a group
+        "403":
+          description: User is not a member of this group
+        "404":
+          description: Conversation not found
+        "500":
+          description: Internal server error
+
 
 components:
   schemas:
