@@ -6,7 +6,7 @@ import { ref, computed } from "vue";
 import axios from "../services/axios";
 
 export default {
-	emits: ["feedback", "select-conversation"],
+	emits: ["feedback", "select-conversation", "conversation-created"],
 	props: {
 		user: {
 			type: Object,
@@ -134,7 +134,7 @@ export default {
 			formData.append("username", selectedUser.value.username);
 
 			try {
-				await axios.post("/conversations", formData, {
+				const response = await axios.post("/conversations", formData, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 
@@ -142,6 +142,8 @@ export default {
 				privateMessage.value = "";
 				searchQuery.value = "";
 				searchResults.value = [];
+
+				emit("conversation-created", response.data);
 
 				const modal = document.getElementById("newConversationModal");
 				const bootstrapModal = bootstrap.Modal.getInstance(modal);
@@ -187,9 +189,11 @@ export default {
 			}
 
 			try {
-				await axios.post("/conversations", formData, {
+				const response = await axios.post("/conversations", formData, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
+
+				emit("conversation-created", response.data);
 
 				selectedUsers.value.clear();
 				groupName.value = "";

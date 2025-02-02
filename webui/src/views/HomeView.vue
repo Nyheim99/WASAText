@@ -111,6 +111,18 @@ export default {
 			}
 		};
 
+		const addNewConversation = async () => {
+			try {
+				await fetchConversations();
+
+				if (conversations.value.length > 0) {
+					selectConversation(conversations.value[0]);
+				}
+			} catch (error) {
+				console.error("Failed to refetch conversations:", error);
+			}
+		};
+
 		const updatePhoto = async (file) => {
 			const formData = new FormData();
 			formData.append("photo", file);
@@ -191,6 +203,7 @@ export default {
 			updateConversationPhoto,
 			updateConversationName,
 			fetchConversationDetails,
+			addNewConversation,
 		};
 	},
 };
@@ -221,6 +234,7 @@ export default {
 					v-if="user.id"
 					@feedback="handleFeedback"
 					@select-conversation="selectConversation"
+					@conversation-created="addNewConversation"
 					:user="user"
 					:conversations="conversations"
 					:allUsers="allUsers"
