@@ -126,6 +126,8 @@ type ConversationPreview struct {
 	LastMessageContent   *string `json:"last_message_content,omitempty"`
 	LastMessageHasPhoto  bool   `json:"last_message_has_photo"`         
 	LastMessageTimestamp string `json:"last_message_timestamp"`
+	LastMessageSenderID  int64   `json:"last_message_sender_id,omitempty"`
+	LastMessageSender    string  `json:"last_message_sender,omitempty"`
 }
 
 // GetMyConversations retrieves a list of conversations for a given user, sorted by the latest message timestamp.
@@ -144,7 +146,9 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 			END AS display_photo_url,
 			m.content AS last_message_content,
 			CASE WHEN m.photo_data IS NOT NULL THEN 1 ELSE 0 END AS last_message_has_photo,
-			COALESCE(m.timestamp, '1970-01-01T00:00:00Z') AS last_message_timestamp
+			COALESCE(m.timestamp, '1970-01-01T00:00:00Z') AS last_message_timestamp,
+			m.sender_id AS last_message_sender_id,
+			sender.username AS last_message_sender
 		FROM 
 			conversations c
 		JOIN 
@@ -158,6 +162,8 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 				WHERE cp2.conversation_id = c.id AND cp2.user_id != ?
 				LIMIT 1
 			)
+		LEFT JOIN 
+			users sender ON sender.id = m.sender_id
 		WHERE 
 			cp.user_id = ?
 		ORDER BY 
@@ -175,6 +181,8 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 	for rows.Next() {
 		var conversation ConversationPreview
 		var lastMessageHasPhoto int
+		var lastMessageSenderID sql.NullInt64
+		var lastMessageSender sql.NullString
 
 		if err := rows.Scan(
 			&conversation.ConversationID,
@@ -184,16 +192,28 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 			&conversation.LastMessageContent,
 			&lastMessageHasPhoto,
 			&conversation.LastMessageTimestamp,
+			&lastMessageSenderID,
+			&lastMessageSender,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan conversation row: %w", err)
 		}
 
 		conversation.LastMessageHasPhoto = lastMessageHasPhoto == 1
+		if lastMessageSenderID.Valid {
+			conversation.LastMessageSenderID = lastMessageSenderID.Int64
+		}
+		if lastMessageSender.Valid {
+			conversation.LastMessageSender = lastMessageSender.String
+		} else {
+			conversation.LastMessageSender = "Unknown"
+		}
+
 		conversations = append(conversations, conversation)
 	}
 
 	return conversations, nil
 }
+
 
 
 type ConversationDetails struct {
@@ -262,7 +282,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	messages := []Message{}
 	for messageRows.Next() {
 		var msg Message
-		var photoData []byte // Store BLOB data
+		var photoData []byte
 		var photoMimeType sql.NullString
 
 		err := messageRows.Scan(

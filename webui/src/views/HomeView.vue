@@ -47,8 +47,8 @@ export default {
 		const fetchConversations = async () => {
 			try {
 				const response = await axios.get("/conversations");
-				conversations.value = response.data.conversations;
-				console.log(response.data.conversations)
+				conversations.value = response.data;
+				console.log(response.data);
 			} catch (error) {
 				console.error("Failed to fetch conversations:", error);
 			}
@@ -190,6 +190,23 @@ export default {
 			}
 		};
 
+		const updateConversationWithNewMessage = (payload) => {
+			const { conversationId, lastMessage } = payload;
+
+			const conversation = conversations.value.find(
+				(conv) => conv.conversation_id === conversationId
+			);
+			if (conversation) {
+				conversation.last_message_content = lastMessage.content;
+				const date = new Date(lastMessage.timestamp);
+        const formattedTimestamp = date.toISOString().slice(0, 19).replace("T", " ");
+				conversation.last_message_timestamp = formattedTimestamp;
+				conversation.last_message_sender = lastMessage.sender_name;
+				conversation.last_message_sender_id = lastMessage.sender_id;
+			}
+			fetchConversationDetails(conversationId);
+		};
+
 		onMounted(async () => {
 			await fetchUser();
 			await fetchUsers();
@@ -215,6 +232,7 @@ export default {
 			selectedConversationDetails,
 			updateConversationPhoto,
 			updateConversationName,
+			updateConversationWithNewMessage,
 			fetchConversationDetails,
 			addNewConversation,
 			removeConversation,
@@ -234,7 +252,7 @@ export default {
 			{{ feedbackMessage }}
 		</div>
 
-		<div class="row flex-grow-1 g-3 flex-nowrap">
+		<div class="row flex-grow-1 g-3 flex-nowrap h-100">
 			<div class="col-auto p-0">
 				<Sidebar
 					:logout="logout"
@@ -266,6 +284,7 @@ export default {
 					@group-name-updated="updateConversationName"
 					@group-members-updated="fetchConversationDetails"
 					@group-left="removeConversation"
+					@message-sent="updateConversationWithNewMessage"
 				/>
 			</div>
 		</div>

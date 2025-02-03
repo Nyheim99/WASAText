@@ -2,28 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
 )
-
-// ConversationPreview represents a preview of a conversation for the API response.
-type ConversationPreview struct {
-	ConversationID       int64  `json:"conversation_id"`
-	ConversationType     string `json:"conversation_type"`
-	DisplayName          string `json:"display_name"`
-	DisplayPhotoURL      string `json:"display_photo_url"`
-	LastMessageContent   string `json:"last_message_content,omitempty"`
-	LastMessageHasPhoto  bool   `json:"last_message_has_photo"`
-	LastMessageTimestamp string `json:"last_message_timestamp"`
-}
-
-// ConversationListResponse represents the API response for the list of conversations.
-type ConversationListResponse struct {
-	Conversations []ConversationPreview `json:"conversations"`
-}
 
 func (rt *_router) getMyConversations(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Retrieve the request context to access the user ID
@@ -39,46 +22,17 @@ func (rt *_router) getMyConversations(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	// Call the database function to get conversations
-	dbConversations, err := rt.db.GetMyConversations(userID)
+	// Fetch conversations directly from the database
+	conversations, err := rt.db.GetMyConversations(userID)
 	if err != nil {
-		http.Error(w, "Failed to retrieve conversations", http.StatusInternalServerError)
-		fmt.Printf("Database error: %v\n", err)
+		http.Error(w, `{"error": "Failed to retrieve conversations"}`, http.StatusInternalServerError)
 		return
 	}
 
-	// Map database results to API struct
-	apiConversations := make([]ConversationPreview, len(dbConversations))
-	for i, conversation := range dbConversations {
-		var lastMessageContent string
-		if conversation.LastMessageContent != nil {
-			lastMessageContent = *conversation.LastMessageContent
-		} else {
-			lastMessageContent = "" // Default empty string if nil
-		}
-
-		apiConversations[i] = ConversationPreview{
-			ConversationID:       conversation.ConversationID,
-			ConversationType:     conversation.ConversationType,
-			DisplayName:          conversation.DisplayName,
-			DisplayPhotoURL:      conversation.DisplayPhotoURL,
-			LastMessageContent:   lastMessageContent,
-			LastMessageHasPhoto:  conversation.LastMessageHasPhoto,
-			LastMessageTimestamp: conversation.LastMessageTimestamp,
-		}
-	}
-
-	// Prepare the response
-	response := ConversationListResponse{
-		Conversations: apiConversations,
-	}
-
-	// Encode the response as JSON
+	// Return JSON response directly
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		fmt.Printf("JSON encoding error: %v\n", err)
-		return
+	if err := json.NewEncoder(w).Encode(conversations); err != nil {
+		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
 	}
 }

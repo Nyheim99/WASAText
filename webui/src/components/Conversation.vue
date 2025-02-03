@@ -1,6 +1,8 @@
 <script>
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
+import ImageIcon from "/image.svg";
+import SendIcon from "/send.svg";
 import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
 import axios from "../services/axios";
 
@@ -29,6 +31,7 @@ export default {
 		"group-name-updated",
 		"group-members-updated",
 		"group-left",
+		"message-sent",
 	],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
@@ -42,6 +45,9 @@ export default {
 		const selectedUsers = ref(new Set());
 		const addingMembers = ref(false);
 
+		const newMessage = ref("");
+		const photoInput = ref(null);
+		const selectedPhoto = ref(null);
 		const messages = computed(
 			() => props.conversationDetails?.messages || []
 		);
@@ -323,6 +329,64 @@ export default {
 			}
 		};
 
+		const sendMessage = async () => {
+			if (!newMessage.value && !selectedPhoto.value) {
+				alert("Please enter a message or select a photo.");
+				return;
+			}
+
+			const formData = new FormData();
+			formData.append("message", newMessage.value);
+			if (selectedPhoto.value) {
+				formData.append("photo", selectedPhoto.value);
+			}
+
+			try {
+				const response = await axios.post(
+					`/conversations/${props.conversation.conversation_id}/messages`,
+					formData,
+					{ headers: { "Content-Type": "multipart/form-data" } }
+				);
+
+				console.log("Message sent:", response.data);
+
+				newMessage.value = "";
+				selectedPhoto.value = null;
+
+				emit("message-sent", {
+					conversationId: props.conversation.conversation_id,
+					lastMessage: response.data,
+				});
+			} catch (error) {
+				console.error(
+					"Failed to send message:",
+					error.response?.data || error.message
+				);
+			}
+		};
+
+		const triggerFileUpload = () => {
+			photoInput.value.click();
+		};
+
+		const photoPreview = computed(() => {
+			return selectedPhoto.value
+				? URL.createObjectURL(selectedPhoto.value)
+				: null;
+		});
+
+		const handlePhotoUpload = (event) => {
+			const file = event.target.files[0];
+			if (file) {
+				selectedPhoto.value = file;
+			}
+		};
+
+		const formatBase64Image = (base64Data, mimeType) => {
+			if (!base64Data) return "";
+			return `data:${mimeType};base64,${base64Data}`;
+		};
+
 		const resolvePhotoURL = (photoURL) => {
 			if (!photoURL) {
 				return AvatarIcon;
@@ -376,14 +440,24 @@ export default {
 			formatTimestamp,
 			messages,
 			getSenderPhoto,
+			sendMessage,
+			handlePhotoUpload,
+			triggerFileUpload,
+			newMessage,
+			photoInput,
+			SendIcon,
+			ImageIcon,
+			formatBase64Image,
+			selectedPhoto,
+			photoPreview,
 		};
 	},
 };
 </script>
 
 <template>
-	<div class="bg-white shadow-sm rounded p-4 overflow-auto h-100">
-		<div class="d-flex align-items-center justify-content-between mb-2">
+	<div class="bg-white d-flex flex-column shadow-sm rounded p-4 h-100">
+		<div class="d-flex align-items-center mb-2">
 			<div class="d-flex align-items-center">
 				<img
 					:src="conversationPhoto()"
@@ -433,12 +507,9 @@ export default {
 			</button>
 		</div>
 
-		<hr class="mx-n4" />
+		<hr class="m-0" />
 
-		<div
-			class="flex-grow-1 overflow-auto p-3 d-flex flex-column"
-			style="display: flex; flex-direction: column; overflow-y: auto"
-		>
+		<div class="flex-grow-1 overflow-auto p-3 d-flex flex-column">
 			<div
 				v-for="message in messages"
 				:key="message.id"
@@ -449,7 +520,7 @@ export default {
 							? 'flex-end'
 							: 'flex-start',
 				}"
-				style="position: relative;"
+				style="position: relative"
 			>
 				<!-- Avatar for received messages -->
 				<img
@@ -457,7 +528,12 @@ export default {
 					:src="resolvePhotoURL(getSenderPhoto(message.sender_id))"
 					alt="Sender Avatar"
 					class="rounded-circle me-2"
-					style="width: 35px; height: 35px; object-fit: cover; align-self: flex-end;"
+					style="
+						width: 35px;
+						height: 35px;
+						object-fit: cover;
+						align-self: flex-end;
+					"
 				/>
 
 				<!-- Message Bubble -->
@@ -501,6 +577,7 @@ export default {
 						"
 					>
 						<p
+							v-if="message.content"
 							class="mb-0"
 							style="
 								margin: 0;
@@ -510,6 +587,19 @@ export default {
 						>
 							{{ message.content }}
 						</p>
+						<!-- Image Message -->
+						<img
+							v-if="message.photo_data"
+							:src="
+								formatBase64Image(
+									message.photo_data,
+									message.photo_mime_type
+								)
+							"
+							alt="Sent Image"
+							class="mt-2 rounded"
+							style="max-width: 200px; border-radius: 8px"
+						/>
 						<small
 							class="text-muted"
 							style="
@@ -525,6 +615,72 @@ export default {
 					</div>
 				</div>
 			</div>
+		</div>
+
+		<!-- Message Input -->
+		<div class="d-flex align-items-center pt-2">
+			<input
+				type="file"
+				ref="photoInput"
+				class="d-none"
+				@change="handlePhotoUpload"
+			/>
+			<button
+				class="btn btn-outline-secondary me-2 position-relative"
+				@click="triggerFileUpload"
+				data-bs-toggle="tooltip"
+				title="Attach a photo"
+			>
+				<img :src="ImageIcon" alt="Select Photo" width="24" />
+			</button>
+
+			<!-- Photo Preview -->
+			<div
+				v-if="selectedPhoto"
+				class="d-flex align-items-center position-relative border rounded p-2 bg-light"
+				style="max-width: 150px; height: 50px"
+			>
+				<!-- Preview Image -->
+				<img
+					:src="photoPreview"
+					alt="Photo Preview"
+					class="rounded"
+					style="
+						width: 50px;
+						height: 50px;
+						object-fit: cover;
+						border: 1px solid #ddd;
+					"
+				/>
+
+				<!-- Remove Photo Button -->
+				<button
+					class="btn btn-sm btn-danger rounded-circle position-absolute"
+					style="
+						top: -5px;
+						right: -5px;
+						width: 20px;
+						height: 20px;
+						font-size: 12px;
+						padding: 0;
+					"
+					@click="selectedPhoto = null"
+				>
+					×
+				</button>
+			</div>
+
+			<input
+				v-else
+				v-model="newMessage"
+				type="text"
+				class="form-control"
+				placeholder="Type a message..."
+				@keyup.enter="sendMessage"
+			/>
+			<button class="btn btn-primary ms-2" @click="sendMessage">
+				<img :src="SendIcon" alt="Send Message" width="24" />
+			</button>
 		</div>
 	</div>
 

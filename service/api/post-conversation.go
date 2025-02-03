@@ -157,7 +157,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 	}
 
 	// Store message in database
-	messageID, err = rt.db.AddMessage(conversationID, currentUserID, textContent, photoData, photoMimeType)
+	messageID, err = rt.db.SendMessage(conversationID, currentUserID, textContent, photoData, photoMimeType)
 	if err != nil {
 		http.Error(w, "Failed to add message", http.StatusInternalServerError)
 		return

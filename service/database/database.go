@@ -50,16 +50,17 @@ type AppDatabase interface {
 	
 	GetOrCreatePrivateConversation(currentUserID, recipientID int64) (int64, error)
 	CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error)
-	AddMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error)
 
 	SetGroupName(conversationID int64, name string) error
 	SetGroupPhoto(conversationID int64, photoURL string) error
 
+	AddToGroup(conversationID int64, newParticipants []int64) error
+	LeaveGroup(conversationID int64, userID int64) error
+
 	GetConversation(conversationID int64) (*ConversationDetails, error)
 	GetMyConversations(userID int64) ([]ConversationPreview, error)
 
-	AddToGroup(conversationID int64, newParticipants []int64) error
-	LeaveGroup(conversationID int64, userID int64) error
+	SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error)
 
 	Ping() error
 }

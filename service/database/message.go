@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// AddMessage adds a message to a conversation, supporting both text and image messages.
-func (db *appdbimpl) AddMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error) {
+// SendMessage adds a message to a conversation, supporting both text and image messages.
+func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error) {
 	// Ensure that either content or photoData is provided, but not both
 	if (content != nil && photoData != nil) || (content == nil && photoData == nil) {
 		return 0, fmt.Errorf("a message must contain either text or an image, but not both")

@@ -43,9 +43,13 @@ export default {
 		const groupMessage = ref("");
 
 		const formatTimestamp = (timestamp) => {
+			const utcTimestamp = new Date(timestamp);
+			const localTimestamp = new Date(
+				utcTimestamp.getTime() - utcTimestamp.getTimezoneOffset() * 60000
+			);
+
 			const now = new Date();
-			const messageTime = new Date(timestamp);
-			const diffInMs = now - messageTime;
+			const diffInMs = now - localTimestamp;
 
 			const seconds = diffInMs / 1000;
 			const minutes = seconds / 60;
@@ -56,9 +60,10 @@ export default {
 			const years = days / 365;
 
 			if (hours < 12) {
-				return messageTime.toLocaleTimeString("en-US", {
+				return localTimestamp.toLocaleTimeString("en-GB", {
 					hour: "2-digit",
 					minute: "2-digit",
+					hour12: false,
 				});
 			} else if (hours < 24) {
 				return `${Math.floor(hours)}H`;
@@ -554,7 +559,20 @@ export default {
 
 				<div class="flex-grow-1">
 					<h6 class="mb-1">{{ conversation.display_name }}</h6>
-					<p class="mb-0 text-muted" style="font-size: 0.9rem">
+					<p class="mb-0 text-muted" style="font-size: 0.8rem">
+						<strong
+							v-if="conversation.conversation_type === 'group'"
+						>
+							{{ conversation.last_message_sender }}:
+						</strong>
+						<strong
+							v-else
+							v-if="
+								conversation.last_message_sender_id === user.id
+							"
+						>
+							You:
+						</strong>
 						<span v-if="conversation.last_message_content">
 							{{
 								truncateMessage(
@@ -563,13 +581,29 @@ export default {
 								)
 							}}
 						</span>
-						<span v-else>
-							<img :src="PhotoIcon" alt="Photo" width="16" />
-						</span>
+						<svg
+							v-else
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							fill="currentColor"
+							class="bi bi-camera-fill"
+							viewBox="0 0 16 16"
+						>
+							<path
+								d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"
+							/>
+							<path
+								d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0"
+							/>
+						</svg>
 					</p>
 				</div>
 
-				<small class="text-muted">
+				<small
+					class="text-muted"
+					style="align-self: flex-start; font-size: 0.7rem"
+				>
 					{{ formatTimestamp(conversation.last_message_timestamp) }}
 				</small>
 			</div>

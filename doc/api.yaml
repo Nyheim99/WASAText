@@ -414,6 +414,74 @@ paths:
         "500":
           description: Internal server error
 
+  /conversations/{conversationId}/messages:
+    post:
+      operationId: sendMessage
+      summary: Send a message in a conversation
+      description: |
+        Sends a message (either text or photo) in the specified conversation.
+        Users can send a plain text message, a photo, or both.
+      tags:
+        - Messages
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: The text content of the message
+                  example: "Hello everyone!"
+                photo:
+                  type: string
+                  format: binary
+                  description: The image file to be uploaded
+      responses:
+        "201":
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: integer
+                    description: Unique identifier of the sent message
+                    example: 123
+                  message_type:
+                    type: string
+                    enum: ["text", "photo"]
+                    description: Type of message sent
+                    example: "text"
+                  content:
+                    type: string
+                    description: The text content of the message (empty if it's a photo message)
+                    example: "Hello everyone!"
+                  sender_id:
+                    type: integer
+                    description: ID of the user who sent the message
+                    example: 2
+                  sender_name:
+                    type: string
+                    description: Name of the user who sent the message
+                    example: "JohnDoe"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: Time when the message was sent
+                    example: "2024-02-02T15:04:05Z"
+        "400":
+          description: Bad request - Either no content provided, invalid file type, or malformed request.
+        "401":
+          description: Unauthorized - User is not authenticated.
+        "404":
+          description: Conversation not found.
+        "500":
+          description: Internal server error.
 
 components:
   schemas:

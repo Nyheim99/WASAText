@@ -21,12 +21,7 @@ type AddToGroupResponse struct {
 // addToGroup handles adding new members to an existing group conversation.
 func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	conversationIDStr := ps.ByName("conversationID")
-conversationID, err := strconv.ParseInt(conversationIDStr, 10, 64)
-if err != nil {
-	http.Error(w, "Invalid conversation ID", http.StatusBadRequest)
-	return
-}
-
+	conversationID, err := strconv.ParseInt(conversationIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid conversation ID", http.StatusBadRequest)
 		return
