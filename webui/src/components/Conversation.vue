@@ -1,7 +1,7 @@
 <script>
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
-import { ref, onMounted, onBeforeUnmount, watch } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -41,6 +41,10 @@ export default {
 		const usersNotInGroup = ref([]);
 		const selectedUsers = ref(new Set());
 		const addingMembers = ref(false);
+
+		const messages = computed(
+			() => props.conversationDetails?.messages || []
+		);
 
 		const conversationPhoto = () => {
 			if (props.conversation.display_photo_url?.startsWith("/")) {
@@ -329,6 +333,20 @@ export default {
 			return photoURL;
 		};
 
+		const getSenderPhoto = (senderId) => {
+			const sender = props.allUsers.find((user) => user.id === senderId);
+			return sender?.photo_url || "";
+		};
+
+		const formatTimestamp = (timestamp) => {
+			const date = new Date(timestamp);
+			return date.toLocaleTimeString("en-GB", {
+				hour: "2-digit",
+				minute: "2-digit",
+				hour12: false,
+			});
+		};
+
 		watch(
 			() => props.conversationDetails,
 			() => {
@@ -355,6 +373,9 @@ export default {
 			addingMembers,
 			usersNotInGroup,
 			resolvePhotoURL,
+			formatTimestamp,
+			messages,
+			getSenderPhoto,
 		};
 	},
 };
@@ -370,7 +391,11 @@ export default {
 					class="rounded-circle"
 					style="width: 50px; height: 50px; object-fit: cover"
 				/>
-				<h2 class="px-2 mb-0">{{ conversation.display_name }}</h2>
+				<h2 class="px-2 mb-0">
+					{{ conversation.display_name }} ({{
+						conversation.conversation_id
+					}})
+				</h2>
 			</div>
 
 			<button
@@ -408,63 +433,151 @@ export default {
 			</button>
 		</div>
 
+		<hr class="mx-n4" />
+
 		<div
-			class="modal fade"
-			id="groupNameModal"
-			tabindex="-1"
-			aria-labelledby="groupNameModalLabel"
-			aria-hidden="true"
+			class="flex-grow-1 overflow-auto p-3 d-flex flex-column"
+			style="display: flex; flex-direction: column; overflow-y: auto"
 		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h1 class="modal-title fs-5" id="groupNameModalLabel">
-							Update Group Name
-						</h1>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<input
-							type="text"
-							v-model="newGroupName"
-							class="form-control"
-							placeholder="Enter new group name"
-						/>
+			<div
+				v-for="message in messages"
+				:key="message.id"
+				class="d-flex align-items-start mb-2"
+				:style="{
+					justifyContent:
+						message.sender_id === user.id
+							? 'flex-end'
+							: 'flex-start',
+				}"
+				style="position: relative;"
+			>
+				<!-- Avatar for received messages -->
+				<img
+					v-if="message.sender_id !== user.id"
+					:src="resolvePhotoURL(getSenderPhoto(message.sender_id))"
+					alt="Sender Avatar"
+					class="rounded-circle me-2"
+					style="width: 35px; height: 35px; object-fit: cover; align-self: flex-end;"
+				/>
+
+				<!-- Message Bubble -->
+				<div
+					class="p-2 rounded shadow-sm"
+					:style="{
+						backgroundColor:
+							message.sender_id === user.id
+								? '#dcf8c6'
+								: '#f1f0f0',
+						maxWidth: '75%',
+						wordWrap: 'break-word',
+						padding: '10px',
+						borderRadius: '18px',
+						position: 'relative',
+						alignSelf:
+							message.sender_id === user.id
+								? 'flex-end'
+								: 'flex-start',
+						textAlign: 'left',
+					}"
+				>
+					<p
+						v-if="
+							conversation.conversation_type === 'group' &&
+							message.sender_id !== user.id
+						"
+						style="
+							font-weight: bold;
+							margin-bottom: 2px;
+							font-size: 14px;
+						"
+					>
+						{{ message.sender_username }}
+					</p>
+					<div
+						style="
+							display: flex;
+							flex-direction: column;
+							position: relative;
+						"
+					>
 						<p
-							class="text-danger small mt-2"
-							v-if="validationMessage"
+							class="mb-0"
+							style="
+								margin: 0;
+								word-break: break-word;
+								white-space: pre-wrap;
+							"
 						>
-							{{ validationMessage }}
+							{{ message.content }}
 						</p>
-					</div>
-					<div class="modal-footer">
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
+						<small
+							class="text-muted"
+							style="
+								font-size: 12px;
+								color: gray;
+								align-self: flex-end;
+								margin-top: 4px;
+								white-space: nowrap;
+							"
 						>
-							Close
-						</button>
-						<button
-							type="button"
-							class="btn btn-primary"
-							@click="handleUpdateGroupName"
-							:disabled="updatingName"
-						>
-							{{ updatingName ? "Updating..." : "Update" }}
-						</button>
+							{{ formatTimestamp(message.timestamp) }}
+						</small>
 					</div>
 				</div>
 			</div>
 		</div>
+	</div>
 
-		<hr class="mx-n4" />
-		<p>Conversation ID: {{ conversation.conversation_id }}</p>
+	<div
+		class="modal fade"
+		id="groupNameModal"
+		tabindex="-1"
+		aria-labelledby="groupNameModalLabel"
+		aria-hidden="true"
+	>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="groupNameModalLabel">
+						Update Group Name
+					</h1>
+					<button
+						type="button"
+						class="btn-close"
+						data-bs-dismiss="modal"
+						aria-label="Close"
+					></button>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						v-model="newGroupName"
+						class="form-control"
+						placeholder="Enter new group name"
+					/>
+					<p class="text-danger small mt-2" v-if="validationMessage">
+						{{ validationMessage }}
+					</p>
+				</div>
+				<div class="modal-footer">
+					<button
+						type="button"
+						class="btn btn-secondary"
+						data-bs-dismiss="modal"
+					>
+						Close
+					</button>
+					<button
+						type="button"
+						class="btn btn-primary"
+						@click="handleUpdateGroupName"
+						:disabled="updatingName"
+					>
+						{{ updatingName ? "Updating..." : "Update" }}
+					</button>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	<div

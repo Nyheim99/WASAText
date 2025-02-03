@@ -222,7 +222,8 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("conversation not found")
 	} else if err != nil {
-		return nil, fmt.Errorf("failed to retrieve conversationnn: %w", err)
+		fmt.Printf("ERROR: Failed to retrieve conversation: %v\n", err)
+		return nil, fmt.Errorf("failed to retrieve conversation: %w", err)
 	}
 
 	if conversation.ConversationType == "group" {
@@ -232,6 +233,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			JOIN users ON conversation_participants.user_id = users.id
 			WHERE conversation_participants.conversation_id = ?`, conversationID)
 		if err != nil {
+			fmt.Printf("ERROR: Failed to retrieve participants: %v\n", err)
 			return nil, fmt.Errorf("failed to retrieve participants: %w", err)
 		}
 		defer rows.Close()
@@ -239,6 +241,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		for rows.Next() {
 			var participant User
 			if err := rows.Scan(&participant.ID, &participant.Username, &participant.PhotoURL); err != nil {
+				fmt.Printf("ERROR: Failed to scan participant: %v\n", err)
 				return nil, fmt.Errorf("failed to scan participant: %w", err)
 			}
 			conversation.Participants = append(conversation.Participants, participant)
@@ -257,6 +260,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		WHERE m.conversation_id = ?
 		ORDER BY m.timestamp ASC`, conversationID)
 	if err != nil {
+		fmt.Printf("ERROR: Failed to retrieve messages: %v\n", err)
 		return nil, fmt.Errorf("failed to retrieve messages: %w", err)
 	}
 	defer messageRows.Close()
@@ -280,6 +284,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			&msg.IsDeleted,
 		)
 		if err != nil {
+			fmt.Printf("ERROR: Failed to scan message: %v\n", err)
 			return nil, fmt.Errorf("failed to scan message: %w", err)
 		}
 
@@ -290,12 +295,14 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			JOIN users u ON r.user_id = u.id
 			WHERE r.message_id = ?`, msg.ID)
 		if err != nil {
+			fmt.Printf("ERROR: Failed to retrieve reactions: %v\n", err)
 			return nil, fmt.Errorf("failed to retrieve reactions: %w", err)
 		}
 
 		for reactionRows.Next() {
 			var reaction Reaction
 			if err := reactionRows.Scan(&reaction.UserID, &reaction.Username, &reaction.Emoticon); err != nil {
+				fmt.Printf("ERROR: Failed to scan reaction: %v\n", err)
 				return nil, fmt.Errorf("failed to scan reaction: %w", err)
 			}
 			msg.Reactions = append(msg.Reactions, reaction)

@@ -64,7 +64,7 @@ export default {
 					`/conversations/${conversationId}`
 				);
 				selectedConversationDetails.value = response.data;
-				console.log("Updated conversation details:", response.data);
+				console.log("Conversation details:", response.data);
 			} catch (error) {
 				console.error("Failed to fetch conversation details:", error);
 			}
@@ -233,7 +233,7 @@ export default {
 			{{ feedbackMessage }}
 		</div>
 
-		<div class="row flex-grow-1 g-3">
+		<div class="row flex-grow-1 g-3 flex-nowrap">
 			<div class="col-auto p-0">
 				<Sidebar
 					:logout="logout"

@@ -33,7 +33,7 @@ export default {
 
 		const selectedUser = ref(null);
 		const privateMessage = ref("");
-		
+
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
 
@@ -226,6 +226,13 @@ export default {
 			return conversationType === "group" ? PeopleIcon : AvatarIcon;
 		};
 
+		const truncateMessage = (message, maxLength) => {
+			if (message.length > maxLength) {
+				return message.slice(0, maxLength) + "...";
+			}
+			return message;
+		};
+
 		return {
 			WriteIcon,
 			AvatarIcon,
@@ -251,6 +258,7 @@ export default {
 			formatTimestamp,
 			sortedConversations,
 			resolvePhotoURL,
+			truncateMessage,
 		};
 	},
 };
@@ -548,7 +556,12 @@ export default {
 					<h6 class="mb-1">{{ conversation.display_name }}</h6>
 					<p class="mb-0 text-muted" style="font-size: 0.9rem">
 						<span v-if="conversation.last_message_content">
-							{{ conversation.last_message_content }}
+							{{
+								truncateMessage(
+									conversation.last_message_content,
+									20
+								)
+							}}
 						</span>
 						<span v-else>
 							<img :src="PhotoIcon" alt="Photo" width="16" />
