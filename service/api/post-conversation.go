@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"mime/multipart"
+	"bytes"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
@@ -30,8 +31,8 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 	conversationType := r.FormValue("conversation_type")
 	message := r.FormValue("message")
 
-	if conversationType == "" || message == "" {
-		http.Error(w, "conversation_type and message are required", http.StatusBadRequest)
+	if conversationType == "" {
+		http.Error(w, "conversation_type is required", http.StatusBadRequest)
 		return
 	}
 
@@ -41,6 +42,9 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 	currentUserID := reqCtx.UserID
+
+	var conversationID int64
+	var err error
 
 	if conversationType == "private" {
 		username := r.FormValue("username")
@@ -61,85 +65,111 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		}
 
 		// Create or fetch private conversation
-		conversationID, err := rt.db.GetOrCreatePrivateConversation(currentUserID, recipientID)
+		conversationID, err = rt.db.GetOrCreatePrivateConversation(currentUserID, recipientID)
 		if err != nil {
 			http.Error(w, "Failed to create private conversation", http.StatusInternalServerError)
 			return
 		}
+	} else if conversationType == "group" {
+		groupName := r.FormValue("group_name")
+		participants := r.FormValue("participants")
 
-		// Add message to conversation
-		messageID, err := rt.db.AddMessage(conversationID, currentUserID, message)
-		if err != nil {
-			http.Error(w, "Failed to add message", http.StatusInternalServerError)
+		if groupName == "" || participants == "" {
+			http.Error(w, "group_name and participants are required for group conversation", http.StatusBadRequest)
 			return
 		}
 
-		// Respond
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(NewConversationResponse{
-			ConversationID: conversationID,
-			MessageID:      messageID,
-		})
+		var participantIDs []int64
+		err := json.Unmarshal([]byte(participants), &participantIDs)
+		if err != nil {
+			http.Error(w, "Invalid participants format", http.StatusBadRequest)
+			return
+		}
+
+		conversationID, err = rt.db.CreateGroupConversation(currentUserID, groupName, "", participantIDs)
+		if err != nil {
+			http.Error(w, "Failed to create group conversation", http.StatusInternalServerError)
+			return
+		}
+
+		// Handle optional group photo
+		var photoURL string
+		file, handler, err := r.FormFile("group_photo")
+		if err == nil {
+			defer file.Close()
+			photoURL, err = rt.saveUploadedFile(file, handler, conversationID)
+			if err != nil {
+				http.Error(w, "Failed to save group photo", http.StatusInternalServerError)
+				return
+			}
+			err = rt.db.SetGroupPhoto(conversationID, photoURL)
+			if err != nil {
+				http.Error(w, "Failed to update group photo", http.StatusInternalServerError)
+				return
+			}
+		}
+	} else {
+		http.Error(w, "Unsupported conversation type", http.StatusBadRequest)
 		return
 	}
 
-		if conversationType == "group" {
-			groupName := r.FormValue("group_name")
-			participants := r.FormValue("participants")
+	// Handle Message (Text or Photo)
+	var messageID int64
+	var textContent *string
+	var photoData *[]byte
+	var photoMimeType *string
 
-			if groupName == "" || participants == "" {
-					http.Error(w, "group_name and participants are required for group conversation", http.StatusBadRequest)
-					return
-			}
-
-			var participantIDs []int64
-			err := json.Unmarshal([]byte(participants), &participantIDs)
-			if err != nil {
-					http.Error(w, "Invalid participants format", http.StatusBadRequest)
-					return
-			}
-
-			conversationID, err := rt.db.CreateGroupConversation(currentUserID, groupName, "", participantIDs)
-			if err != nil {
-					http.Error(w, "Failed to create group conversation", http.StatusInternalServerError)
-					return
-			}
-
-			// Handle optional group photo
-			var photoURL string
-			file, handler, err := r.FormFile("group_photo")
-			if err == nil {
-					defer file.Close()
-					photoURL, err = rt.saveUploadedFile(file, handler, conversationID)
-					if err != nil {
-							http.Error(w, "Failed to save group photo", http.StatusInternalServerError)
-							return
-					}
-					err = rt.db.SetGroupPhoto(conversationID, photoURL)
-					if err != nil {
-							http.Error(w, "Failed to update group photo", http.StatusInternalServerError)
-							return
-					}
-			}
-
-
-			messageID, err := rt.db.AddMessage(conversationID, currentUserID, message)
-			if err != nil {
-					http.Error(w, "Failed to add message", http.StatusInternalServerError)
-					return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(NewConversationResponse{
-					ConversationID: conversationID,
-					MessageID:      messageID,
-			})
-			return
+	if message != "" {
+		textContent = &message
 	}
 
-	http.Error(w, "Unsupported conversation type", http.StatusBadRequest)
+	// Handle optional photo message
+	file, handler, err := r.FormFile("message_photo")
+	if err == nil {
+		defer file.Close()
+
+		// Read file into byte slice
+		buf := new(bytes.Buffer)
+		if _, err := io.Copy(buf, file); err != nil {
+			http.Error(w, "Failed to read uploaded image", http.StatusInternalServerError)
+			return
+		}
+		data := buf.Bytes()
+		photoData = &data
+
+		// Extract MIME type from file extension
+		mimeType := strings.ToLower(filepath.Ext(handler.Filename))
+		if mimeType == ".jpg" || mimeType == ".jpeg" {
+			mimeType = "image/jpeg"
+		} else if mimeType == ".png" {
+			mimeType = "image/png"
+		} else {
+			http.Error(w, "Invalid image type. Only JPG and PNG are allowed.", http.StatusBadRequest)
+			return
+		}
+		photoMimeType = &mimeType
+	}
+
+	// Ensure at least one of text or photo is present
+	if textContent == nil && photoData == nil {
+		http.Error(w, "Either message text or a photo is required", http.StatusBadRequest)
+		return
+	}
+
+	// Store message in database
+	messageID, err = rt.db.AddMessage(conversationID, currentUserID, textContent, photoData, photoMimeType)
+	if err != nil {
+		http.Error(w, "Failed to add message", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(NewConversationResponse{
+		ConversationID: conversationID,
+		MessageID:      messageID,
+	})
 }
 
 // Helper function to save uploaded group photos

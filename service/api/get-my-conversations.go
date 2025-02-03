@@ -11,12 +11,12 @@ import (
 
 // ConversationPreview represents a preview of a conversation for the API response.
 type ConversationPreview struct {
-	ConversationID      int64  `json:"conversation_id"`
-	ConversationType    string `json:"conversation_type"`
-	DisplayName         string `json:"display_name"`
-	DisplayPhotoURL     string `json:"display_photo_url"`
-	LastMessageContent  string `json:"last_message_content,omitempty"`
-	LastMessagePhotoURL string `json:"last_message_photo_url,omitempty"`
+	ConversationID       int64  `json:"conversation_id"`
+	ConversationType     string `json:"conversation_type"`
+	DisplayName          string `json:"display_name"`
+	DisplayPhotoURL      string `json:"display_photo_url"`
+	LastMessageContent   string `json:"last_message_content,omitempty"`
+	LastMessageHasPhoto  bool   `json:"last_message_has_photo"`
 	LastMessageTimestamp string `json:"last_message_timestamp"`
 }
 
@@ -50,13 +50,20 @@ func (rt *_router) getMyConversations(w http.ResponseWriter, r *http.Request, ps
 	// Map database results to API struct
 	apiConversations := make([]ConversationPreview, len(dbConversations))
 	for i, conversation := range dbConversations {
+		var lastMessageContent string
+		if conversation.LastMessageContent != nil {
+			lastMessageContent = *conversation.LastMessageContent
+		} else {
+			lastMessageContent = "" // Default empty string if nil
+		}
+
 		apiConversations[i] = ConversationPreview{
-			ConversationID:      conversation.ConversationID,
-			ConversationType:    conversation.ConversationType,
-			DisplayName:         conversation.DisplayName,
-			DisplayPhotoURL:     conversation.DisplayPhotoURL,
-			LastMessageContent:  conversation.LastMessageContent,
-			LastMessagePhotoURL: conversation.LastMessagePhotoURL,
+			ConversationID:       conversation.ConversationID,
+			ConversationType:     conversation.ConversationType,
+			DisplayName:          conversation.DisplayName,
+			DisplayPhotoURL:      conversation.DisplayPhotoURL,
+			LastMessageContent:   lastMessageContent,
+			LastMessageHasPhoto:  conversation.LastMessageHasPhoto,
 			LastMessageTimestamp: conversation.LastMessageTimestamp,
 		}
 	}

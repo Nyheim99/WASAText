@@ -48,6 +48,7 @@ export default {
 			try {
 				const response = await axios.get("/conversations");
 				conversations.value = response.data.conversations;
+				console.log(response.data.conversations)
 			} catch (error) {
 				console.error("Failed to fetch conversations:", error);
 			}

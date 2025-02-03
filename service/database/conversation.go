@@ -95,17 +95,6 @@ func (db *appdbimpl) CreateGroupConversation(creatorID int64, name, photoURL str
 	return conversationID, nil
 }
 
-// ConversationPreview represents a preview of a conversation for listing.
-type ConversationPreview struct {
-	ConversationID      int64  `json:"conversation_id"`
-	ConversationType    string `json:"conversation_type"`
-	DisplayName         string `json:"display_name"`
-	DisplayPhotoURL     string `json:"display_photo_url"`
-	LastMessageContent  string `json:"last_message_content,omitempty"`
-	LastMessagePhotoURL string `json:"last_message_photo_url,omitempty"`
-	LastMessageTimestamp string `json:"last_message_timestamp"`
-}
-
 func (db *appdbimpl) SetGroupName(conversationID int64, name string) error {
 	_, err := db.c.Exec(
 		`UPDATE conversations SET name = ? WHERE id = ? AND conversation_type = 'group'`,
@@ -128,6 +117,17 @@ func (db *appdbimpl) SetGroupPhoto(conversationID int64, photoURL string) error 
 	return nil
 }
 
+// ConversationPreview represents a preview of a conversation for listing.
+type ConversationPreview struct {
+	ConversationID       int64  `json:"conversation_id"`
+	ConversationType     string `json:"conversation_type"`
+	DisplayName          string `json:"display_name"`
+	DisplayPhotoURL      string `json:"display_photo_url"`
+	LastMessageContent   *string `json:"last_message_content,omitempty"`
+	LastMessageHasPhoto  bool   `json:"last_message_has_photo"`         
+	LastMessageTimestamp string `json:"last_message_timestamp"`
+}
+
 // GetMyConversations retrieves a list of conversations for a given user, sorted by the latest message timestamp.
 func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, error) {
 	query := `
@@ -142,8 +142,8 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 				WHEN c.conversation_type = 'private' THEN u.photo_url
 				ELSE c.photo_url
 			END AS display_photo_url,
-			COALESCE(m.content, '') AS last_message_content,
-			COALESCE(m.photo_url, '') AS last_message_photo_url,
+			m.content AS last_message_content,
+			CASE WHEN m.photo_data IS NOT NULL THEN 1 ELSE 0 END AS last_message_has_photo,
 			COALESCE(m.timestamp, '1970-01-01T00:00:00Z') AS last_message_timestamp
 		FROM 
 			conversations c
@@ -166,7 +166,6 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 
 	rows, err := db.c.Query(query, userID, userID)
 	if err != nil {
-		fmt.Printf("Query error: %v\n", err)
 		return nil, fmt.Errorf("failed to query conversations: %w", err)
 	}
 	defer rows.Close()
@@ -175,28 +174,27 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 
 	for rows.Next() {
 		var conversation ConversationPreview
+		var lastMessageHasPhoto int
+
 		if err := rows.Scan(
 			&conversation.ConversationID,
 			&conversation.ConversationType,
 			&conversation.DisplayName,
 			&conversation.DisplayPhotoURL,
 			&conversation.LastMessageContent,
-			&conversation.LastMessagePhotoURL,
+			&lastMessageHasPhoto,
 			&conversation.LastMessageTimestamp,
 		); err != nil {
-			fmt.Printf("Row scan error: %v\n", err)
 			return nil, fmt.Errorf("failed to scan conversation row: %w", err)
 		}
-		conversations = append(conversations, conversation)
-	}
 
-	if err := rows.Err(); err != nil {
-		fmt.Printf("Row iteration error: %v\n", err)
-		return nil, fmt.Errorf("error iterating through rows: %w", err)
+		conversation.LastMessageHasPhoto = lastMessageHasPhoto == 1
+		conversations = append(conversations, conversation)
 	}
 
 	return conversations, nil
 }
+
 
 type ConversationDetails struct {
 	ConversationID   int64  `json:"conversation_id"`
@@ -222,7 +220,6 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("conversation not found")
 	} else if err != nil {
-		fmt.Printf("ERROR: Failed to retrieve conversation: %v\n", err)
 		return nil, fmt.Errorf("failed to retrieve conversation: %w", err)
 	}
 
@@ -233,7 +230,6 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			JOIN users ON conversation_participants.user_id = users.id
 			WHERE conversation_participants.conversation_id = ?`, conversationID)
 		if err != nil {
-			fmt.Printf("ERROR: Failed to retrieve participants: %v\n", err)
 			return nil, fmt.Errorf("failed to retrieve participants: %w", err)
 		}
 		defer rows.Close()
@@ -241,18 +237,17 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		for rows.Next() {
 			var participant User
 			if err := rows.Scan(&participant.ID, &participant.Username, &participant.PhotoURL); err != nil {
-				fmt.Printf("ERROR: Failed to scan participant: %v\n", err)
 				return nil, fmt.Errorf("failed to scan participant: %w", err)
 			}
 			conversation.Participants = append(conversation.Participants, participant)
 		}
 	}
 
-	// Step 3: Fetch all messages in the conversation, including sender username
+	// Fetch all messages in the conversation, including sender username and photo data
 	messageRows, err := db.c.Query(`
 		SELECT 
 			m.id, m.conversation_id, m.sender_id, u.username, 
-			m.content, m.photo_url, m.timestamp, m.status, 
+			m.content, m.photo_data, m.photo_mime_type, m.timestamp, m.status, 
 			m.is_reply, m.original_message_id, 
 			m.is_forwarded, m.is_deleted
 		FROM messages m
@@ -260,22 +255,24 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		WHERE m.conversation_id = ?
 		ORDER BY m.timestamp ASC`, conversationID)
 	if err != nil {
-		fmt.Printf("ERROR: Failed to retrieve messages: %v\n", err)
 		return nil, fmt.Errorf("failed to retrieve messages: %w", err)
 	}
 	defer messageRows.Close()
 
-	// Step 4: Populate the messages array
 	messages := []Message{}
 	for messageRows.Next() {
 		var msg Message
+		var photoData []byte // Store BLOB data
+		var photoMimeType sql.NullString
+
 		err := messageRows.Scan(
 			&msg.ID,
 			&msg.ConversationID,
 			&msg.SenderID,
 			&msg.SenderUsername,
 			&msg.Content,
-			&msg.PhotoURL,
+			&photoData,
+			&photoMimeType,
 			&msg.Timestamp,
 			&msg.Status,
 			&msg.IsReply,
@@ -284,30 +281,15 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			&msg.IsDeleted,
 		)
 		if err != nil {
-			fmt.Printf("ERROR: Failed to scan message: %v\n", err)
 			return nil, fmt.Errorf("failed to scan message: %w", err)
 		}
 
-		// Step 5: Fetch reactions for this message
-		reactionRows, err := db.c.Query(`
-			SELECT r.user_id, u.username, r.emoticon
-			FROM reactions r
-			JOIN users u ON r.user_id = u.id
-			WHERE r.message_id = ?`, msg.ID)
-		if err != nil {
-			fmt.Printf("ERROR: Failed to retrieve reactions: %v\n", err)
-			return nil, fmt.Errorf("failed to retrieve reactions: %w", err)
+		if len(photoData) > 0 {
+			msg.PhotoData = &photoData
 		}
-
-		for reactionRows.Next() {
-			var reaction Reaction
-			if err := reactionRows.Scan(&reaction.UserID, &reaction.Username, &reaction.Emoticon); err != nil {
-				fmt.Printf("ERROR: Failed to scan reaction: %v\n", err)
-				return nil, fmt.Errorf("failed to scan reaction: %w", err)
-			}
-			msg.Reactions = append(msg.Reactions, reaction)
+		if photoMimeType.Valid {
+			msg.PhotoMimeType = &photoMimeType.String
 		}
-		reactionRows.Close()
 
 		messages = append(messages, msg)
 	}
@@ -315,6 +297,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	conversation.Messages = messages
 	return &conversation, nil
 }
+
 
 func (db *appdbimpl) AddToGroup(conversationID int64, newParticipants []int64) error {
 	if len(newParticipants) == 0 {

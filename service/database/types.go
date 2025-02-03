@@ -28,8 +28,9 @@ type Message struct {
 	ConversationID    int64       `json:"conversation_id"`     
 	SenderID          int64       `json:"sender_id"`          
 	SenderUsername    string      `json:"sender_username"`
-	Content           string      `json:"content,omitempty"`    
-	PhotoURL          string      `json:"photo_url,omitempty"`  
+	Content           *string     `json:"content,omitempty"`
+	PhotoData         *[]byte     `json:"photo_data,omitempty"`
+	PhotoMimeType     *string     `json:"photo_mime_type,omitempty"`
 	Timestamp         time.Time   `json:"timestamp"`            
 	Status            string      `json:"status"`               
 	IsReply           bool        `json:"is_reply"`             

@@ -50,7 +50,7 @@ type AppDatabase interface {
 	
 	GetOrCreatePrivateConversation(currentUserID, recipientID int64) (int64, error)
 	CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error)
-	AddMessage(conversationID, senderID int64, content string) (int64, error)
+	AddMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error)
 
 	SetGroupName(conversationID int64, name string) error
 	SetGroupPhoto(conversationID int64, photoURL string) error
@@ -97,20 +97,25 @@ func New(db *sql.DB) (AppDatabase, error) {
 			FOREIGN KEY (user_id) REFERENCES users(id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS messages (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			conversation_id INTEGER NOT NULL,
-			sender_id INTEGER NOT NULL,
-			content TEXT DEFAULT '',
-			photo_url TEXT DEFAULT '',
-			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-			status TEXT CHECK(status IN ('sent', 'received', 'read')) DEFAULT 'sent',
-			is_reply BOOLEAN DEFAULT FALSE,
-			original_message_id INTEGER NOT NULL DEFAULT 0,
-			is_forwarded BOOLEAN DEFAULT FALSE,
-			is_deleted BOOLEAN DEFAULT FALSE,
-			FOREIGN KEY (conversation_id) REFERENCES conversations(id),
-			FOREIGN KEY (sender_id) REFERENCES users(id),
-			FOREIGN KEY (original_message_id) REFERENCES messages(id)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL,
+    sender_id INTEGER NOT NULL,
+    content TEXT DEFAULT NULL,
+    photo_data BLOB DEFAULT NULL,
+    photo_mime_type TEXT DEFAULT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status TEXT CHECK(status IN ('sent', 'received', 'read')) DEFAULT 'sent',
+    is_reply BOOLEAN DEFAULT FALSE,
+    original_message_id INTEGER NOT NULL DEFAULT 0,
+    is_forwarded BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    CHECK (
+        (content IS NOT NULL AND photo_data IS NULL) OR
+        (content IS NULL AND photo_data IS NOT NULL)
+    ),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+    FOREIGN KEY (sender_id) REFERENCES users(id),
+    FOREIGN KEY (original_message_id) REFERENCES messages(id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS message_status (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
