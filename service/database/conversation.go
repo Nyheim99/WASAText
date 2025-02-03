@@ -204,6 +204,7 @@ type ConversationDetails struct {
 	DisplayName      string `json:"display_name"`
 	PhotoURL         string `json:"display_photo_url"`
 	Participants     []User `json:"participants,omitempty"`
+	Messages         []Message `json:"messages,omitempty"`
 }
 
 func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails, error) {
@@ -221,7 +222,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("conversation not found")
 	} else if err != nil {
-		return nil, fmt.Errorf("failed to retrieve conversation: %w", err)
+		return nil, fmt.Errorf("failed to retrieve conversationnn: %w", err)
 	}
 
 	if conversation.ConversationType == "group" {
@@ -244,6 +245,67 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		}
 	}
 
+	// Step 3: Fetch all messages in the conversation, including sender username
+	messageRows, err := db.c.Query(`
+		SELECT 
+			m.id, m.conversation_id, m.sender_id, u.username, 
+			m.content, m.photo_url, m.timestamp, m.status, 
+			m.is_reply, m.original_message_id, 
+			m.is_forwarded, m.is_deleted
+		FROM messages m
+		JOIN users u ON m.sender_id = u.id
+		WHERE m.conversation_id = ?
+		ORDER BY m.timestamp ASC`, conversationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve messages: %w", err)
+	}
+	defer messageRows.Close()
+
+	// Step 4: Populate the messages array
+	messages := []Message{}
+	for messageRows.Next() {
+		var msg Message
+		err := messageRows.Scan(
+			&msg.ID,
+			&msg.ConversationID,
+			&msg.SenderID,
+			&msg.SenderUsername,
+			&msg.Content,
+			&msg.PhotoURL,
+			&msg.Timestamp,
+			&msg.Status,
+			&msg.IsReply,
+			&msg.OriginalMessageID,
+			&msg.IsForwarded,
+			&msg.IsDeleted,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan message: %w", err)
+		}
+
+		// Step 5: Fetch reactions for this message
+		reactionRows, err := db.c.Query(`
+			SELECT r.user_id, u.username, r.emoticon
+			FROM reactions r
+			JOIN users u ON r.user_id = u.id
+			WHERE r.message_id = ?`, msg.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve reactions: %w", err)
+		}
+
+		for reactionRows.Next() {
+			var reaction Reaction
+			if err := reactionRows.Scan(&reaction.UserID, &reaction.Username, &reaction.Emoticon); err != nil {
+				return nil, fmt.Errorf("failed to scan reaction: %w", err)
+			}
+			msg.Reactions = append(msg.Reactions, reaction)
+		}
+		reactionRows.Close()
+
+		messages = append(messages, msg)
+	}
+
+	conversation.Messages = messages
 	return &conversation, nil
 }
 

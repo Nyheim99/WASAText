@@ -105,7 +105,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			status TEXT CHECK(status IN ('sent', 'received', 'read')) DEFAULT 'sent',
 			is_reply BOOLEAN DEFAULT FALSE,
-			original_message_id INTEGER,
+			original_message_id INTEGER DEFAULT 0,
 			is_forwarded BOOLEAN DEFAULT FALSE,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			FOREIGN KEY (conversation_id) REFERENCES conversations(id),
