@@ -3,7 +3,14 @@ import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
 import ImageIcon from "/image.svg";
 import SendIcon from "/send.svg";
-import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from "vue";
+import {
+	ref,
+	onMounted,
+	onBeforeUnmount,
+	watch,
+	computed,
+	nextTick,
+} from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -32,6 +39,7 @@ export default {
 		"group-members-updated",
 		"group-left",
 		"message-sent",
+		"message-deleted"
 	],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
@@ -52,6 +60,8 @@ export default {
 		const messages = computed(
 			() => props.conversationDetails?.messages || []
 		);
+
+		const contextMenu = ref({ visible: false, x: 0, y: 0, message: null });
 
 		const conversationPhoto = () => {
 			if (props.conversation.display_photo_url?.startsWith("/")) {
@@ -186,7 +196,7 @@ export default {
 				);
 				props.conversationDetails.participants =
 					response.data.participants;
-				console.log("Updated conversation details:", response.data);
+				console.log("Updated conversation details in Conversation:", response.data);
 			} catch (error) {
 				console.error(
 					"Failed to fetch updated conversation details:",
@@ -344,12 +354,12 @@ export default {
 
 			try {
 				const response = await axios.post(
-					`/conversations/${props.conversation.conversation_id}/messages`,
+					`/conversations/${props.conversation.conversation_id}/messages/send`,
 					formData,
 					{ headers: { "Content-Type": "multipart/form-data" } }
 				);
 
-				console.log("Message sent:", response.data);
+				console.log("Message sent in Conversation:", response.data);
 
 				newMessage.value = "";
 				selectedPhoto.value = null;
@@ -363,6 +373,34 @@ export default {
 					"Failed to send message:",
 					error.response?.data || error.message
 				);
+			}
+		};
+
+		const deleteMessage = async (message) => {
+			if (!confirm("Are you sure you want to delete this message?"))
+				return;
+
+			try {
+				const response = await axios.delete(
+					`/conversations/${props.conversation.conversation_id}/messages/${message.id}/delete`
+				);
+
+				console.log("Deleted message in Conversation: ", response.data)
+
+				message.is_deleted = true;
+				message.content = null;
+
+				emit("message-deleted", {
+					conversationId: props.conversation.conversation_id,
+					deletedMessage: response.data,
+				});
+
+				console.log("Message deleted:", message.id);
+			} catch (error) {
+				console.error("Failed to delete message:", error);
+				alert("Failed to delete message.");
+			} finally {
+				contextMenu.value.visible = false;
 			}
 		};
 
@@ -382,8 +420,8 @@ export default {
 				selectedPhoto.value = file;
 
 				nextTick(() => {
-            photoPreviewDiv.value?.focus();
-        });
+					photoPreviewDiv.value?.focus();
+				});
 			}
 		};
 
@@ -427,12 +465,27 @@ export default {
 
 		const handleEnterPress = (event) => {
 			event.preventDefault();
-			console.log("Enter pressed")
 
 			if (selectedPhoto.value || newMessage.value.trim()) {
 				sendMessage();
 			}
 		};
+
+		const showContextMenu = (event, message) => {
+			if (message.is_deleted || message.sender_id !== props.user.id)
+				return;
+
+			contextMenu.value = {
+				visible: true,
+				x: event.clientX,
+				y: event.clientY,
+				message,
+			};
+		};
+
+		document.addEventListener("click", () => {
+			contextMenu.value.visible = false;
+		});
 
 		return {
 			fileInput,
@@ -465,7 +518,10 @@ export default {
 			selectedPhoto,
 			photoPreview,
 			photoPreviewDiv,
-			handleEnterPress
+			handleEnterPress,
+			contextMenu,
+			showContextMenu,
+			deleteMessage,
 		};
 	},
 };
@@ -525,11 +581,32 @@ export default {
 
 		<hr class="m-0" />
 
+		<!-- Context Menu -->
+		<div
+			v-if="contextMenu.visible"
+			@click="deleteMessage(contextMenu.message)"
+			:style="{
+				position: 'absolute',
+				background: 'white',
+				border: '1px solid #ccc',
+				padding: '5px 10px',
+				borderRadius: '5px',
+				boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.2)',
+				cursor: 'pointer',
+				zIndex: '1000',
+				top: contextMenu.y + 'px',
+				left: contextMenu.x + 'px',
+			}"
+		>
+			Delete Message
+		</div>
+
 		<div class="flex-grow-1 overflow-auto p-3 d-flex flex-column">
 			<div
 				v-for="message in messages"
 				:key="message.id"
 				class="d-flex align-items-start mb-2"
+				@contextmenu.prevent="showContextMenu($event, message)"
 				:style="{
 					justifyContent:
 						message.sender_id === user.id
@@ -554,7 +631,7 @@ export default {
 
 				<!-- Message Bubble -->
 				<div
-					class="p-2 rounded shadow-sm"
+					class="p-2 rounded shadow-sm position-relative"
 					:style="{
 						backgroundColor:
 							message.sender_id === user.id
@@ -564,7 +641,6 @@ export default {
 						wordWrap: 'break-word',
 						padding: '10px',
 						borderRadius: '18px',
-						position: 'relative',
 						alignSelf:
 							message.sender_id === user.id
 								? 'flex-end'
@@ -585,7 +661,11 @@ export default {
 					>
 						{{ message.sender_username }}
 					</p>
+					<p v-if="message.is_deleted" class="text-muted">
+						<i>This message was deleted</i>
+					</p>
 					<div
+						v-else
 						style="
 							display: flex;
 							flex-direction: column;

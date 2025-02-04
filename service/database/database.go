@@ -61,6 +61,7 @@ type AppDatabase interface {
 	GetMyConversations(userID int64) ([]ConversationPreview, error)
 
 	SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error)
+	DeleteMessage(conversationID, messageID, userID int64) error
 
 	Ping() error
 }

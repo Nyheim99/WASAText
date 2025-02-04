@@ -117,16 +117,19 @@ func (db *appdbimpl) SetGroupPhoto(conversationID int64, photoURL string) error 
 
 // ConversationPreview represents a preview of a conversation for listing.
 type ConversationPreview struct {
-	ConversationID       int64  `json:"conversation_id"`
-	ConversationType     string `json:"conversation_type"`
-	DisplayName          string `json:"display_name"`
-	DisplayPhotoURL      string `json:"display_photo_url"`
+	ConversationID       int64   `json:"conversation_id"`
+	ConversationType     string  `json:"conversation_type"`
+	DisplayName          string  `json:"display_name"`
+	DisplayPhotoURL      string  `json:"display_photo_url"`
+	LastMessageID        int64   `json:"last_message_id"`
 	LastMessageContent   *string `json:"last_message_content,omitempty"`
-	LastMessageHasPhoto  bool   `json:"last_message_has_photo"`         
-	LastMessageTimestamp string `json:"last_message_timestamp"`
+	LastMessageHasPhoto  bool    `json:"last_message_has_photo"`
+	LastMessageTimestamp string  `json:"last_message_timestamp"`
 	LastMessageSenderID  int64   `json:"last_message_sender_id,omitempty"`
 	LastMessageSender    string  `json:"last_message_sender,omitempty"`
+	LastMessageIsDeleted bool    `json:"last_message_is_deleted"`
 }
+
 
 // GetMyConversations retrieves a list of conversations for a given user, sorted by the latest message timestamp.
 func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, error) {
@@ -142,11 +145,13 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 				WHEN c.conversation_type = 'private' THEN u.photo_url
 				ELSE c.photo_url
 			END AS display_photo_url,
+			m.id AS last_message_id,  -- Retrieve last message ID
 			m.content AS last_message_content,
 			CASE WHEN m.photo_data IS NOT NULL THEN 1 ELSE 0 END AS last_message_has_photo,
 			COALESCE(m.timestamp, '1970-01-01T00:00:00Z') AS last_message_timestamp,
 			m.sender_id AS last_message_sender_id,
-			sender.username AS last_message_sender
+			sender.username AS last_message_sender,
+			CASE WHEN m.is_deleted = 1 THEN 1 ELSE 0 END AS last_message_is_deleted
 		FROM 
 			conversations c
 		JOIN 
@@ -181,22 +186,29 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 		var lastMessageHasPhoto int
 		var lastMessageSenderID sql.NullInt64
 		var lastMessageSender sql.NullString
+		var lastMessageIsDeleted int
+		var lastMessageID int64
 
 		if err := rows.Scan(
 			&conversation.ConversationID,
 			&conversation.ConversationType,
 			&conversation.DisplayName,
 			&conversation.DisplayPhotoURL,
+			&lastMessageID,
 			&conversation.LastMessageContent,
 			&lastMessageHasPhoto,
 			&conversation.LastMessageTimestamp,
 			&lastMessageSenderID,
 			&lastMessageSender,
+			&lastMessageIsDeleted, // Scan the deleted status
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan conversation row: %w", err)
 		}
 
 		conversation.LastMessageHasPhoto = lastMessageHasPhoto == 1
+		conversation.LastMessageIsDeleted = lastMessageIsDeleted == 1
+		conversation.LastMessageID = lastMessageID
+		
 		if lastMessageSenderID.Valid {
 			conversation.LastMessageSenderID = lastMessageSenderID.Int64
 		}
@@ -211,7 +223,6 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 
 	return conversations, nil
 }
-
 
 
 type ConversationDetails struct {

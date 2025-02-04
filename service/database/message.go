@@ -51,3 +51,34 @@ func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string
 
 	return messageID, nil
 }
+
+// DeleteMessage performs a soft delete by setting is_deleted to TRUE.
+func (db *appdbimpl) DeleteMessage(conversationID, messageID, userID int64) error {
+	// Check if the message exists and belongs to the conversation
+	var count int
+	err := db.c.QueryRow(`
+		SELECT COUNT(*) FROM messages 
+		WHERE id = ? AND conversation_id = ? AND sender_id = ? AND is_deleted = FALSE
+	`, messageID, conversationID, userID).Scan(&count)
+
+	if err != nil {
+		return fmt.Errorf("failed to check message existence: %w", err)
+	}
+
+	if count == 0 {
+		return fmt.Errorf("message not found or already deleted")
+	}
+
+	// Perform the soft delete
+	_, err = db.c.Exec(`
+		UPDATE messages 
+		SET is_deleted = TRUE
+		WHERE id = ? AND conversation_id = ? AND sender_id = ?
+	`, messageID, conversationID, userID)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete message: %w", err)
+	}
+
+	return nil
+}

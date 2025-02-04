@@ -2,7 +2,7 @@
 import WriteIcon from "/pencil-square.svg";
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -45,7 +45,8 @@ export default {
 		const formatTimestamp = (timestamp) => {
 			const utcTimestamp = new Date(timestamp);
 			const localTimestamp = new Date(
-				utcTimestamp.getTime() - utcTimestamp.getTimezoneOffset() * 60000
+				utcTimestamp.getTime() -
+					utcTimestamp.getTimezoneOffset() * 60000
 			);
 
 			const now = new Date();
@@ -77,14 +78,6 @@ export default {
 				return `${Math.floor(years)}y`;
 			}
 		};
-
-		const sortedConversations = computed(() =>
-			[...props.conversations].sort(
-				(a, b) =>
-					new Date(b.last_message_timestamp) -
-					new Date(a.last_message_timestamp)
-			)
-		);
 
 		const toggleUserSelection = (user) => {
 			if (selectedUsers.value.has(user)) {
@@ -261,7 +254,6 @@ export default {
 			feedbackMessage,
 			showFeedback,
 			formatTimestamp,
-			sortedConversations,
 			resolvePhotoURL,
 			truncateMessage,
 		};
@@ -535,7 +527,7 @@ export default {
 
 		<div>
 			<div
-				v-for="conversation in sortedConversations"
+				v-for="conversation in conversations"
 				:key="conversation.conversation_id"
 				class="container d-flex align-items-center p-2 border-bottom"
 				:class="{
@@ -559,7 +551,21 @@ export default {
 
 				<div class="flex-grow-1">
 					<h6 class="mb-1">{{ conversation.display_name }}</h6>
-					<p class="mb-0 text-muted" style="font-size: 0.8rem">
+					<span
+						v-if="conversation.last_message_is_deleted"
+						class="text-muted"
+						style="font-size: 0.8rem"
+					>
+						<i
+							>{{
+								conversation.last_message_sender_id ===
+								user.id
+									? "You"
+									: conversation.last_message_sender
+							}} deleted a message</i
+						>
+					</span>
+					<p v-else class="mb-0 text-muted" style="font-size: 0.8rem">
 						<strong
 							v-if="conversation.conversation_type === 'group'"
 						>

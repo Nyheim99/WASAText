@@ -48,7 +48,10 @@ export default {
 			try {
 				const response = await axios.get("/conversations");
 				conversations.value = response.data;
-				console.log(response.data);
+				console.log(
+					"Fetched conversations in HomeView.vue: ",
+					response.data
+				);
 			} catch (error) {
 				console.error("Failed to fetch conversations:", error);
 			}
@@ -65,7 +68,7 @@ export default {
 					`/conversations/${conversationId}`
 				);
 				selectedConversationDetails.value = response.data;
-				console.log("Conversation details:", response.data);
+				console.log("Conversation details in HomeView:", response.data);
 			} catch (error) {
 				console.error("Failed to fetch conversation details:", error);
 			}
@@ -161,49 +164,66 @@ export default {
 		};
 
 		const updateConversationName = (payload) => {
-			const conversation = conversations.value.find(
+			const index = conversations.value.findIndex(
 				(conv) => conv.conversation_id === payload.conversationId
 			);
-			if (conversation) {
-				conversation.display_name = payload.newName;
+
+			if (index !== -1) {
+				conversations.value[index] = {
+					...conversations.value[index],
+					display_name: payload.newName,
+				};
+
+				if (
+					selectedConversation.value?.conversation_id ===
+					payload.conversationId
+				) {
+					selectedConversation.value = {
+						...selectedConversation.value,
+						display_name: payload.newName,
+					};
+				}
 			}
 		};
 
 		const updateConversationPhoto = (payload) => {
-			if (
-				selectedConversation.value &&
-				selectedConversation.value.conversation_id ===
-					payload.conversationId
-			) {
-				selectedConversation.value.display_photo_url =
-					payload.newPhotoUrl;
-			}
-
-			const conversationIndex = conversations.value.findIndex(
-				(conversation) =>
-					conversation.conversation_id === payload.conversationId
+			const index = conversations.value.findIndex(
+				(conv) => conv.conversation_id === payload.conversationId
 			);
 
-			if (conversationIndex !== -1) {
-				conversations.value[conversationIndex].display_photo_url =
-					payload.newPhotoUrl;
+			if (index !== -1) {
+				conversations.value[index] = {
+					...conversations.value[index],
+					display_photo_url: payload.newPhotoUrl,
+				};
+			}
+
+			if (
+				selectedConversation.value?.conversation_id ===
+				payload.conversationId
+			) {
+				selectedConversation.value = {
+					...selectedConversation.value,
+					display_photo_url: payload.newPhotoUrl,
+				};
 			}
 		};
 
 		const updateConversationWithNewMessage = (payload) => {
 			const { conversationId, lastMessage } = payload;
 
-			const conversation = conversations.value.find(
-				(conv) => conv.conversation_id === conversationId
-			);
-			if (conversation) {
-				conversation.last_message_content = lastMessage.content;
-				const date = new Date(lastMessage.timestamp);
-        const formattedTimestamp = date.toISOString().slice(0, 19).replace("T", " ");
-				conversation.last_message_timestamp = formattedTimestamp;
-				conversation.last_message_sender = lastMessage.sender_name;
-				conversation.last_message_sender_id = lastMessage.sender_id;
-			}
+			console.log(lastMessage)
+
+			fetchConversations()
+			fetchConversationDetails(conversationId);
+		};
+
+		const updateConversationWithDeletedMessage = (payload) => {
+			const { conversationId, deletedMessage } = payload;
+
+			console.log(deletedMessage)
+
+			fetchConversations()
 			fetchConversationDetails(conversationId);
 		};
 
@@ -233,6 +253,7 @@ export default {
 			updateConversationPhoto,
 			updateConversationName,
 			updateConversationWithNewMessage,
+			updateConversationWithDeletedMessage,
 			fetchConversationDetails,
 			addNewConversation,
 			removeConversation,
@@ -285,6 +306,7 @@ export default {
 					@group-members-updated="fetchConversationDetails"
 					@group-left="removeConversation"
 					@message-sent="updateConversationWithNewMessage"
+					@message-deleted="updateConversationWithDeletedMessage"
 				/>
 			</div>
 		</div>

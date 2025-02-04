@@ -414,7 +414,7 @@ paths:
         "500":
           description: Internal server error
 
-  /conversations/{conversationId}/messages:
+  /conversations/{conversationId}/messages/send:
     post:
       operationId: sendMessage
       summary: Send a message in a conversation
@@ -480,6 +480,49 @@ paths:
           description: Unauthorized - User is not authenticated.
         "404":
           description: Conversation not found.
+        "500":
+          description: Internal server error.
+
+  /conversations/{conversationId}/messages/{messageId}/delete:
+    delete:
+      operationId: deleteMessage
+      summary: Soft delete a message in a conversation
+      description: |
+        Marks a message as deleted by setting `is_deleted = true` instead of permanently removing it.
+        Only the sender of the message can delete it.
+      tags:
+        - Messages
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+        - $ref: "#/components/parameters/messageId"
+      responses:
+        "200":
+          description: Message deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: integer
+                    description: Unique identifier of the deleted message
+                    example: 45
+                  conversation_id:
+                    type: integer
+                    description: Unique identifier of the conversation
+                    example: 12
+                  status:
+                    type: string
+                    description: Confirmation message
+                    example: "deleted"
+        "400":
+          description: Invalid request parameters.
+        "401":
+          description: Unauthorized - User is not authenticated.
+        "403":
+          description: Forbidden - User is not the sender of this message.
+        "404":
+          description: Message not found or already deleted.
         "500":
           description: Internal server error.
 
