@@ -3,7 +3,7 @@ import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
 import ImageIcon from "/image.svg";
 import SendIcon from "/send.svg";
-import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -47,6 +47,7 @@ export default {
 
 		const newMessage = ref("");
 		const photoInput = ref(null);
+		const photoPreviewDiv = ref(null);
 		const selectedPhoto = ref(null);
 		const messages = computed(
 			() => props.conversationDetails?.messages || []
@@ -379,6 +380,10 @@ export default {
 			const file = event.target.files[0];
 			if (file) {
 				selectedPhoto.value = file;
+
+				nextTick(() => {
+            photoPreviewDiv.value?.focus();
+        });
 			}
 		};
 
@@ -420,6 +425,15 @@ export default {
 			{ deep: true }
 		);
 
+		const handleEnterPress = (event) => {
+			event.preventDefault();
+			console.log("Enter pressed")
+
+			if (selectedPhoto.value || newMessage.value.trim()) {
+				sendMessage();
+			}
+		};
+
 		return {
 			fileInput,
 			uploading,
@@ -450,6 +464,8 @@ export default {
 			formatBase64Image,
 			selectedPhoto,
 			photoPreview,
+			photoPreviewDiv,
+			handleEnterPress
 		};
 	},
 };
@@ -618,7 +634,7 @@ export default {
 		</div>
 
 		<!-- Message Input -->
-		<div class="d-flex align-items-center pt-2">
+		<div class="d-flex align-items-end pt-2">
 			<input
 				type="file"
 				ref="photoInput"
@@ -634,50 +650,59 @@ export default {
 				<img :src="ImageIcon" alt="Select Photo" width="24" />
 			</button>
 
-			<!-- Photo Preview -->
 			<div
-				v-if="selectedPhoto"
-				class="d-flex align-items-center position-relative border rounded p-2 bg-light"
-				style="max-width: 150px; height: 50px"
+				class="flex-grow-1 d-flex align-items-center border rounded bg-light"
+				style="height: 100%"
 			>
-				<!-- Preview Image -->
-				<img
-					:src="photoPreview"
-					alt="Photo Preview"
-					class="rounded"
-					style="
-						width: 50px;
-						height: 50px;
-						object-fit: cover;
-						border: 1px solid #ddd;
-					"
-				/>
-
-				<!-- Remove Photo Button -->
-				<button
-					class="btn btn-sm btn-danger rounded-circle position-absolute"
-					style="
-						top: -5px;
-						right: -5px;
-						width: 20px;
-						height: 20px;
-						font-size: 12px;
-						padding: 0;
-					"
-					@click="selectedPhoto = null"
+				<!-- Photo Preview -->
+				<div
+					v-if="selectedPhoto"
+					@keyup.enter="handleEnterPress"
+					ref="photoPreviewDiv"
+					tabindex="0"
+					class="d-flex align-items-center w-100"
 				>
-					×
-				</button>
-			</div>
+					<div class="position-relative">
+						<!-- Preview Image -->
+						<img
+							:src="photoPreview"
+							alt="Photo Preview"
+							class="rounded"
+							style="
+								width: auto;
+								height: 100px;
+								object-fit: cover;
+								border: 1px solid #ddd;
+							"
+						/>
 
-			<input
-				v-else
-				v-model="newMessage"
-				type="text"
-				class="form-control"
-				placeholder="Type a message..."
-				@keyup.enter="sendMessage"
-			/>
+						<!-- Remove Photo Button -->
+						<button
+							class="btn btn-sm btn-danger rounded-circle position-absolute"
+							style="
+								top: -5px;
+								right: -5px;
+								width: 20px;
+								height: 20px;
+								font-size: 12px;
+								padding: 0;
+							"
+							@click="selectedPhoto = null"
+						>
+							×
+						</button>
+					</div>
+				</div>
+
+				<input
+					v-else
+					v-model="newMessage"
+					type="text"
+					class="form-control border-0 bg-transparent w-100"
+					placeholder="Type a message..."
+					@keyup.enter="handleEnterPress"
+				/>
+			</div>
 			<button class="btn btn-primary ms-2" @click="sendMessage">
 				<img :src="SendIcon" alt="Send Message" width="24" />
 			</button>

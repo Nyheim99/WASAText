@@ -28,8 +28,6 @@ func (db *appdbimpl) GetOrCreatePrivateConversation(currentUserID, recipientID i
 	`, recipientID, currentUserID).Scan(&conversationID)
 
 	if err == sql.ErrNoRows {
-		// Step 2: No existing conversation; create a new one
-		fmt.Println("No existing conversation found, creating a new one...")
 		result, err := db.c.Exec(`
 			INSERT INTO conversations (conversation_type)
 			VALUES ('private')
