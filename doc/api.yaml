@@ -4,7 +4,7 @@ info:
   description: |-
     This document describes the API is for the 
     WASAText application.
-  version: 1.0.2
+  version: 1.0.3
 paths:
   /session:
     post:
@@ -46,10 +46,11 @@ paths:
           description: Server error occurred during login.
   /users:
     get:
-      operationId: getUsers
+      tags: ["users"]
       summary: Get a list of users
       description: |-
         Return a list of all users in the system.
+      operationId: getUsers
       responses:
         "200":
           description: List of users
@@ -63,10 +64,11 @@ paths:
 
   /user:
     get:
-      operationId: getUser
+      tags: ["user"]
       summary: get all the user's details
       description: |-
         Return the authenticated user's details.
+      operationId: getUser
       responses:
         "200":
           description: User details
@@ -83,10 +85,11 @@ paths:
 
   /user/username:
     put:
-      operationId: setMyUserName
+      tags: ["user"]
       summary: Update the user's username
       description: |-
         Updates the user's username as long as it is not already in use
+      operationId: setMyUserName
       requestBody:
         content:
           application/json:
@@ -124,9 +127,10 @@ paths:
 
   /user/photo:
     put:
-      operationId: setMyPhoto
+      tags: ["user"]
       summary: Upload or replace the user's profile picture
       description: Uploads a new profile picture for the user or replaces the existing one.
+      operationId: setMyPhoto
       requestBody:
         required: true
         content:
@@ -159,10 +163,11 @@ paths:
 
   /conversations:
     get:
-      operationId: getMyConversations
+      tags: ["conversations"]
       summary: Get all the user's conversations
       description: |-
         Return the list of all conversations the user is apart of
+      operationId: getMyConversations
       responses:
         "200":
           description: List of conversations
@@ -176,10 +181,11 @@ paths:
         "500":
           description: "Internal server error. Please try again later."
     post:
-      operationId: createConversation
+      tags: ["conversation"]
       summary: Create a new conversation or group
       description: |-
         Create a new conversation with someone or a new group
+      operationId: createConversation
       requestBody:
         content:
           application/json:
@@ -195,6 +201,7 @@ paths:
 
   /conversations/{conversationId}:
     get:
+      tags: ["conversation"]
       operationId: getConversation
       summary: Get conversation details
       description: |
@@ -241,10 +248,11 @@ paths:
 
   /conversations/{conversationId}/photo:
     put:
-      operationId: setGroupPhoto
+      tags: ["conversation"]
       summary: Upload or update a group's profile picture
       description: |-
         Uploads a new profile picture for a group conversation or replaces the existing one.
+      operationId: setGroupPhoto
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
@@ -281,10 +289,11 @@ paths:
 
   /conversations/{conversationId}/name:
     put:
-      operationId: setGroupName
+      tags: ["conversation"]
       summary: Update the group conversation name
       description: |-
         Updates the name of a group conversation.
+      operationId: setGroupName
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
@@ -322,13 +331,12 @@ paths:
 
   /conversations/{conversationId}/members:
     post:
-      operationId: addToGroup
+      tags: ["conversation"]
       summary: Add users to a group conversation
       description: |
         Adds new participants to an existing group conversation.
         The request must be sent by an existing member of the group.
-      tags:
-        - Conversations
+      operationId: addToGroup
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
@@ -375,13 +383,12 @@ paths:
           description: Internal server error
   /conversations/{conversationId}/members/me:
     delete:
-      operationId: leaveGroup
+      tags: ["conversation"]
       summary: Leave a group conversation
       description: |
         Allows a user to leave a group conversation. 
         If the group has only one participant remaining after this action, the group will be automatically deleted.
-      tags:
-        - Conversations
+      operationId: leaveGroup
       parameters:
         - $ref: "#/components/parameters/conversationId"
       responses:
@@ -413,13 +420,12 @@ paths:
 
   /conversations/{conversationId}/messages:
     post:
-      operationId: sendMessage
+      tags: ["message"]
       summary: Send a message in a conversation
       description: |
         Sends a message (either text or photo) in the specified conversation.
         Users can send a plain text message, a photo, or both.
-      tags:
-        - Messages
+      operationId: sendMessage
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
@@ -482,13 +488,12 @@ paths:
 
   /conversations/{conversationId}/messages/{messageId}:
     delete:
-      operationId: deleteMessage
+      tags: ["message"]
       summary: Soft delete a message in a conversation
       description: |
         Marks a message as deleted by setting `is_deleted = true` instead of permanently removing it.
         Only the sender of the message can delete it.
-      tags:
-        - Messages
+      operationId: deleteMessage
       parameters:
         - $ref: "#/components/parameters/conversationId"
         - $ref: "#/components/parameters/messageId"
