@@ -62,6 +62,8 @@ type AppDatabase interface {
 
 	SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error)
 	DeleteMessage(conversationID, messageID, userID int64) error
+	CommentMessage(messageID, userID int64, emoticon string) error
+	UncommentMessage(messageID, userID int64) error
 
 	Ping() error
 }
@@ -133,9 +135,10 @@ func New(db *sql.DB) (AppDatabase, error) {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			message_id INTEGER NOT NULL,
 			user_id INTEGER NOT NULL,
-			emoticon TEXT NOT NULL, -- Emoji reactions
+			emoticon TEXT NOT NULL,
 			FOREIGN KEY (message_id) REFERENCES messages(id),
-			FOREIGN KEY (user_id) REFERENCES users(id)
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			UNIQUE (message_id, user_id)
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (conversation_id, timestamp DESC);`,
 	}

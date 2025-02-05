@@ -1,0 +1,54 @@
+package api
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"github.com/Nyheim99/WASAText/service/api/reqcontext"
+	"github.com/julienschmidt/httprouter"
+)
+
+type commentMessageRequest struct {
+	Emoticon string `json:"emoticon"`
+}
+
+func (rt *_router) commentMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	messageIDStr := ps.ByName("messageID")
+	messageID, err := strconv.ParseInt(messageIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid message ID", http.StatusBadRequest)
+		return
+	}
+
+	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
+	if !ok || reqCtx == nil {
+		http.Error(w, "Request context missing", http.StatusInternalServerError)
+		return
+	}
+	userID := reqCtx.UserID
+
+	if userID <= 0 {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	var req commentMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Emoticon == "" {
+		http.Error(w, "Emoticon cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	err = rt.db.CommentMessage(messageID, userID, req.Emoticon)
+	if err != nil {
+		http.Error(w, "Failed to add reaction", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

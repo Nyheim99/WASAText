@@ -252,27 +252,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		return nil, fmt.Errorf("failed to retrieve conversation: %w", err)
 	}
 
-	if conversation.ConversationType == "group" {
-		rows, err := db.c.Query(`
-			SELECT users.id, users.username, users.photo_url
-			FROM conversation_participants
-			JOIN users ON conversation_participants.user_id = users.id
-			WHERE conversation_participants.conversation_id = ?`, conversationID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve participants: %w", err)
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			var participant User
-			if err := rows.Scan(&participant.ID, &participant.Username, &participant.PhotoURL); err != nil {
-				return nil, fmt.Errorf("failed to scan participant: %w", err)
-			}
-			conversation.Participants = append(conversation.Participants, participant)
-		}
-	}
-
-	// Fetch all messages in the conversation, including sender username and photo data
+	// Fetch messages
 	messageRows, err := db.c.Query(`
 		SELECT 
 			m.id, m.conversation_id, m.sender_id, u.username, 
@@ -319,6 +299,26 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		if photoMimeType.Valid {
 			msg.PhotoMimeType = &photoMimeType.String
 		}
+
+		// Fetch reactions for the message
+		reactionRows, err := db.c.Query(`
+			SELECT user_id, emoticon
+			FROM reactions
+			WHERE message_id = ?`, msg.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve reactions: %w", err)
+		}
+		defer reactionRows.Close()
+
+		reactions := []Reaction{}
+		for reactionRows.Next() {
+			var reaction Reaction
+			if err := reactionRows.Scan(&reaction.UserID, &reaction.Emoticon); err != nil {
+				return nil, fmt.Errorf("failed to scan reaction: %w", err)
+			}
+			reactions = append(reactions, reaction)
+		}
+		msg.Reactions = reactions
 
 		messages = append(messages, msg)
 	}

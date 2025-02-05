@@ -82,3 +82,31 @@ func (db *appdbimpl) DeleteMessage(conversationID, messageID, userID int64) erro
 
 	return nil
 }
+
+func (db *appdbimpl) CommentMessage(messageID, userID int64, emoticon string) error {
+	_, err := db.c.Exec(`
+		INSERT INTO reactions (message_id, user_id, emoticon)
+		VALUES (?, ?, ?)
+		ON CONFLICT (message_id, user_id) 
+		DO UPDATE SET emoticon = excluded.emoticon
+	`, messageID, userID, emoticon)
+
+	if err != nil {
+		return fmt.Errorf("failed to add reaction: %w", err)
+	}
+
+	return nil
+}
+
+func (db *appdbimpl) UncommentMessage(messageID, userID int64) error {
+	_, err := db.c.Exec(`
+		DELETE FROM reactions WHERE message_id = ? AND user_id = ?
+	`, messageID, userID)
+
+	if err != nil {
+		return fmt.Errorf("failed to remove reaction: %w", err)
+	}
+
+	return nil
+}
+

@@ -64,6 +64,15 @@ export default {
 
 		const contextMenu = ref({ visible: false, x: 0, y: 0, message: null });
 
+		const reactionPicker = ref({
+			visible: false,
+			x: 0,
+			y: 0,
+			message: null,
+		});
+		const availableReactions = ["👍", "😂", "❤️", "🔥", "😢"];
+		let activePopover = null;
+
 		const conversationPhoto = () => {
 			if (props.conversation.display_photo_url?.startsWith("/")) {
 				return `${__API_URL__}${props.conversation.display_photo_url}?t=${cacheBuster.value}`;
@@ -135,6 +144,10 @@ export default {
 		};
 
 		const getUsername = (userId) => {
+			if (userId === props.user.id) {
+				return props.user.username;
+			}
+
 			const user = props.allUsers.find((user) => user.id === userId);
 			return user ? user.username : "Unknown";
 		};
@@ -492,19 +505,155 @@ export default {
 		};
 
 		const showContextMenu = (event, message) => {
-			if (message.is_deleted || message.sender_id !== props.user.id)
+			if (message.is_deleted) {
 				return;
+			}
+			event.preventDefault();
+			event.stopPropagation();
+
+			const menuWidth = 75;
+
+			let x = event.clientX;
+			let y = event.clientY;
+
+			if (message.sender_id === props.user.id) {
+				x -= menuWidth;
+			}
 
 			contextMenu.value = {
 				visible: true,
-				x: event.clientX,
-				y: event.clientY,
+				x,
+				y,
+				message,
+				canDelete: message.sender_id === props.user.id,
+			};
+		};
+
+		const showReactionPicker = (event, message) => {
+			event.preventDefault();
+			event.stopPropagation();
+
+			const pickerWidth = 200;
+			const pickerHeight = 50;
+
+			let x = event.clientX;
+			let y = event.clientY;
+
+			const viewportWidth = window.innerWidth;
+			const viewportHeight = window.innerHeight;
+
+			if (x + pickerWidth > viewportWidth) {
+				x = viewportWidth - pickerWidth - 15;
+			}
+
+			if (y + pickerHeight > viewportHeight) {
+				y = viewportHeight - pickerHeight - 10;
+			}
+
+			reactionPicker.value = {
+				visible: true,
+				x,
+				y,
 				message,
 			};
+
+			contextMenu.value.visible = false;
+		};
+
+		const toggleReaction = async (message, emoji) => {
+			try {
+				const userReaction = message.reactions?.find(
+					(r) => r.user_id === props.user.id
+				);
+
+				if (userReaction?.emoticon === emoji) {
+					// If user already reacted with this emoji → remove reaction
+					await axios.delete(
+						`/conversations/${props.conversation.conversation_id}/messages/${message.id}/reactions/me`
+					);
+					message.reactions = message.reactions.filter(
+						(r) => r.user_id !== props.user.id
+					);
+				} else {
+					// Otherwise → add/update reaction
+					await axios.post(
+						`/conversations/${props.conversation.conversation_id}/messages/${message.id}/reactions`,
+						{ emoticon: emoji }
+					);
+					// Update the local message object optimistically
+					message.reactions = message.reactions.filter(
+						(r) => r.user_id !== props.user.id
+					);
+					message.reactions.push({
+						user_id: props.user.id,
+						emoticon: emoji,
+					});
+				}
+			} catch (error) {
+				console.error("Error toggling reaction:", error);
+			} finally {
+				reactionPicker.value.visible = false;
+			}
+		};
+
+		const groupReactions = (reactions) => {
+			const grouped = {};
+			reactions.forEach((reaction) => {
+				if (grouped[reaction.emoticon]) {
+					grouped[reaction.emoticon] += 1;
+				} else {
+					grouped[reaction.emoticon] = 1;
+				}
+			});
+			return grouped;
+		};
+
+		const showReactionDetails = (event, message) => {
+			if (activePopover) {
+				activePopover.dispose();
+				activePopover = null;
+			}
+
+			const reactionList = message.reactions
+				.map(
+					(r) => `
+            <div style="display: flex; align-items: center; gap: 30px;">
+                <span style="flex-grow: 1; text-align: left;">${getUsername(
+					r.user_id
+				)}</span>
+                <span style="font-size: 20px;">${r.emoticon}</span>
+            </div>
+        `
+				)
+				.join("");
+
+			const popoverContent =
+				reactionList.length > 0
+					? reactionList
+					: "<div>No reactions yet</div>";
+
+			const popover = new bootstrap.Popover(event.currentTarget, {
+				content: popoverContent,
+				html: true,
+				trigger: "manual",
+				placement: "top",
+				sanitize: false,
+			});
+
+			popover.show();
+			activePopover = popover;
 		};
 
 		document.addEventListener("click", () => {
 			contextMenu.value.visible = false;
+			reactionPicker.value.visible = false;
+			if (
+				activePopover &&
+				!event.target.closest("[data-bs-toggle='popover']")
+			) {
+				activePopover.dispose();
+				activePopover = null;
+			}
 		});
 
 		return {
@@ -541,9 +690,15 @@ export default {
 			handleEnterPress,
 			contextMenu,
 			showContextMenu,
+			reactionPicker,
+			availableReactions,
+			showReactionPicker,
+			toggleReaction,
+			showReactionDetails,
 			deleteMessage,
 			messageContainer,
 			scrollToBottom,
+			groupReactions,
 		};
 	},
 };
@@ -560,9 +715,7 @@ export default {
 					style="width: 50px; height: 50px; object-fit: cover"
 				/>
 				<h2 class="px-2 mb-0">
-					{{ conversation.display_name }} ({{
-						conversation.conversation_id
-					}})
+					{{ conversation.display_name }}
 				</h2>
 			</div>
 
@@ -606,7 +759,6 @@ export default {
 		<!-- Context Menu -->
 		<div
 			v-if="contextMenu.visible"
-			@click="deleteMessage(contextMenu.message)"
 			:style="{
 				position: 'absolute',
 				background: 'white',
@@ -620,7 +772,59 @@ export default {
 				left: contextMenu.x + 'px',
 			}"
 		>
-			Delete Message
+			<div @click="showReactionPicker($event, contextMenu.message)">
+				React
+			</div>
+			<hr class="my-2" v-if="contextMenu.canDelete" />
+			<div
+				v-if="contextMenu.canDelete"
+				@click="deleteMessage(contextMenu.message)"
+				class="text-danger"
+			>
+				Delete
+			</div>
+		</div>
+
+		<!-- Reaction Picker -->
+		<div
+			v-if="reactionPicker.visible"
+			:style="{
+				position: 'absolute',
+				background: 'white',
+				border: '1px solid #ccc',
+				padding: '5px 10px',
+				borderRadius: '5px',
+				boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.2)',
+				cursor: 'pointer',
+				zIndex: '1000',
+				top: reactionPicker.y + 'px',
+				left: reactionPicker.x + 'px',
+				display: 'flex',
+				gap: '8px',
+			}"
+		>
+			<span
+				v-for="emoji in availableReactions"
+				:key="emoji"
+				@click="toggleReaction(reactionPicker.message, emoji)"
+				:style="{
+					fontSize: '20px',
+					cursor: 'pointer',
+					width: '28px',
+					height: '28px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					borderRadius: '50%',
+					backgroundColor: reactionPicker.message?.reactions?.some(
+						(r) => r.user_id === user.id && r.emoticon === emoji
+					)
+						? '#ddd'
+						: 'transparent',
+				}"
+			>
+				{{ emoji }}
+			</span>
 		</div>
 
 		<div
@@ -630,13 +834,13 @@ export default {
 			<div
 				v-for="message in messages"
 				:key="message.id"
-				class="d-flex align-items-start mb-2"
-				@contextmenu.prevent="showContextMenu($event, message)"
+				class="d-flex align-items-start"
 				:style="{
 					justifyContent:
 						message.sender_id === user.id
 							? 'flex-end'
 							: 'flex-start',
+					marginBottom: message.reactions.length > 0 ? '26px' : '5px',
 				}"
 				style="position: relative"
 			>
@@ -657,6 +861,7 @@ export default {
 				<!-- Message Bubble -->
 				<div
 					class="p-2 rounded shadow-sm position-relative"
+					@contextmenu.prevent="showContextMenu($event, message)"
 					:style="{
 						backgroundColor:
 							message.sender_id === user.id
@@ -681,7 +886,7 @@ export default {
 						style="
 							font-weight: bold;
 							margin-bottom: 2px;
-							font-size: 14px;
+							font-size: 16px;
 						"
 					>
 						{{ message.sender_username }}
@@ -693,8 +898,9 @@ export default {
 						v-else
 						style="
 							display: flex;
-							flex-direction: column;
+							flex-direction: row;
 							position: relative;
+							gap: 10px;
 						"
 					>
 						<p
@@ -733,6 +939,61 @@ export default {
 						>
 							{{ formatTimestamp(message.timestamp) }}
 						</small>
+					</div>
+
+					<!-- Reactions under messages -->
+					<div
+						v-if="message.reactions && message.reactions.length"
+						:style="{
+							position: 'absolute',
+							bottom: '-20px',
+							left:
+								message.sender_id !== user.id ? '8px' : 'auto',
+							right:
+								message.sender_id === user.id ? '8px' : 'auto',
+							background: 'white',
+							padding: '3px 6px',
+							borderRadius: '15px',
+							boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+							fontSize: '14px',
+							cursor: 'pointer',
+							zIndex: 100,
+							display: 'flex',
+							alignItems: 'center',
+							gap: '10px',
+						}"
+						tabindex="0"
+						role="button"
+						data-bs-toggle="popover"
+						@click="showReactionDetails($event, message)"
+					>
+						<span
+							v-for="(count, emoji) in groupReactions(
+								message.reactions
+							)"
+							:key="emoji"
+							:style="{
+								display: 'inline-flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								width: '20px',
+								height: '20px',
+								fontSize: '16px',
+								borderRadius: '50%',
+								padding: '4px',
+							}"
+						>
+							{{ emoji }}
+							<span
+								v-if="count > 1"
+								:style="{
+									fontSize: '12px',
+									marginLeft: '6px',
+									color: '#555',
+								}"
+								>{{ count }}</span
+							>
+						</span>
 					</div>
 				</div>
 			</div>
