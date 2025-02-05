@@ -323,7 +323,7 @@ export default {
 		const handleLeaveGroup = async () => {
 			try {
 				await axios.delete(
-					`/conversations/${props.conversation.conversation_id}/leave`
+					`/conversations/${props.conversation.conversation_id}/members/me`
 				);
 
 				emit("group-left", props.conversation.conversation_id);
@@ -358,7 +358,7 @@ export default {
 
 			try {
 				const response = await axios.post(
-					`/conversations/${props.conversation.conversation_id}/messages/send`,
+					`/conversations/${props.conversation.conversation_id}/messages`,
 					formData,
 					{ headers: { "Content-Type": "multipart/form-data" } }
 				);
@@ -386,7 +386,7 @@ export default {
 
 			try {
 				const response = await axios.delete(
-					`/conversations/${props.conversation.conversation_id}/messages/${message.id}/delete`
+					`/conversations/${props.conversation.conversation_id}/messages/${message.id}`
 				);
 
 				console.log("Deleted message in Conversation: ", response.data);

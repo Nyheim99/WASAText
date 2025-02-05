@@ -376,7 +376,7 @@ paths:
           description: Conversation not found
         "500":
           description: Internal server error
-  /conversations/{conversationId}/leave:
+  /conversations/{conversationId}/members/me:
     delete:
       operationId: leaveGroup
       summary: Leave a group conversation
@@ -414,7 +414,7 @@ paths:
         "500":
           description: Internal server error
 
-  /conversations/{conversationId}/messages/send:
+  /conversations/{conversationId}/messages:
     post:
       operationId: sendMessage
       summary: Send a message in a conversation
@@ -483,7 +483,7 @@ paths:
         "500":
           description: Internal server error.
 
-  /conversations/{conversationId}/messages/{messageId}/delete:
+  /conversations/{conversationId}/messages/{messageId}:
     delete:
       operationId: deleteMessage
       summary: Soft delete a message in a conversation
