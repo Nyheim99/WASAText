@@ -102,28 +102,16 @@ paths:
                   maxLength: 16
                   pattern: "^[a-zA-Z0-9]*$"
                   example: Marco
-              required:
-                - username
+        required: true
       responses:
-        "200":
+        "204":
           description: Username updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  username:
-                    type: string
         "400":
-          description: Invalid input.
-        "404":
-          description: User not found.
+          description: Invalid input
         "409":
-          description: Username already in use.
+          description: Username already in use
         "500":
-          description: "Internal server error. Please try again later."
+          description: Internal server error
 
   /user/photo:
     put:
@@ -132,7 +120,6 @@ paths:
       description: Uploads a new profile picture for the user or replaces the existing one.
       operationId: setMyPhoto
       requestBody:
-        required: true
         content:
           multipart/form-data:
             schema:
@@ -142,6 +129,7 @@ paths:
                   type: string
                   format: binary
                   description: The profile picture to be uploaded.
+        required: true
       responses:
         "200":
           description: Profile picture uploaded successfully

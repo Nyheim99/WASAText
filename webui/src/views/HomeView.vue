@@ -32,12 +32,10 @@ export default {
 		};
 
 		const fetchUsers = async () => {
-			const userId = localStorage.getItem("userId");
-
 			try {
 				const response = await axios.get("/users");
 				allUsers.value = response.data.filter(
-					(u) => u.id !== Number(userId)
+					(u) => u.id !== user.id
 				);
 			} catch (error) {
 				console.error("Failed to fetch users:", error);
@@ -90,10 +88,9 @@ export default {
 
 		const updateUsername = async (newUsername) => {
 			try {
-				const response = await axios.put("/user/username", {
+				await axios.put("/user/username", {
 					username: newUsername,
 				});
-				console.log("Username updated successfully:", response.data);
 				feedbackMessage.value = "Username updated successfully!";
 				showFeedback.value = true;
 
