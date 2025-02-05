@@ -113,9 +113,6 @@ paths:
                     type: string
                   username:
                     type: string
-          example:
-            message: Username updated successfully
-            username: Marco
         "400":
           description: Invalid input.
         "404":
@@ -547,7 +544,7 @@ components:
         photo_url:
           description: "URL of user's profile picture"
           type: string
-          example: "https://example.com/photo.jpg"
+          example: "https://url.com/photo.jpg"
     Message:
       title: Message
       description: "This object represents a single message"
@@ -640,7 +637,7 @@ components:
         photo_url:
           description: "Url of the group's picture"
           type: string
-          example: "https://example.com/photo.jpg"
+          example: "https://url.com/photo.jpg"
 
   parameters:
     userId:
