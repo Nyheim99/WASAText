@@ -130,7 +130,6 @@ type ConversationPreview struct {
 	LastMessageIsDeleted bool    `json:"last_message_is_deleted"`
 }
 
-
 // GetMyConversations retrieves a list of conversations for a given user, sorted by the latest message timestamp.
 func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, error) {
 	query := `
@@ -170,7 +169,8 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 		WHERE 
 			cp.user_id = ?
 		ORDER BY 
-			m.timestamp DESC;
+    	m.timestamp DESC
+		LIMIT 50;
 	`
 
 	rows, err := db.c.Query(query, userID, userID)
@@ -200,7 +200,7 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 			&conversation.LastMessageTimestamp,
 			&lastMessageSenderID,
 			&lastMessageSender,
-			&lastMessageIsDeleted, // Scan the deleted status
+			&lastMessageIsDeleted,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan conversation row: %w", err)
 		}
@@ -208,7 +208,7 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 		conversation.LastMessageHasPhoto = lastMessageHasPhoto == 1
 		conversation.LastMessageIsDeleted = lastMessageIsDeleted == 1
 		conversation.LastMessageID = lastMessageID
-		
+
 		if lastMessageSenderID.Valid {
 			conversation.LastMessageSenderID = lastMessageSenderID.Int64
 		}
@@ -224,13 +224,12 @@ func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, er
 	return conversations, nil
 }
 
-
 type ConversationDetails struct {
-	ConversationID   int64  `json:"conversation_id"`
-	ConversationType string `json:"conversation_type"`
-	DisplayName      string `json:"display_name"`
-	PhotoURL         string `json:"display_photo_url"`
-	Participants     []User `json:"participants,omitempty"`
+	ConversationID   int64     `json:"conversation_id"`
+	ConversationType string    `json:"conversation_type"`
+	DisplayName      string    `json:"display_name"`
+	PhotoURL         string    `json:"display_photo_url"`
+	Participants     []User    `json:"participants,omitempty"`
 	Messages         []Message `json:"messages,omitempty"`
 }
 
@@ -326,7 +325,6 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	conversation.Messages = messages
 	return &conversation, nil
 }
-
 
 func (db *appdbimpl) AddToGroup(conversationID int64, newParticipants []int64) error {
 	if len(newParticipants) == 0 {
@@ -424,4 +422,3 @@ func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
 
 	return nil
 }
- 

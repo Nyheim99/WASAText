@@ -263,20 +263,18 @@ export default {
 
 <template>
 	<div class="rounded shadow-sm bg-white p-3 overflow-auto h-100">
-		<div class="container mb-3">
-			<div class="row">
-				<div class="d-flex justify-content-between align-items-center">
-					<h5 class="mb-0" style="line-height: 1.5">Conversations</h5>
-					<button
-						class="btn btn-light p-1 d-flex align-items-center justify-content-center"
-						type="button"
-						data-bs-toggle="modal"
-						data-bs-target="#newConversationModal"
-						style="width: 24px; height: 24px"
-					>
-						<img :src="WriteIcon" alt="New Conversation" />
-					</button>
-				</div>
+		<div class="container mb-3 row">
+			<div class="d-flex justify-content-between align-items-center">
+				<h5 class="mb-0" style="line-height: 1.5">Conversations</h5>
+				<button
+					class="btn btn-light p-1 d-flex align-items-center justify-content-center"
+					type="button"
+					data-bs-toggle="modal"
+					data-bs-target="#newConversationModal"
+					style="width: 24px; height: 24px"
+				>
+					<img :src="WriteIcon" alt="New Conversation" />
+				</button>
 			</div>
 		</div>
 
@@ -526,7 +524,13 @@ export default {
 		</div>
 
 		<div>
+			<div v-if="conversations.length === 0">
+				<p>
+					You have no chats, click the button above to start chatting!
+				</p>
+			</div>
 			<div
+				v-else
 				v-for="conversation in conversations"
 				:key="conversation.conversation_id"
 				class="container d-flex align-items-center p-2 border-bottom"
@@ -558,11 +562,11 @@ export default {
 					>
 						<i
 							>{{
-								conversation.last_message_sender_id ===
-								user.id
+								conversation.last_message_sender_id === user.id
 									? "You"
 									: conversation.last_message_sender
-							}} deleted a message</i
+							}}
+							deleted a message</i
 						>
 					</span>
 					<p v-else class="mb-0 text-muted" style="font-size: 0.8rem">

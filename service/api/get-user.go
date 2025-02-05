@@ -28,5 +28,6 @@ func (rt *_router) getUser(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(user)
 }

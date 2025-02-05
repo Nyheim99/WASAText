@@ -5,7 +5,7 @@ info:
     This document describes the API is for the 
     WASAText application.
   version: 1.0.3
-  
+
 paths:
   /session:
     post:
@@ -165,13 +165,12 @@ paths:
             application/json:
               schema:
                 type: array
-                minItems: 1
+                minItems: 0
                 maxItems: 50
-                items: { $ref: "#/components/schemas/Conversation" }
-        "401":
-          description: "Unauthorized"
+                items: { $ref: "#/components/schemas/ConversationPreview" }
+              example: []
         "500":
-          description: "Internal server error. Please try again later."
+          description: Internal server error
     post:
       tags: ["conversation"]
       summary: Create a new conversation or group
@@ -618,34 +617,67 @@ components:
           description: "ID of the user who commented"
           type: integer
           example: 2
-    Conversation:
-      title: Conversation
-      description: "This object represents a conversation between two users"
+    ConversationPreview:
+      title: ConversationPreview
+      description: "This object represents a preview of a conversation for listing"
       type: object
       properties:
         conversation_id:
           description: "Unique conversation identifier"
           type: integer
           example: 1
-        name:
-          description: "Name of the group"
-          type: string
-          example: "WASA Co-Students"
-          maxLength: 20
         conversation_type:
-          description: |-
-            Indicates wether conversation is a group or private conversation
+          description: "Indicates whether the conversation is a group or private conversation"
           type: string
           enum: ["group", "private"]
           example: "group"
+        display_name:
+          description: "The name displayed for the conversation (group name or other user's name)"
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: "^[a-zA-Z0-9]*$"
+          example: "WASA Co-Students"
+        display_photo_url:
+          description: "URL of the display photo for the conversation (group photo or other user's profile picture)"
+          type: string
+          format: uri
+          example: "https://url.com/photo.jpg"
         last_message_id:
-          description: "Id of last message in conversation"
+          description: "ID of last message in the conversation"
           type: integer
           example: 789
-        photo_url:
-          description: "Url of the group's picture"
+        last_message_content:
+          description: "Content of the last message in the conversation"
           type: string
-          example: "https://url.com/photo.jpg"
+          nullable: true
+          minLength: 1
+          maxLength: 1000
+          example: "Hey, how are you?"
+        last_message_has_photo:
+          description: "Indicates if the last message contains a photo"
+          type: boolean
+          example: true
+        last_message_timestamp:
+          description: "Timestamp of the last message"
+          type: string
+          format: date-time
+          example: "2024-02-05T12:00:00Z"
+        last_message_sender_id:
+          description: "ID of the user who sent the last message"
+          type: integer
+          example: 2
+        last_message_sender:
+          description: "Username of the last message sender"
+          type: string
+          minLength: 3
+          maxLength: 16
+          pattern: "^[a-zA-Z0-9]*$"
+          example: "Alice"
+        last_message_is_deleted:
+          description: "Indicates if the last message was deleted"
+          type: boolean
+          example: false
 
   parameters:
     userId:
