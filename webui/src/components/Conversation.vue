@@ -39,7 +39,7 @@ export default {
 		"group-members-updated",
 		"group-left",
 		"message-sent",
-		"message-deleted"
+		"message-deleted",
 	],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
@@ -60,6 +60,7 @@ export default {
 		const messages = computed(
 			() => props.conversationDetails?.messages || []
 		);
+		const messageContainer = ref(null);
 
 		const contextMenu = ref({ visible: false, x: 0, y: 0, message: null });
 
@@ -196,7 +197,10 @@ export default {
 				);
 				props.conversationDetails.participants =
 					response.data.participants;
-				console.log("Updated conversation details in Conversation:", response.data);
+				console.log(
+					"Updated conversation details in Conversation:",
+					response.data
+				);
 			} catch (error) {
 				console.error(
 					"Failed to fetch updated conversation details:",
@@ -385,7 +389,7 @@ export default {
 					`/conversations/${props.conversation.conversation_id}/messages/${message.id}/delete`
 				);
 
-				console.log("Deleted message in Conversation: ", response.data)
+				console.log("Deleted message in Conversation: ", response.data);
 
 				message.is_deleted = true;
 				message.content = null;
@@ -453,6 +457,22 @@ export default {
 				hour12: false,
 			});
 		};
+
+		const scrollToBottom = () => {
+			nextTick(() => {
+				if (messageContainer.value) {
+					messageContainer.value.scrollTop =
+						messageContainer.value.scrollHeight;
+				}
+			});
+		};
+
+		watch(
+			() => messages.value.length,
+			() => {
+				scrollToBottom();
+			}
+		);
 
 		watch(
 			() => props.conversationDetails,
@@ -522,6 +542,8 @@ export default {
 			contextMenu,
 			showContextMenu,
 			deleteMessage,
+			messageContainer,
+			scrollToBottom,
 		};
 	},
 };
@@ -601,7 +623,10 @@ export default {
 			Delete Message
 		</div>
 
-		<div class="flex-grow-1 overflow-auto p-3 d-flex flex-column">
+		<div
+			class="flex-grow-1 overflow-auto p-3 d-flex flex-column"
+			ref="messageContainer"
+		>
 			<div
 				v-for="message in messages"
 				:key="message.id"
