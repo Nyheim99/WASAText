@@ -69,8 +69,7 @@ paths:
     get:
       tags: ["user"]
       summary: get all the user's details
-      description: |-
-        Return the authenticated user's details.
+      description: Return the authenticated user's details.
       operationId: getUser
       responses:
         "200":
@@ -79,12 +78,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-        "401":
-          description: "Unauthorized"
         "404":
           description: "User not found"
         "500":
-          description: "Internal server error. Please try again later."
+          description: "Internal server error"
 
   /user/username:
     put:
@@ -560,6 +557,9 @@ components:
         photo_url:
           description: "URL of user's profile picture"
           type: string
+          format: uri
+          minLength: 10
+          maxLength: 2048
           example: "https://url.com/photo.jpg"
     Message:
       title: Message
