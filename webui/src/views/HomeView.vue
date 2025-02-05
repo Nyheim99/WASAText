@@ -34,9 +34,7 @@ export default {
 		const fetchUsers = async () => {
 			try {
 				const response = await axios.get("/users");
-				allUsers.value = response.data.filter(
-					(u) => u.id !== user.id
-				);
+				allUsers.value = response.data.filter((u) => u.id !== user.id);
 			} catch (error) {
 				console.error("Failed to fetch users:", error);
 			}
@@ -112,6 +110,29 @@ export default {
 			}
 		};
 
+		const updatePhoto = async (file) => {
+			const formData = new FormData();
+			formData.append("photo", file);
+
+			try {
+				const response = await axios.put("/user/photo", formData, {
+					headers: { "Content-Type": "multipart/form-data" },
+				});
+
+				console.log("Profile picture updated:", response.data);
+				user.value.photo_url = response.data.photo_url;
+				return true;
+			} catch (error) {
+				console.error(
+					"Failed to update profile picture:",
+					error.response?.data || error.message
+				);
+				return {
+					error: "Failed to upload profile picture.",
+				};
+			}
+		};
+
 		const addNewConversation = async () => {
 			try {
 				await fetchConversations();
@@ -133,30 +154,6 @@ export default {
 
 			if (conversations.value.length > 0) {
 				selectConversation(conversations.value[0]);
-			}
-		};
-
-		const updatePhoto = async (file) => {
-			const formData = new FormData();
-			formData.append("photo", file);
-
-			try {
-				const response = await axios.put("/user/photo", formData, {
-					headers: { "Content-Type": "multipart/form-data" },
-				});
-
-				console.log("Profile picture updated:", response.data);
-				user.value.photo_url = response.data.photo_url;
-				return { success: true };
-			} catch (error) {
-				console.error(
-					"Failed to update profile picture:",
-					error.response?.data || error.message
-				);
-				return {
-					success: false,
-					error: "Failed to upload profile picture.",
-				};
 			}
 		};
 
@@ -209,18 +206,18 @@ export default {
 		const updateConversationWithNewMessage = (payload) => {
 			const { conversationId, lastMessage } = payload;
 
-			console.log(lastMessage)
+			console.log(lastMessage);
 
-			fetchConversations()
+			fetchConversations();
 			fetchConversationDetails(conversationId);
 		};
 
 		const updateConversationWithDeletedMessage = (payload) => {
 			const { conversationId, deletedMessage } = payload;
 
-			console.log(deletedMessage)
+			console.log(deletedMessage);
 
-			fetchConversations()
+			fetchConversations();
 			fetchConversationDetails(conversationId);
 		};
 

@@ -5,6 +5,7 @@ info:
     This document describes the API is for the 
     WASAText application.
   version: 1.0.3
+  
 paths:
   /session:
     post:
@@ -44,6 +45,7 @@ paths:
           description: Invalid username
         "500":
           description: Server error occurred during login.
+
   /users:
     get:
       tags: ["users"]
@@ -138,16 +140,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: Profile picture uploaded successfully
                   photo_url:
                     type: string
+                    format: uri
+                    minLength: 10
+                    maxLength: 2048
                     example: /service/profile_pictures/user_1.jpg
         "400":
           description: Invalid file upload
         "500":
-          description: Server error occurred
+          description: Internal server error
 
   /conversations:
     get:

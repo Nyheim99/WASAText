@@ -14,16 +14,14 @@ import (
 )
 
 func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	// Parse the user from the request context
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
-		http.Error(w, "Request context missing", http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	userID := reqCtx.UserID
 
-	// Parse multipart form
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "Invalid file upload", http.StatusBadRequest)
@@ -35,56 +33,49 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 		http.Error(w, "Invalid file upload", http.StatusBadRequest)
 		return
 	}
+
 	defer file.Close()
 
-	// Validate file type
 	allowedExtensions := map[string]bool{".jpg": true, ".jpeg": true, ".png": true}
 	fileExt := strings.ToLower(filepath.Ext(handler.Filename))
 	if !allowedExtensions[fileExt] {
-		http.Error(w, "Invalid file type. Only JPG and PNG are allowed", http.StatusBadRequest)
+		http.Error(w, "Invalid file upload", http.StatusBadRequest)
 		return
 	}
 
-	// Define file save path
 	fileName := fmt.Sprintf("user_%d%s", userID, fileExt)
 	savePath := filepath.Join("service/photos/users", fileName)
 
-	// Ensure directory exists
 	err = os.MkdirAll("service/photos/users", os.ModePerm)
 	if err != nil {
-		http.Error(w, "Server error: unable to create directory", http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	// Save the new file
 	out, err := os.Create(savePath)
 	if err != nil {
-		http.Error(w, "Server error: unable to save file", http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, file)
 	if err != nil {
-		http.Error(w, "Server error: unable to save file", http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	// Update the photo URL in the database
 	photoURL := fmt.Sprintf("/service/photos/users/%s", fileName)
 
 	err = rt.db.SetMyPhoto(userID, photoURL)
 	if err != nil {
-		http.Error(w, "Failed to update profile picture", http.StatusInternalServerError)
-		fmt.Println("Database error:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	// Respond with success
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
-		"message":  "Profile picture uploaded successfully",
 		"photo_url": photoURL,
 	})
 }

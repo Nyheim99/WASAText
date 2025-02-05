@@ -84,7 +84,7 @@ export default {
       const response = await props.updatePhoto(file);
       uploading.value = false;
 
-      if (response.success) {
+      if (response === true) {
 				cacheBuster.value = Date.now();
         const modal = document.getElementById("photoModal");
         const bootstrapModal = bootstrap.Modal.getInstance(modal);
