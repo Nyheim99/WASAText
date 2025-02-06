@@ -92,6 +92,7 @@ paths:
         Updates the user's username as long as it is not already in use
       operationId: setMyUserName
       requestBody:
+        description: The new username
         content:
           application/json:
             schema:
@@ -121,6 +122,7 @@ paths:
       description: Uploads a new profile picture for the user or replaces the existing one.
       operationId: setMyPhoto
       requestBody:
+        description: the new profile picture
         content:
           multipart/form-data:
             schema:
@@ -175,6 +177,8 @@ paths:
         Create a new private conversation with a user or a new group conversation.
       operationId: createConversation
       requestBody:
+        description: Conversation details
+        required: true
         content:
           multipart/form-data:
             schema:
@@ -291,6 +295,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
+        description: New group name
         required: true
         content:
           application/json:
@@ -330,6 +335,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
+        description: New group picture
         required: true
         content:
           multipart/form-data:
@@ -368,6 +374,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
+        description: List of new group members
         required: true
         content:
           application/json:
@@ -443,6 +450,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
+        description: message to be sent
         required: true
         content:
           multipart/form-data:
