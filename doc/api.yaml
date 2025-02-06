@@ -347,6 +347,7 @@ paths:
                   type: string
                   minLength: 3
                   maxLength: 20
+                  pattern: "^[a-zA-Z0-9 ]*$"
                   example: "Study Group"
       responses:
         "200":
@@ -354,20 +355,15 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Group name updated successfully
-                  name:
-                    type: string
-                    example: "Study Group"
+                type: string
+                minLength: 3
+                maxLength: 20
+                pattern: "^[a-zA-Z0-9 ]*$"
+                example: "Study Group"
         "400":
-          description: Invalid input.
-        "404":
-          description: Group conversation not found.
+          description: Invalid request
         "500":
-          description: "Internal server error. Please try again later."
+          description: Internal server error
 
   /conversations/{conversationId}/members:
     post:
@@ -624,7 +620,7 @@ components:
           maxLength: 1000
           pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
           example: "Hello guys!"
-        conversation_id: 
+        conversation_id:
           description: "Id of conversation message belongs in"
           type: integer
           example: 1

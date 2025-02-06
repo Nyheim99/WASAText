@@ -223,17 +223,7 @@ export default {
 		};
 
 		const handleUpdateGroupName = async () => {
-			if (!newGroupName.value.trim()) {
-				validationMessage.value = "Group name cannot be empty.";
-				return;
-			}
-
-			if (
-				newGroupName.value.length < 3 ||
-				newGroupName.value.length > 20
-			) {
-				validationMessage.value =
-					"Group name must be between 3 and 20 characters.";
+			if (!validateGroupName(newGroupName.value.trim())) {
 				return;
 			}
 
@@ -247,13 +237,11 @@ export default {
 					}
 				);
 
-				console.log("Group name updated:", response.data);
-
-				props.conversation.display_name = response.data.name;
+				props.conversation.display_name = response.data;
 
 				emit("group-name-updated", {
 					conversationId: props.conversation.conversation_id,
-					newName: response.data.name,
+					newName: response.data,
 				});
 
 				const modal = document.getElementById("groupNameModal");
@@ -274,6 +262,20 @@ export default {
 			} finally {
 				updatingName.value = false;
 			}
+		};
+
+		const validateGroupName = (groupname) => {
+			if (groupname.length < 3 || groupname.length > 20) {
+				validationMessage.value =
+					"Group name must be between 3 and 20 characters long.";
+				return false;
+			}
+			if (!/^[a-zA-Z0-9 ]*$/.test(groupname)) {
+				validationMessage.value =
+					"Group name can only contain alphanumeric characters.";
+				return false;
+			}
+			return true;
 		};
 
 		const handleUpdateGroupPhoto = async () => {
