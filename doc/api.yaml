@@ -78,8 +78,7 @@ paths:
           description: User details
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/User"
+              schema: { $ref: "#/components/schemas/User" }
         "404":
           description: "User not found"
         "500":
@@ -268,15 +267,13 @@ paths:
                     minLength: 1
                     maxLength: 1000
                     description: List of messages in conversation
-                    items:
-                      $ref: "#/components/schemas/Message"
+                    items: { $ref: "#/components/schemas/Message" }
                   participants:
                     type: array
                     minLength: 2
                     maxLength: 100
                     description: List of participants (only for group conversations)
-                    items:
-                      $ref: "#/components/schemas/User"
+                    items: { $ref: "#/components/schemas/User" }
         "400":
           description: Invalid conversation ID
         "404":
@@ -403,7 +400,8 @@ paths:
       summary: Leave a group conversation
       description: |
         Allows a user to leave a group conversation. 
-        If the group has only one participant remaining after this action, the group will be automatically deleted.
+        If the group has only one participant remaining after this action, 
+        the group will be automatically deleted.
       operationId: leaveGroup
       parameters:
         - $ref: "#/components/parameters/conversationId"
@@ -639,8 +637,7 @@ components:
           type: array
           minItems: 0
           maxItems: 100
-          items:
-            $ref: "#/components/schemas/Reaction"
+          items: { $ref: "#/components/schemas/Reaction" }
     Reaction:
       title: Reaction
       description: "Represents a single reaction to a message"
