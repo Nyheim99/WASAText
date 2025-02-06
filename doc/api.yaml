@@ -391,7 +391,7 @@ paths:
                   example: [3, 4, 5]
       responses:
         "204":
-          description: Successfully added users to the group conversation.
+          description: Successfully added users to the group conversation
         "400":
           description: Invalid request
         "403":
@@ -413,27 +413,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/conversationId"
       responses:
-        "200":
-          description: Successfully left the group conversation.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  conversation_id:
-                    type: integer
-                    description: Unique identifier of the conversation
-                    example: 10
-                  status:
-                    type: string
-                    description: Confirmation message
-                    example: "User successfully left the group"
+        "204":
+          description: Successfully left the group conversation
         "400":
-          description: |
-            - Invalid conversation ID
-            - Conversation is not a group
+          description: Invalid request
         "403":
-          description: User is not a member of this group
+          description: User is not a member of the conversation
         "404":
           description: Conversation not found
         "500":

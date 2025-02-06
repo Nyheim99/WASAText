@@ -377,7 +377,6 @@ func (db *appdbimpl) AddToGroup(conversationID int64, newParticipants []int64) e
 }
 
 func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
-	// Step 1: Check if the conversation exists and is a group
 	var conversationType string
 	err := db.c.QueryRow(`
 		SELECT conversation_type FROM conversations WHERE id = ?
@@ -393,7 +392,6 @@ func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
 		return fmt.Errorf("cannot leave a private conversation")
 	}
 
-	// Step 2: Remove the user from the conversation participants
 	_, err = db.c.Exec(`
 		DELETE FROM conversation_participants 
 		WHERE conversation_id = ? AND user_id = ?
@@ -403,7 +401,6 @@ func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
 		return fmt.Errorf("failed to remove user from group: %w", err)
 	}
 
-	// Step 3: Check how many participants are left
 	var participantCount int
 	err = db.c.QueryRow(`
 		SELECT COUNT(*) FROM conversation_participants WHERE conversation_id = ?
@@ -413,7 +410,6 @@ func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
 		return fmt.Errorf("failed to check remaining participants: %w", err)
 	}
 
-	// Step 4: If only 1 participant remains, delete the group conversation
 	if participantCount == 1 {
 		_, err = db.c.Exec(`
 			DELETE FROM conversations WHERE id = ?
@@ -423,7 +419,6 @@ func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
 			return fmt.Errorf("failed to delete group conversation: %w", err)
 		}
 
-		// Also delete the last participant to completely remove the group
 		_, err = db.c.Exec(`
 			DELETE FROM conversation_participants WHERE conversation_id = ?
 		`, conversationID)

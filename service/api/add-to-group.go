@@ -26,7 +26,7 @@ func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprou
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	currentUserID := reqCtx.UserID
+	UserID := reqCtx.UserID
 
 	var request AddToGroupRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -50,7 +50,7 @@ func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprou
 
 	isMember := false
 	for _, participant := range conversation.Participants {
-		if participant.ID == currentUserID {
+		if participant.ID == UserID {
 			isMember = true
 			break
 		}

@@ -308,19 +308,13 @@ export default {
 
 				emit("group-left", props.conversation.conversation_id);
 
-				// Close the modal manually
 				const modalElement = document.getElementById("leaveGroupModal");
 				const modal = bootstrap.Modal.getInstance(modalElement);
 				if (modal) modal.hide();
 
-				// Clear conversation details (remove from UI)
 				props.conversationDetails = null;
-				console.log("Left group successfully");
 			} catch (error) {
 				console.error("Failed to leave group:", error);
-				alert(
-					error.response?.data?.message || "Failed to leave group."
-				);
 			}
 		};
 
