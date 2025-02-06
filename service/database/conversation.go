@@ -5,52 +5,45 @@ import (
 	"fmt"
 )
 
-// GetOrCreatePrivateConversation retrieves an existing private conversation or creates a new one between two users.
-func (db *appdbimpl) GetOrCreatePrivateConversation(currentUserID, recipientID int64) (int64, error) {
+func (db *appdbimpl) CreatePrivateConversation(userID, recipientID int64) (int64, error) {
+	var existingConversationID int64
+
+	err := db.c.QueryRow(`
+		SELECT c.id 
+		FROM conversations c
+		JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
+		JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
+		WHERE c.conversation_type = 'private' 
+		AND cp1.user_id = ? 
+		AND cp2.user_id = ?
+	`, userID, recipientID).Scan(&existingConversationID)
+
+	if err == nil {
+		return existingConversationID, fmt.Errorf("a private conversation between these users already exists")
+	} else if err != sql.ErrNoRows {
+		return 0, fmt.Errorf("failed to check for existing conversation: %w", err)
+	}
+
+	result, err := db.c.Exec(`
+		INSERT INTO conversations (conversation_type) VALUES ('private')
+	`)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create conversation: %w", err)
+	}
+
 	var conversationID int64
 
-	// Step 1: Try to fetch an existing private conversation
-	err := db.c.QueryRow(`
-		SELECT id
-		FROM conversations
-		WHERE conversation_type = 'private'
-		AND id IN (
-			SELECT conversation_id
-			FROM conversation_participants
-			WHERE user_id = ?
-		)
-		AND id IN (
-			SELECT conversation_id
-			FROM conversation_participants
-			WHERE user_id = ?
-		)
-		LIMIT 1
-	`, recipientID, currentUserID).Scan(&conversationID)
+	conversationID, err = result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to retrieve conversation ID: %w", err)
+	}
 
-	if err == sql.ErrNoRows {
-		result, err := db.c.Exec(`
-			INSERT INTO conversations (conversation_type)
-			VALUES ('private')
-		`)
-		if err != nil {
-			return 0, fmt.Errorf("failed to create conversation: %w", err)
-		}
-
-		conversationID, err = result.LastInsertId()
-		if err != nil {
-			return 0, fmt.Errorf("failed to retrieve conversation ID: %w", err)
-		}
-
-		// Step 3: Add participants to the new conversation
-		_, err = db.c.Exec(`
-			INSERT INTO conversation_participants (conversation_id, user_id)
-			VALUES (?, ?), (?, ?)
-		`, conversationID, recipientID, conversationID, currentUserID)
-		if err != nil {
-			return 0, fmt.Errorf("failed to add participants: %w", err)
-		}
-	} else if err != nil {
-		return 0, fmt.Errorf("failed to query existing conversation: %w", err)
+	_, err = db.c.Exec(`
+		INSERT INTO conversation_participants (conversation_id, user_id)
+		VALUES (?, ?), (?, ?)
+	`, conversationID, recipientID, conversationID, userID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to add participants: %w", err)
 	}
 
 	return conversationID, nil

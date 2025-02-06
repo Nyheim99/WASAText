@@ -44,11 +44,11 @@ type AppDatabase interface {
 
 	GetUser(userId int64) (*User, error)
 	GetUsers() ([]User, error)
-	
+
 	SetMyUserName(userID int64, username string) error
 	SetMyPhoto(userID int64, photoURL string) error
-	
-	GetOrCreatePrivateConversation(currentUserID, recipientID int64) (int64, error)
+
+	CreatePrivateConversation(userID, recipientID int64) (int64, error)
 	CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error)
 
 	SetGroupName(conversationID int64, name string) error

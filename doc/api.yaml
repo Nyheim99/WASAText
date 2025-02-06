@@ -174,8 +174,7 @@ paths:
     post:
       tags: ["conversation"]
       summary: Create a new conversation or group
-      description: |-
-        Create a new conversation with someone or a new group
+      description: Create a new conversation with someone or a new group
       operationId: createConversation
       requestBody:
         content:
@@ -187,8 +186,10 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Conversation" }
+        "400":
+          description: Invalid request
         "500":
-          description: "Internal server error. Please try again later."
+          description: Internal server error
 
   /conversations/{conversationId}:
     get:

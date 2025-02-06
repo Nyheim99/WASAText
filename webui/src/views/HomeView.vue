@@ -140,6 +140,7 @@ export default {
 				if (conversations.value.length > 0) {
 					selectConversation(conversations.value[0]);
 				}
+				
 			} catch (error) {
 				console.error("Failed to refetch conversations:", error);
 			}

@@ -2,7 +2,7 @@
 import WriteIcon from "/pencil-square.svg";
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import axios from "../services/axios";
 
 export default {
@@ -33,6 +33,9 @@ export default {
 
 		const selectedUser = ref(null);
 		const privateMessage = ref("");
+
+		const showValidation = ref(false);
+		const validationMessage = ref("");
 
 		const feedbackMessage = ref("");
 		const showFeedback = ref(false);
@@ -79,6 +82,15 @@ export default {
 			}
 		};
 
+		const resetModalState = () => {
+			showValidation.value = false;
+			validationMessage.value = "";
+			selectedUser.value = null;
+			privateMessage.value = "";
+			searchQuery.value = "";
+			searchResults.value = [];
+		};
+
 		const toggleUserSelection = (user) => {
 			if (selectedUsers.value.has(user)) {
 				selectedUsers.value.delete(user);
@@ -98,15 +110,57 @@ export default {
 				searchResults.value = [];
 				return;
 			}
-			searchResults.value = props.allUsers.filter((user) =>
-				user.username
-					.toLowerCase()
-					.includes(searchQuery.value.toLowerCase())
+
+			const privateConversationUsers = new Set(
+				props.conversations
+					.filter((conv) => conv.conversation_type === "private")
+					.map((conv) => conv.display_name)
 			);
+
+			const availableUsers = props.allUsers.filter(
+				(user) =>
+					user.id !== props.user.id &&
+					!privateConversationUsers.has(user.username) &&
+					user.username
+						.toLowerCase()
+						.includes(searchQuery.value.toLowerCase())
+			);
+
+			if (availableUsers.length === 0) {
+				searchResults.value = [];
+				validationMessage.value =
+					"No matching users found or already in a conversation.";
+				showValidation.value = true;
+			} else {
+				searchResults.value = availableUsers;
+				showValidation.value = false;
+			}
 		};
 
 		const showAllUsersOnFocus = () => {
-			searchResults.value = props.allUsers;
+			const privateConversationUsers = new Set(
+				props.conversations
+					.filter((conv) => conv.conversation_type === "private")
+					.map((conv) => conv.display_name)
+			);
+
+			const availableUsers = props.allUsers.filter(
+				(user) =>
+					user.id !== props.user.id &&
+					!privateConversationUsers.has(user.username)
+			);
+
+			if (availableUsers.length === 0) {
+				searchResults.value = [];
+				validationMessage.value =
+					props.allUsers.length <= 1
+						? "No users available to start a conversation."
+						: "You've already started private conversations with all available users.";
+				showValidation.value = true;
+			} else {
+				searchResults.value = availableUsers;
+				showValidation.value = false;
+			}
 		};
 
 		const selectUser = (user) => {
@@ -116,40 +170,40 @@ export default {
 		};
 
 		const createPrivateConversation = async () => {
-			if (!privateMessage.value.trim()) {
-				alert("Message cannot be empty.");
+			if (!selectedUser.value) {
+				showValidation.value = true;
+				validationMessage.value =
+					"Please select a user to start a conversation.";
 				return;
 			}
 
-			if (!selectedUser.value) {
-				alert("Please select a user to start a conversation.");
+			if (!privateMessage.value.trim()) {
+				showValidation.value = true;
+				validationMessage.value = "Message cannot be empty.";
 				return;
 			}
 
 			const formData = new FormData();
 			formData.append("conversation_type", "private");
 			formData.append("message", privateMessage.value);
-			formData.append("username", selectedUser.value.username);
+			formData.append("recipientID", selectedUser.value.id);
 
 			try {
-				const response = await axios.post("/conversations", formData, {
+				await axios.post("/conversations", formData, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 
-				selectedUser.value = null;
-				privateMessage.value = "";
-				searchQuery.value = "";
-				searchResults.value = [];
+				resetModalState();
 
-				emit("conversation-created", response.data);
+				emit("conversation-created");
+				emit("feedback", "Conversation started successfully!");
 
 				const modal = document.getElementById("newConversationModal");
 				const bootstrapModal = bootstrap.Modal.getInstance(modal);
 				bootstrapModal.hide();
-
-				emit("feedback", "Conversation started successfully!");
 			} catch (error) {
-				console.error("Failed to start conversation:", error.message);
+				showValidation.value = true;
+				validationMessage.value = "Failed to start conversation:";
 				const errorMessage =
 					error.response?.data?.message ||
 					"Failed to start conversation.";
@@ -231,6 +285,23 @@ export default {
 			return message;
 		};
 
+		onMounted(() => {
+			const modal = document.getElementById("newConversationModal");
+			if (modal) {
+				modal.addEventListener("hide.bs.modal", resetModalState);
+			}
+		});
+
+		onUnmounted(() => {
+			const modal = document.getElementById("newConversationModal");
+			if (modal) {
+				modal.removeEventListener(
+					"hide.bs.modal",
+					resetModalState
+				);
+			}
+		});
+
 		return {
 			WriteIcon,
 			AvatarIcon,
@@ -256,6 +327,8 @@ export default {
 			formatTimestamp,
 			resolvePhotoURL,
 			truncateMessage,
+			showValidation,
+			validationMessage,
 		};
 	},
 };
@@ -398,6 +471,13 @@ export default {
 									rows="3"
 								></textarea>
 							</div>
+							<p
+								class="text-danger small mt-2"
+								aria-live="assertive"
+								v-if="showValidation"
+							>
+								{{ validationMessage }}
+							</p>
 						</div>
 
 						<div v-if="modalMode === 'group'">
@@ -494,6 +574,13 @@ export default {
 								placeholder="Write an initial message..."
 								rows="3"
 							></textarea>
+							<p
+								class="text-danger small mt-2"
+								aria-live="assertive"
+								v-if="showValidation"
+							>
+								{{ validationMessage }}
+							</p>
 						</div>
 					</div>
 					<div class="modal-footer">
@@ -506,7 +593,7 @@ export default {
 								class="btn btn-primary"
 								@click="createPrivateConversation"
 							>
-								Send Message Priv
+								Start Conversation!
 							</button>
 						</div>
 						<div v-else class="mt-2 d-flex justify-content-end">
