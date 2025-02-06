@@ -142,76 +142,6 @@ export default {
 			return user ? user.username : "Unknown";
 		};
 
-		const handleAddMembers = async () => {
-			if (selectedUsers.value.size === 0) {
-				alert("Please select at least one user.");
-				return;
-			}
-
-			addingMembers.value = true;
-
-			try {
-				// Send API request to add members
-				const response = await axios.post(
-					`/conversations/${props.conversation.conversation_id}/members`,
-					{
-						participants: [...selectedUsers.value],
-					}
-				);
-
-				console.log("Added members:", response.data);
-
-				emit(
-					"group-members-updated",
-					props.conversation.conversation_id
-				);
-
-				// Refresh the conversation details
-				await fetchConversationDetails(
-					props.conversation.conversation_id
-				);
-
-				// Reset selection
-				selectedUsers.value.clear();
-				updateUsersNotInGroup();
-
-				// Close the modal
-				const modal = document.getElementById("addMembersModal");
-				if (modal) {
-					const bootstrapModal = bootstrap.Modal.getInstance(modal);
-					if (bootstrapModal) {
-						bootstrapModal.hide();
-					}
-				}
-			} catch (error) {
-				console.error("Failed to add members:", error);
-				alert(
-					error.response?.data?.message || "Failed to add members."
-				);
-			} finally {
-				addingMembers.value = false;
-			}
-		};
-
-		const fetchConversationDetails = async (conversationId) => {
-			try {
-				const response = await axios.get(
-					`/conversations/${conversationId}`
-				);
-				props.conversationDetails.participants =
-					response.data.participants;
-				console.log(
-					"Updated conversation details in Conversation:",
-					response.data
-				);
-			} catch (error) {
-				console.error(
-					"Failed to fetch updated conversation details:",
-					error
-				);
-			}
-		};
-
 		const handleUpdateGroupName = async () => {
 			if (!validateGroupName(newGroupName.value.trim())) {
 				return;
@@ -296,7 +226,8 @@ export default {
 
 				emit("group-photo-updated", {
 					conversationId: props.conversation.conversation_id,
-					newPhotoUrl: response.data.photo_url + "?t=" + cacheBuster.value,
+					newPhotoUrl:
+						response.data.photo_url + "?t=" + cacheBuster.value,
 				});
 
 				if (fileInput.value) {
@@ -329,6 +260,44 @@ export default {
 				return false;
 			}
 			return true;
+		};
+
+		const handleAddMembers = async () => {
+			if (selectedUsers.value.size === 0) {
+				validationMessage.value = "Please select at least one user.";
+				return;
+			}
+
+			addingMembers.value = true;
+
+			try {
+				await axios.post(
+					`/conversations/${props.conversation.conversation_id}/members`,
+					{
+						participants: [...selectedUsers.value],
+					}
+				);
+
+				emit(
+					"group-members-updated",
+					props.conversation.conversation_id
+				);
+
+				selectedUsers.value.clear();
+				updateUsersNotInGroup();
+
+				const modal = document.getElementById("addMembersModal");
+				if (modal) {
+					const bootstrapModal = bootstrap.Modal.getInstance(modal);
+					if (bootstrapModal) {
+						bootstrapModal.hide();
+					}
+				}
+			} catch (error) {
+				console.error("Failed to add members:", error);
+			} finally {
+				addingMembers.value = false;
+			}
 		};
 
 		const handleLeaveGroup = async () => {
@@ -1178,6 +1147,7 @@ export default {
 			</div>
 		</div>
 	</div>
+
 	<div
 		class="modal fade"
 		id="addMembersModal"
@@ -1261,6 +1231,9 @@ export default {
 							</span>
 						</div>
 					</div>
+					<p class="text-danger small mt-2" v-if="validationMessage">
+						{{ validationMessage }}
+					</p>
 				</div>
 				<div class="modal-footer">
 					<button
