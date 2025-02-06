@@ -82,16 +82,6 @@ export default {
 				: AvatarIcon;
 		};
 
-		const validateImage = (file) => {
-			const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-			if (!allowedTypes.includes(file.type)) {
-				validationMessage.value =
-					"Only JPEG and PNG files are allowed.";
-				return false;
-			}
-			return true;
-		};
-
 		const setGroupNameOnModalOpen = () => {
 			newGroupName.value = props.conversation.display_name || "";
 		};
@@ -302,15 +292,11 @@ export default {
 					}
 				);
 
-				console.log("Group picture updated:", response.data);
-
 				cacheBuster.value = Date.now();
-				props.conversation.display_photo_url =
-					response.data.photo_url + "?t=" + cacheBuster.value;
 
 				emit("group-photo-updated", {
 					conversationId: props.conversation.conversation_id,
-					newPhotoUrl: props.conversation.display_photo_url,
+					newPhotoUrl: response.data.photo_url + "?t=" + cacheBuster.value,
 				});
 
 				if (fileInput.value) {
@@ -333,6 +319,16 @@ export default {
 					"Failed to upload group picture.";
 				uploading.value = false;
 			}
+		};
+
+		const validateImage = (file) => {
+			const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+			if (!allowedTypes.includes(file.type)) {
+				validationMessage.value =
+					"Only JPEG and PNG files are allowed.";
+				return false;
+			}
+			return true;
 		};
 
 		const handleLeaveGroup = async () => {
