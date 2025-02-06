@@ -89,6 +89,10 @@ export default {
 			privateMessage.value = "";
 			searchQuery.value = "";
 			searchResults.value = [];
+			selectedUsers.value.clear();
+			groupName.value = "";
+			groupPhoto.value = null;
+			groupMessage.value = "";
 		};
 
 		const toggleUserSelection = (user) => {
@@ -177,9 +181,8 @@ export default {
 				return;
 			}
 
-			if (!privateMessage.value.trim()) {
+			if (!validateMessage(privateMessage.value)) {
 				showValidation.value = true;
-				validationMessage.value = "Message cannot be empty.";
 				return;
 			}
 
@@ -212,18 +215,19 @@ export default {
 		};
 
 		const createGroupConversation = async () => {
-			if (!groupName.value.trim()) {
-				alert("Group name is required.");
-				return;
-			}
-
-			if (!groupMessage.value.trim()) {
-				alert("Message cannot be empty.");
+			if (!validateGroupName(groupName.value)) {
+				showValidation.value = true;
 				return;
 			}
 
 			if (selectedUsers.value.size === 0) {
-				alert("Please select at least one user.");
+				showValidation.value = true;
+				validationMessage.value = "Please select at least one user.";
+				return;
+			}
+
+			if (!validateMessage(groupMessage.value)) {
+				showValidation.value = true;
 				return;
 			}
 
@@ -231,9 +235,8 @@ export default {
 			formData.append("conversation_type", "group");
 			formData.append("group_name", groupName.value);
 			formData.append("message", groupMessage.value);
-			formData.append(
-				"participants",
-				JSON.stringify([...selectedUsers.value].map((user) => user.id))
+			[...selectedUsers.value].forEach((user) =>
+				formData.append("participants", user.id)
 			);
 
 			if (groupPhoto.value) {
@@ -241,34 +244,52 @@ export default {
 			}
 
 			try {
-				const response = await axios.post("/conversations", formData, {
+				await axios.post("/conversations", formData, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 
-				emit("conversation-created", response.data);
-
-				selectedUsers.value.clear();
-				groupName.value = "";
-				groupPhoto.value = null;
-				groupMessage.value = "";
-				searchQuery.value = "";
-				searchResults.value = [];
+				emit("conversation-created");
+				emit("feedback", "Group conversation created successfully!");
 
 				const modal = document.getElementById("newConversationModal");
 				const bootstrapModal = bootstrap.Modal.getInstance(modal);
 				bootstrapModal.hide();
-
-				emit("feedback", "Group conversation created successfully!");
 			} catch (error) {
-				console.error(
-					"Failed to create group conversation:",
-					error.message
-				);
+				showValidation.value = true;
+				validationMessage.value = "Failed to start conversation:";
 				const errorMessage =
 					error.response?.data?.message ||
-					"Failed to create group conversation.";
+					"Failed to start conversation.";
 				emit("feedback", errorMessage);
 			}
+		};
+
+		const validateGroupName = (groupname) => {
+			if (groupname.length < 3 || groupname.length > 20) {
+				validationMessage.value =
+					"Group name must be between 3 and 20 characters long.";
+				return false;
+			}
+			if (!/^[a-zA-Z0-9 ]*$/.test(groupname)) {
+				validationMessage.value =
+					"Group name can only contain alphanumeric characters.";
+				return false;
+			}
+			return true;
+		};
+
+		const validateMessage = (message) => {
+			if (message.trim().length < 1 || message.length > 1000) {
+				validationMessage.value =
+					"Message must be between 1 and 1000 characters long.";
+				return false;
+			}
+			if (!/^[a-zA-Z0-9À-ÿ.,!?()\-\"' ]+$/.test(message)) {
+				validationMessage.value =
+					"Message contains invalid characters.";
+				return false;
+			}
+			return true;
 		};
 
 		const resolvePhotoURL = (photoURL, conversationType) => {
@@ -295,10 +316,7 @@ export default {
 		onUnmounted(() => {
 			const modal = document.getElementById("newConversationModal");
 			if (modal) {
-				modal.removeEventListener(
-					"hide.bs.modal",
-					resetModalState
-				);
+				modal.removeEventListener("hide.bs.modal", resetModalState);
 			}
 		});
 
@@ -335,9 +353,12 @@ export default {
 </script>
 
 <template>
-	<div class="rounded shadow-sm bg-white p-3 overflow-auto h-100">
-		<div class="container mb-3 row">
-			<div class="d-flex justify-content-between align-items-center">
+	<div
+		class="rounded shadow-sm bg-white p-1 d-flex flex-column h-100"
+		style="max-width: 270px"
+	>
+		<div class="container row p-2 w-100 mx-0">
+			<div class="d-flex justify-content-between align-items-center px-0">
 				<h5 class="mb-0" style="line-height: 1.5">Conversations</h5>
 				<button
 					class="btn btn-light p-1 d-flex align-items-center justify-content-center"
@@ -610,12 +631,24 @@ export default {
 			</div>
 		</div>
 
-		<div>
-			<div v-if="conversations.length === 0">
-				<p>
-					You have no chats, click the button above to start chatting!
+		<div class="overflow-auto">
+			<div
+				v-if="conversations.length === 0"
+				class="container d-flex flex-column align-items-center justify-content-center text-center p-4"
+			>
+				<p class="text-muted mb-2 fw-semibold">
+					You have no chats yet!
 				</p>
+				<button
+					class="btn btn-secondary btn-sm d-flex align-items-center"
+					data-bs-toggle="modal"
+					data-bs-target="#newConversationModal"
+				>
+					<span class="me-2">Start a Conversation</span>
+					<img :src="WriteIcon" alt="New Conversation" width="16" />
+				</button>
 			</div>
+
 			<div
 				v-else
 				v-for="conversation in conversations"

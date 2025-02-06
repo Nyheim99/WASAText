@@ -21,10 +21,6 @@ export default {
 		const validationMessage = ref("");
 
 		const validateUsername = (username) => {
-			if (username.trim() === "") {
-				validationMessage.value = "Username cannot be empty.";
-				return false;
-			}
 			if (username.length < 3 || username.length > 16) {
 				validationMessage.value =
 					"Username must be between 3 and 16 characters long.";

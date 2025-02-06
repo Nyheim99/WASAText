@@ -49,9 +49,7 @@ func (db *appdbimpl) CreatePrivateConversation(userID, recipientID int64) (int64
 	return conversationID, nil
 }
 
-// CreateGroupConversation creates a new group conversation with the given participants.
 func (db *appdbimpl) CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error) {
-	// Step 1: Insert into the conversations table
 	result, err := db.c.Exec(`
 		INSERT INTO conversations (conversation_type, name, photo_url)
 		VALUES ('group', ?, ?)
@@ -65,14 +63,12 @@ func (db *appdbimpl) CreateGroupConversation(creatorID int64, name, photoURL str
 		return 0, fmt.Errorf("failed to retrieve conversation ID: %w", err)
 	}
 
-	// Step 2: Add participants to the conversation, including the creator
 	participantValues := ""
 	args := []interface{}{}
 	for _, participantID := range participants {
 		participantValues += "(?, ?),"
 		args = append(args, conversationID, participantID)
 	}
-	// Add the creator as a participant
 	participantValues += "(?, ?)"
 	args = append(args, conversationID, creatorID)
 
@@ -108,7 +104,6 @@ func (db *appdbimpl) SetGroupPhoto(conversationID int64, photoURL string) error 
 	return nil
 }
 
-// ConversationPreview represents a preview of a conversation for listing.
 type ConversationPreview struct {
 	ConversationID       int64   `json:"conversation_id"`
 	ConversationType     string  `json:"conversation_type"`
@@ -123,7 +118,6 @@ type ConversationPreview struct {
 	LastMessageIsDeleted bool    `json:"last_message_is_deleted"`
 }
 
-// GetMyConversations retrieves a list of conversations for a given user, sorted by the latest message timestamp.
 func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, error) {
 	query := `
 		SELECT 

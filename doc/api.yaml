@@ -174,18 +174,56 @@ paths:
     post:
       tags: ["conversation"]
       summary: Create a new conversation or group
-      description: Create a new conversation with someone or a new group
+      description: |-
+        Create a new private conversation with a user or a new group conversation.
       operationId: createConversation
       requestBody:
         content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Conversation" }
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - conversation_type
+                - message
+              properties:
+                conversation_type:
+                  type: string
+                  enum: ["private", "group"]
+                  example: "group"
+                  description: Type of conversation. Either "private" or "group".
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
+                  example: "Hey guys, whats up?"
+                  description: Initial message to start the conversation.
+                recipientID:
+                  type: integer
+                  example: 1
+                  description: Required if `conversation_type` is "private". The user ID of the recipient.
+                group_name:
+                  type: string
+                  minLength: 3
+                  maxLength: 20
+                  pattern: "^[a-zA-Z0-9 ]*$"
+                  example: "WASA Students"
+                  description: Required if `conversation_type` is "group". The name of the group.
+                participants:
+                  type: array
+                  items:
+                    type: integer
+                  minItems: 1
+                  maxItems: 50
+                  description: List of participant user IDs (excluding the creator).
+                  example: [2, 3, 4]
+                group_photo:
+                  type: string
+                  format: binary
+                  description: Optional group photo to be uploaded.
       responses:
         "201":
-          description: Conversation created successfully
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Conversation" }
+          description: Conversation created successfully.
         "400":
           description: Invalid request
         "500":
