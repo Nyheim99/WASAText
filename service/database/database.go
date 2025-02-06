@@ -132,13 +132,12 @@ func New(db *sql.DB) (AppDatabase, error) {
 			UNIQUE (message_id, recipient_id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS reactions (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			message_id INTEGER NOT NULL,
 			user_id INTEGER NOT NULL,
 			emoticon TEXT NOT NULL,
 			FOREIGN KEY (message_id) REFERENCES messages(id),
 			FOREIGN KEY (user_id) REFERENCES users(id),
-			UNIQUE (message_id, user_id)
+			PRIMARY KEY (message_id, user_id)
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (conversation_id, timestamp DESC);`,
 	}

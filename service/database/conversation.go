@@ -288,7 +288,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 
 		// Fetch reactions for the message
 		reactionRows, err := db.c.Query(`
-			SELECT user_id, emoticon
+			SELECT user_id, message_id, emoticon
 			FROM reactions
 			WHERE message_id = ?`, msg.ID)
 		if err != nil {
@@ -299,7 +299,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		reactions := []Reaction{}
 		for reactionRows.Next() {
 			var reaction Reaction
-			if err := reactionRows.Scan(&reaction.UserID, &reaction.Emoticon); err != nil {
+			if err := reactionRows.Scan(&reaction.UserID, &reaction.MessageID, &reaction.Emoticon); err != nil {
 				return nil, fmt.Errorf("failed to scan reaction: %w", err)
 			}
 			reactions = append(reactions, reaction)
@@ -310,6 +310,32 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	}
 
 	conversation.Messages = messages
+
+	if conversation.ConversationType == "group" {
+		participantRows, err := db.c.Query(`
+        SELECT id, username, photo_url 
+        FROM users 
+        WHERE id IN (
+            SELECT user_id FROM conversation_participants WHERE conversation_id = ?
+        )`, conversationID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve participants: %w", err)
+		}
+		defer participantRows.Close()
+
+		participants := []User{}
+		for participantRows.Next() {
+			var user User
+			err := participantRows.Scan(&user.ID, &user.Username, &user.PhotoURL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan participant: %w", err)
+			}
+			participants = append(participants, user)
+		}
+
+		conversation.Participants = participants
+	}
+
 	return &conversation, nil
 }
 

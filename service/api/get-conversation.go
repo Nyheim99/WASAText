@@ -18,7 +18,11 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 
 	conversation, err := rt.db.GetConversation(conversationID)
 	if err != nil {
-		http.Error(w, "Failed to retrieve conversation", http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if conversation == nil {
+		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 

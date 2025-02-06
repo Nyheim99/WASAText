@@ -49,9 +49,7 @@ type MessageStatus struct {
 }
 
 type Reaction struct {
-	ID        int64  `json:"id"`         
 	MessageID int64  `json:"message_id"` 
 	UserID    int64  `json:"user_id"`
-	Username  string `json:"username"`   
 	Emoticon  string `json:"emoticon"` 
 }

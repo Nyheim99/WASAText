@@ -232,11 +232,11 @@ paths:
   /conversations/{conversationId}:
     get:
       tags: ["conversation"]
-      operationId: getConversation
       summary: Get conversation details
       description: |
         Retrieves metadata for a specific conversation, including its type, name, and photo.
         If the conversation is a group, the list of participants will also be included.
+      operationId: getConversation
       parameters:
         - $ref: "#/components/parameters/conversationId"
       responses:
@@ -259,15 +259,23 @@ paths:
                   display_name:
                     type: string
                     description: Name of the group or the other participant (for private chats)
-                    example: "WASAChat"
+                    example: "WASA Chat"
                   display_photo_url:
                     type: string
+                    format: uri
                     description: URL of the conversation photo
                     example: "/service/photos/groups/group_2.jpg"
+                  messages:
+                    type: array
+                    minLength: 1
+                    maxLength: 1000
+                    description: List of messages in conversation
+                    items:
+                      $ref: "#/components/schemas/Message"
                   participants:
                     type: array
-                    minItems: 1
-                    maxItems: 100
+                    minLength: 2
+                    maxLength: 100
                     description: List of participants (only for group conversations)
                     items:
                       $ref: "#/components/schemas/User"
@@ -598,15 +606,28 @@ components:
           description: Unique message identifier
           type: integer
           example: 1
-          readOnly: true
-        user_id:
+        sender_id:
           description: "Id of user who sent the message"
           type: integer
           example: 1
+        sender_username:
+          description: "Name of user who sent the message"
+          type: string
+          example: Maria
+          pattern: "^[a-zA-Z0-9]*$"
+          minLength: 3
+          maxLength: 16
         content:
           description: "Content of the message"
           type: string
+          minLength: 1
+          maxLength: 1000
+          pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
           example: "Hello guys!"
+        conversation_id: 
+          description: "Id of conversation message belongs in"
+          type: integer
+          example: 1
         timestamp:
           description: "Timestamp of when the message was sent"
           type: string
@@ -616,6 +637,18 @@ components:
           type: string
           enum: ["sent", "read"]
           example: "sent"
+        is_deleted:
+          description: |-
+            Indicates whether a message is deleted (true9 or not (false)
+          type: boolean
+          example: false
+          default: false
+        is_forwarded:
+          description: |-
+            Indicates whether a message is forwarded (true) or not (false)
+          type: boolean
+          example: true
+          default: false
         is_reply:
           description: |-
             Indicates whether the message is a reply to another message (true) 
@@ -626,36 +659,34 @@ components:
         original_message_id:
           description: |-
             The unique identifier of the original message this message is replying to. 
-            If the message is standalone, this will be null or omitted.
+            If the message is standalone this will be 0.
           type: integer
-          nullable: true
-          example: 42
-        is_forwarded:
-          description: |-
-            Indicates whether a message is forwarded (true) or not (false)
-          type: boolean
-          example: true
-          default: false
-        comments:
-          description: "A list of comments to the message"
+          example: 0
+        reactions:
+          description: "A list of reactions to the message"
           type: array
           minItems: 0
           maxItems: 100
           items:
-            $ref: "#/components/schemas/Comment"
-    Comment:
-      title: Comment
-      description: "Represents a single comment to a message"
+            $ref: "#/components/schemas/Reaction"
+    Reaction:
+      title: Reaction
+      description: "Represents a single reaction to a message"
       type: object
       properties:
         emoticon:
           description: "The emoticon used in the comment"
           type: string
-          example: "😃"
+          example: "👍"
+          enum: ["👍", "😂", "❤️", "🔥", "😢"]
         user_id:
           description: "ID of the user who commented"
           type: integer
           example: 2
+        message_id:
+          description: "ID of the message"
+          type: integer
+          example: 1
     ConversationPreview:
       title: ConversationPreview
       description: "This object represents a preview of a conversation for listing"
@@ -719,14 +750,6 @@ components:
           example: false
 
   parameters:
-    userId:
-      schema:
-        type: integer
-        example: 1
-      name: userId
-      in: path
-      required: true
-      description: "User Id"
     conversationId:
       schema:
         type: integer
