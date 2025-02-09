@@ -107,7 +107,7 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 			return
 		}
 
-		if match, _ := regexp.MatchString(`^[a-zA-Z0-9À-ÿ.,!?()\-\"' ]+$`, *textContent); !match {
+		if match, _ := regexp.MatchString(`^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$`, *textContent); !match {
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
