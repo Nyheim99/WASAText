@@ -26,7 +26,7 @@ export default {
 		},
 	},
 	setup(props, { emit }) {
-		const modalMode = ref("private");
+		const modalMode = ref("");
 		const searchQuery = ref("");
 		const searchResults = ref([]);
 
@@ -371,273 +371,12 @@ export default {
 			</div>
 		</div>
 
-		<div
-			class="modal fade"
-			id="newConversationModal"
-			tabindex="-1"
-			aria-labelledby="newConversationModalLabel"
-			aria-hidden="true"
-		>
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="newConversationModalLabel">
-							Start a New Conversation
-						</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
-						></button>
-					</div>
-					<div class="modal-body">
-						<div
-							class="btn-group mb-3"
-							role="group"
-							aria-label="Conversation Type Selector"
-						>
-							<button
-								type="button"
-								class="btn"
-								:class="
-									modalMode === 'private'
-										? 'btn-primary'
-										: 'btn-light'
-								"
-								@click="setMode('private')"
-							>
-								Private
-							</button>
-							<button
-								type="button"
-								class="btn"
-								:class="
-									modalMode === 'group'
-										? 'btn-primary'
-										: 'btn-light'
-								"
-								@click="setMode('group')"
-							>
-								Group
-							</button>
-						</div>
-
-						<div v-if="modalMode === 'private'">
-							<input
-								type="text"
-								class="form-control"
-								placeholder="Search for a user"
-								v-model="searchQuery"
-								@input="searchUsers"
-								@focus="showAllUsersOnFocus"
-							/>
-							<div
-								v-if="searchResults.length > 0"
-								class="position-relative"
-							>
-								<ul
-									class="list-group position-absolute"
-									style="
-										z-index: 1050;
-										top: 100%;
-										left: 0;
-										width: 100%;
-										max-height: 200px;
-										overflow-y: auto;
-									"
-								>
-									<li
-										v-for="user in searchResults"
-										:key="user.id"
-										class="list-group-item d-flex align-items-center bg-body-secondary"
-										@click="selectUser(user)"
-									>
-										<img
-											v-if="
-												resolvePhotoURL(user.photo_url)
-											"
-											:src="
-												resolvePhotoURL(user.photo_url)
-											"
-											alt="Avatar"
-											class="rounded-circle me-2"
-											style="
-												width: 30px;
-												height: 30px;
-												object-fit: cover;
-											"
-										/>
-										<img
-											v-else
-											:src="AvatarIcon"
-											alt="Default Avatar"
-											class="rounded-circle me-2"
-											style="width: 30px; height: 30px"
-										/>
-										{{ user.username }}
-									</li>
-								</ul>
-							</div>
-							<div v-if="selectedUser" class="mt-3">
-								<h6>
-									Send a message to
-									{{ selectedUser.username }}
-								</h6>
-								<textarea
-									v-model="privateMessage"
-									class="form-control"
-									placeholder="Write your message here..."
-									rows="3"
-								></textarea>
-							</div>
-							<p
-								class="text-danger small mt-2"
-								aria-live="assertive"
-								v-if="showValidation"
-							>
-								{{ validationMessage }}
-							</p>
-						</div>
-
-						<div v-if="modalMode === 'group'">
-							<input
-								type="text"
-								class="form-control mb-2"
-								placeholder="Enter group name"
-								v-model="groupName"
-							/>
-							<input
-								type="file"
-								class="form-control mb-2"
-								accept="image/jpeg, image/png"
-								@change="
-									(e) => (groupPhoto = e.target.files[0])
-								"
-							/>
-
-							<div class="dropdown">
-								<button
-									class="btn btn-light dropdown-toggle"
-									type="button"
-									id="selectUsersDropdown"
-									data-bs-toggle="dropdown"
-									aria-expanded="false"
-								>
-									Select Users
-								</button>
-								<ul
-									class="dropdown-menu"
-									aria-labelledby="selectUsersDropdown"
-									style="max-height: 300px; overflow-y: auto"
-								>
-									<li
-										v-for="user in allUsers.filter((u) => u.id !== user.id)"
-										:key="user.id"
-										class="dropdown-item d-flex align-items-center justify-content-between"
-									>
-										<div class="d-flex align-items-center">
-											<img
-												:src="
-													resolvePhotoURL(
-														user.photo_url
-													)
-												"
-												alt="User Avatar"
-												class="rounded-circle me-2"
-												style="
-													width: 30px;
-													height: 30px;
-													object-fit: cover;
-												"
-											/>
-											{{ user.username }}
-										</div>
-										<input
-											type="checkbox"
-											:checked="isUserSelected(user)"
-											@click="toggleUserSelection(user)"
-										/>
-									</li>
-								</ul>
-							</div>
-
-							<div class="mt-3">
-								<h6>Selected Users:</h6>
-								<div class="d-flex flex-wrap gap-2">
-									<span
-										v-for="user in [...selectedUsers]"
-										:key="user.id"
-										class="badge text-bg-secondary d-flex align-items-center"
-										style="
-											font-size: 14px;
-											padding: 0.5em 0.75em;
-										"
-									>
-										{{ user.username }}
-										<button
-											class="btn-close btn-close-white ms-2"
-											aria-label="Remove"
-											@click="toggleUserSelection(user)"
-											style="
-												font-size: 10px;
-												opacity: 0.8;
-											"
-										></button>
-									</span>
-								</div>
-							</div>
-
-							<textarea
-								v-model="groupMessage"
-								class="form-control mt-2"
-								placeholder="Write an initial message..."
-								rows="3"
-							></textarea>
-							<p
-								class="text-danger small mt-2"
-								aria-live="assertive"
-								v-if="showValidation"
-							>
-								{{ validationMessage }}
-							</p>
-						</div>
-					</div>
-					<div class="modal-footer">
-						<div
-							v-if="modalMode === 'private'"
-							class="mt-2 d-flex justify-content-end"
-						>
-							<button
-								type="button"
-								class="btn btn-primary"
-								@click="createPrivateConversation"
-							>
-								Start Conversation!
-							</button>
-						</div>
-						<div v-else class="mt-2 d-flex justify-content-end">
-							<button
-								type="button"
-								class="btn btn-primary"
-								@click="createGroupConversation"
-							>
-								Start Conversation!
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-
 		<div class="overflow-auto">
 			<div
 				v-if="conversations.length === 0"
 				class="container d-flex flex-column align-items-center justify-content-center text-center p-4"
 			>
-				<p class="text-muted mb-2">
-					You have no chats yet!
-				</p>
+				<p class="text-muted mb-2">You have no chats yet!</p>
 				<button
 					class="btn btn-secondary btn-sm d-flex align-items-center"
 					data-bs-toggle="modal"
@@ -734,6 +473,300 @@ export default {
 				>
 					{{ formatTimestamp(conversation.last_message_timestamp) }}
 				</small>
+			</div>
+		</div>
+
+		<div
+			class="modal fade"
+			id="newConversationModal"
+			tabindex="-1"
+			aria-labelledby="newConversationModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="newConversationModalLabel">
+							Start a New Conversation
+						</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<div class="mb-2">
+							<strong>Step 1:</strong> Select conversation type
+						</div>
+
+						<div
+							class="btn-group mb-3"
+							role="group"
+							aria-label="Conversation Type Selector"
+						>
+							<button
+								type="button"
+								class="btn"
+								:class="
+									modalMode === 'private'
+										? 'btn-primary'
+										: 'btn-light'
+								"
+								@click="setMode('private')"
+							>
+								Private
+							</button>
+							<button
+								type="button"
+								class="btn"
+								:class="
+									modalMode === 'group'
+										? 'btn-primary'
+										: 'btn-light'
+								"
+								@click="setMode('group')"
+							>
+								Group
+							</button>
+						</div>
+
+						<div v-if="modalMode === 'private'">
+							<div class="mb-2">
+								<strong>Step 2:</strong> Select a user
+							</div>
+							<input
+								type="text"
+								class="form-control"
+								placeholder="Search for a user"
+								v-model="searchQuery"
+								@input="searchUsers"
+								@focus="showAllUsersOnFocus"
+							/>
+							<div
+								v-if="searchResults.length > 0"
+								class="position-relative"
+							>
+								<ul
+									class="list-group position-absolute"
+									style="
+										z-index: 1050;
+										top: 100%;
+										left: 0;
+										width: 100%;
+										max-height: 200px;
+										overflow-y: auto;
+									"
+								>
+									<li
+										v-for="user in searchResults"
+										:key="user.id"
+										class="list-group-item d-flex align-items-center bg-body-secondary"
+										@click="selectUser(user)"
+									>
+										<img
+											v-if="
+												resolvePhotoURL(user.photo_url)
+											"
+											:src="
+												resolvePhotoURL(user.photo_url)
+											"
+											alt="Avatar"
+											class="rounded-circle me-2"
+											style="
+												width: 30px;
+												height: 30px;
+												object-fit: cover;
+											"
+										/>
+										<img
+											v-else
+											:src="AvatarIcon"
+											alt="Default Avatar"
+											class="rounded-circle me-2"
+											style="width: 30px; height: 30px"
+										/>
+										{{ user.username }}
+									</li>
+								</ul>
+							</div>
+							<div v-if="selectedUser" class="mt-3">
+								<div class="mb-2">
+									<strong>Step 3:</strong> Send the first
+									message to {{ selectedUser.username }}!
+								</div>
+								<textarea
+									v-model="privateMessage"
+									class="form-control"
+									placeholder="Write your message here..."
+									rows="3"
+								></textarea>
+							</div>
+							<p
+								class="text-danger small mt-2"
+								aria-live="assertive"
+								v-if="showValidation"
+							>
+								{{ validationMessage }}
+							</p>
+						</div>
+
+						<div v-if="modalMode === 'group'">
+							<div class="mb-2">
+								<strong>Step 2:</strong> Enter group name
+							</div>
+							<input
+								type="text"
+								class="form-control mb-2"
+								placeholder="Group name..."
+								v-model="groupName"
+							/>
+							<div v-if="groupName">
+								<div class="mb-2">
+									<strong>Step 3 (optional):</strong> Upload Group Photo
+								</div>
+								<input
+									type="file"
+									class="form-control mb-2"
+									accept="image/jpeg, image/png"
+									@change="
+										(e) => (groupPhoto = e.target.files[0])
+									"
+								/>
+
+								<div class="mb-2">
+									<strong>Step 4:</strong> Select Group Members
+								</div>
+
+								<div class="dropdown">
+									<button
+										class="btn btn-light dropdown-toggle"
+										type="button"
+										id="selectUsersDropdown"
+										data-bs-toggle="dropdown"
+										aria-expanded="false"
+									>
+										Select Users
+									</button>
+									<ul
+										class="dropdown-menu"
+										aria-labelledby="selectUsersDropdown"
+										style="
+											max-height: 300px;
+											overflow-y: auto;
+										"
+									>
+										<li
+											v-for="user in allUsers.filter(
+												(u) => u.id !== user.id
+											)"
+											:key="user.id"
+											class="dropdown-item d-flex align-items-center justify-content-between"
+										>
+											<div
+												class="d-flex align-items-center"
+											>
+												<img
+													:src="
+														resolvePhotoURL(
+															user.photo_url
+														)
+													"
+													alt="User Avatar"
+													class="rounded-circle me-2"
+													style="
+														width: 30px;
+														height: 30px;
+														object-fit: cover;
+													"
+												/>
+												{{ user.username }}
+											</div>
+											<input
+												type="checkbox"
+												:checked="isUserSelected(user)"
+												@click="
+													toggleUserSelection(user)
+												"
+											/>
+										</li>
+									</ul>
+								</div>
+
+								<div v-if="selectedUsers.size > 0" class="mt-3">
+									<h6>Users selected:</h6>
+									<div class="d-flex flex-wrap gap-2">
+										<span
+											v-for="user in [...selectedUsers]"
+											:key="user.id"
+											class="badge text-bg-secondary d-flex align-items-center"
+											style="
+												font-size: 14px;
+												padding: 0.5em 0.75em;
+											"
+										>
+											{{ user.username }}
+											<button
+												class="btn-close btn-close-white ms-2"
+												aria-label="Remove"
+												@click="
+													toggleUserSelection(user)
+												"
+												style="
+													font-size: 10px;
+													opacity: 0.8;
+												"
+											></button>
+										</span>
+									</div>
+								</div>
+
+								<div class="my-2">
+									<strong>Step 5:</strong> Write the first message!
+								</div>
+
+								<textarea
+									v-model="groupMessage"
+									class="form-control mt-2"
+									placeholder="Write an initial message..."
+									rows="3"
+								></textarea>
+							</div>
+
+							<p
+								class="text-danger small mt-2"
+								aria-live="assertive"
+								v-if="showValidation"
+							>
+								{{ validationMessage }}
+							</p>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<div
+							v-if="modalMode === 'private'"
+							class="mt-2 d-flex justify-content-end"
+						>
+							<button
+								type="button"
+								class="btn btn-primary"
+								@click="createPrivateConversation"
+							>
+								Start Conversation!
+							</button>
+						</div>
+						<div v-else class="mt-2 d-flex justify-content-end">
+							<button
+								type="button"
+								class="btn btn-primary"
+								@click="createGroupConversation"
+							>
+								Start Conversation!
+							</button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
