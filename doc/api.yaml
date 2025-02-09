@@ -6,7 +6,6 @@ info:
     WASAText application.
   version: 1.0.3
 
-
 tags:
   - name: conversation
     description: A single conversation or group
@@ -26,6 +25,7 @@ paths:
     post:
       tags: ["login"]
       summary: Logs in the user
+      security: []
       description: |-
         If the user does not exist, it will be created,
         and an identifier is returned.
@@ -61,7 +61,7 @@ paths:
         "400":
           description: Invalid username
         "500":
-          description: Server error occurred during login.
+          description: Server error occurred during login
 
   /users:
     get:
@@ -802,6 +802,12 @@ components:
           type: boolean
           example: false
 
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: User Identifier
+
   parameters:
     conversationId:
       description: Conversation Id
@@ -819,3 +825,6 @@ components:
       name: messageId
       in: path
       required: true
+
+security:
+  - bearer: []
