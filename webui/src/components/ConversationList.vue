@@ -510,7 +510,7 @@ export default {
 							<input
 								type="file"
 								class="form-control mb-2"
-								accept="image/*"
+								accept="image/jpeg, image/png"
 								@change="
 									(e) => (groupPhoto = e.target.files[0])
 								"

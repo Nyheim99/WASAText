@@ -1,7 +1,6 @@
 <script>
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
-import ImageIcon from "/image.svg";
 import {
 	ref,
 	onMounted,
@@ -576,7 +575,6 @@ export default {
 				);
 
 				if (userReaction?.emoticon === emoji) {
-					// If user already reacted with this emoji → remove reaction
 					await axios.delete(
 						`/conversations/${props.conversation.conversation_id}/messages/${message.id}/reactions/me`
 					);
@@ -584,12 +582,10 @@ export default {
 						(r) => r.user_id !== props.user.id
 					);
 				} else {
-					// Otherwise → add/update reaction
 					await axios.post(
 						`/conversations/${props.conversation.conversation_id}/messages/${message.id}/reactions`,
 						{ emoticon: emoji }
 					);
-					// Update the local message object optimistically
 					message.reactions = message.reactions.filter(
 						(r) => r.user_id !== props.user.id
 					);
@@ -699,7 +695,6 @@ export default {
 			triggerFileUpload,
 			newMessage,
 			photoInput,
-			ImageIcon,
 			formatBase64Image,
 			selectedPhoto,
 			photoPreview,
@@ -745,7 +740,7 @@ export default {
 				</h5>
 			</div>
 
-			<div class="dropdown ms-2">
+			<div v-if="conversation.conversation_type == 'group'" class="dropdown ms-2">
 				<button
 					class="btn btn-light p-1 d-flex align-items-center justify-content-center rounded-circle"
 					type="button"
@@ -1165,7 +1160,7 @@ export default {
 					data-bs-toggle="tooltip"
 					title="Attach a photo"
 				>
-					<img :src="ImageIcon" alt="Select Photo" width="24" />
+					<i class="bi bi-image"></i>
 				</button>
 
 				<div
