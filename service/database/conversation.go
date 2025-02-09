@@ -302,6 +302,32 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			}
 		}
 
+		var readCount int
+		err = db.c.QueryRow(`
+			SELECT COUNT(*) 
+			FROM message_status 
+			WHERE message_id = ? AND is_read = TRUE
+		`, msg.ID).Scan(&readCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve message status: %w", err)
+		}
+
+		var participantCount int
+		err = db.c.QueryRow(`
+			SELECT COUNT(*) 
+			FROM conversation_participants 
+			WHERE conversation_id = ?
+		`, conversationID).Scan(&participantCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve participant count: %w", err)
+		}
+
+		if readCount == participantCount {
+			msg.Status = "read"
+		} else {
+			msg.Status = "sent"
+		}
+
 		// Fetch reactions for the message
 		reactionRows, err := db.c.Query(`
 			SELECT user_id, message_id, emoticon

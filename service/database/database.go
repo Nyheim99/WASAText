@@ -66,6 +66,8 @@ type AppDatabase interface {
 	UncommentMessage(messageID, userID int64) error
 	ForwardMessage(conversationID, senderID, originalMessageID int64) (int64, error)
 
+	MarkMessagesAsRead(conversationID, userID int64) error
+
 	Ping() error
 }
 
@@ -109,7 +111,7 @@ func New(db *sql.DB) (AppDatabase, error) {
     photo_data BLOB DEFAULT NULL,
     photo_mime_type TEXT DEFAULT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT CHECK(status IN ('sent', 'received', 'read')) DEFAULT 'sent',
+    status TEXT CHECK(status IN ('sent', 'read')) DEFAULT 'sent',
     is_reply BOOLEAN DEFAULT FALSE,
     original_message_id INTEGER NOT NULL DEFAULT 0,
     is_forwarded BOOLEAN DEFAULT FALSE,
@@ -123,14 +125,12 @@ func New(db *sql.DB) (AppDatabase, error) {
     FOREIGN KEY (original_message_id) REFERENCES messages(id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS message_status (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			message_id INTEGER NOT NULL,
-			recipient_id INTEGER NOT NULL,
-			is_received BOOLEAN DEFAULT FALSE,
+			user_id INTEGER NOT NULL,
 			is_read BOOLEAN DEFAULT FALSE,
 			FOREIGN KEY (message_id) REFERENCES messages(id),
-			FOREIGN KEY (recipient_id) REFERENCES users(id),
-			UNIQUE (message_id, recipient_id)
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			PRIMARY KEY (message_id, user_id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS reactions (
 			message_id INTEGER NOT NULL,

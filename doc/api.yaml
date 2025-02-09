@@ -426,7 +426,7 @@ paths:
           description: Conversation not found
         "500":
           description: Internal server error
-  
+
   /conversations/{conversationId}/members/me:
     delete:
       tags: ["conversation"]
@@ -524,6 +524,24 @@ paths:
           description: Invalid request
         "404":
           description: Sender not found
+        "500":
+          description: Internal server error
+
+  /conversations/{conversationId}/messages/read:
+    put:
+      tags: ["message"]
+      summary: Mark all messages as read in a conversation
+      description: |
+        Marks all messages in a specified conversation as read by the current user.
+        This will update the message status from "sent" to "read" for the user.
+      operationId: markMessagesAsRead
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+      responses:
+        "204":
+          description: Successfully marked messages as read
+        "400":
+          description: Invalid request
         "500":
           description: Internal server error
 

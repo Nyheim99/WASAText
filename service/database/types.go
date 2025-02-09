@@ -48,10 +48,8 @@ type OriginalMessage struct {
 }
 
 type MessageStatus struct {
-	ID          int64  `json:"id"`
 	MessageID   int64  `json:"message_id"`
-	RecipientID int64  `json:"recipient_id"`
-	IsReceived  bool   `json:"is_received"`
+	UserID int64  `json:"user_id"`
 	IsRead      bool   `json:"is_read"`
 }
 

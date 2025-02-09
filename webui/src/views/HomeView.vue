@@ -53,8 +53,9 @@ export default {
 			}
 		};
 
-		const selectConversation = (conversation) => {
+		const selectConversation = async (conversation) => {
 			selectedConversation.value = conversation;
+			await markMessagesAsRead(conversation.conversation_id)
 			fetchConversationDetails(conversation.conversation_id);
 		};
 
@@ -140,7 +141,6 @@ export default {
 				if (conversations.value.length > 0) {
 					selectConversation(conversations.value[0]);
 				}
-				
 			} catch (error) {
 				console.error("Failed to refetch conversations:", error);
 			}
@@ -205,15 +205,24 @@ export default {
 		};
 
 		const updateConversationWithNewMessage = (conversationId) => {
-
 			fetchConversations();
 			fetchConversationDetails(conversationId);
 		};
 
 		const updateConversationWithDeletedMessage = (conversationId) => {
-
 			fetchConversations();
 			fetchConversationDetails(conversationId);
+		};
+
+		const markMessagesAsRead = async (conversationId) => {
+			try {
+				await axios.put(
+					`/conversations/${conversationId}/messages/read`
+				);
+				console.log("Messages marked as read");
+			} catch (error) {
+				console.error("Failed to mark messages as read:", error);
+			}
 		};
 
 		onMounted(async () => {

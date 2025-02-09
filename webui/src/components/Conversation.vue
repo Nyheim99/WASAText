@@ -915,7 +915,10 @@ export default {
 						textAlign: 'left',
 					}"
 				>
-					<div v-if="message.is_reply" class="reply-reference bg-light p-1 rounded mb-1">
+					<div
+						v-if="message.is_reply"
+						class="reply-reference bg-light p-1 rounded mb-1"
+					>
 						<div class="text-muted">
 							<div>
 								<strong>
@@ -982,18 +985,29 @@ export default {
 							class="mt-2 rounded"
 							style="max-width: 200px; border-radius: 8px"
 						/>
-						<small
-							class="text-muted"
-							style="
-								font-size: 12px;
-								color: gray;
-								align-self: flex-end;
-								margin-top: 4px;
-								white-space: nowrap;
-							"
-						>
-							{{ formatTimestamp(message.timestamp) }}
-						</small>
+						<div class="d-flex align-items-center gap-1 align-self-end">
+							<small
+								class="text-muted"
+								style="
+									font-size: 12px;
+									color: gray;
+									margin-top: 4px;
+									white-space: nowrap;
+								"
+							>
+								{{ formatTimestamp(message.timestamp) }}
+							</small>
+								<i
+									v-if="message.status === 'sent' && message.sender_id == user.id"
+									class="bi bi-check align-self-end"
+									title="Sent"
+								></i>
+								<i
+									v-if="message.status === 'read' && message.sender_id == user.id"
+									class="bi bi-check-all text-primary align-self-end"
+									title="Read"
+								></i>
+						</div>
 					</div>
 
 					<!-- Reactions under messages -->
