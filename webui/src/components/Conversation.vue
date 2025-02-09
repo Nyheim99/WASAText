@@ -2,7 +2,6 @@
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
 import ImageIcon from "/image.svg";
-import SendIcon from "/send.svg";
 import {
 	ref,
 	onMounted,
@@ -351,6 +350,9 @@ export default {
 				replyToMessage.value = null;
 
 				emit("message-sent", props.conversation.conversation_id);
+
+				scrollToBottom();
+
 			} catch (error) {
 				console.error(
 					"Failed to send message:",
@@ -697,7 +699,6 @@ export default {
 			triggerFileUpload,
 			newMessage,
 			photoInput,
-			SendIcon,
 			ImageIcon,
 			formatBase64Image,
 			selectedPhoto,
@@ -739,9 +740,9 @@ export default {
 					class="rounded-circle"
 					style="width: 50px; height: 50px; object-fit: cover"
 				/>
-				<h2 class="px-2 mb-0">
+				<h5 class="px-2 mb-0">
 					{{ conversation.display_name }}
-				</h2>
+				</h5>
 			</div>
 
 			<div class="dropdown ms-2">
@@ -1154,6 +1155,7 @@ export default {
 				<input
 					type="file"
 					ref="photoInput"
+					accept="image/jpeg, image/png"
 					class="d-none"
 					@change="handlePhotoUpload"
 				/>
@@ -1219,7 +1221,7 @@ export default {
 					/>
 				</div>
 				<button class="btn btn-primary ms-2" @click="sendMessage" title="Send Message">
-					<img :src="SendIcon" alt="Send Message" width="24" />
+					<i class="bi bi-send"></i>
 				</button>
 			</div>
 		</div>
