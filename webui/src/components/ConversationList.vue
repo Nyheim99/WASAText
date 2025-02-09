@@ -1,5 +1,4 @@
 <script>
-import WriteIcon from "/pencil-square.svg";
 import AvatarIcon from "/person-fill.svg";
 import PeopleIcon from "/people-fill.svg";
 import { ref, onMounted, onUnmounted } from "vue";
@@ -321,7 +320,6 @@ export default {
 		});
 
 		return {
-			WriteIcon,
 			AvatarIcon,
 			searchQuery,
 			searchResults,
@@ -357,17 +355,17 @@ export default {
 		class="rounded shadow-sm bg-white p-1 d-flex flex-column h-100"
 		style="width: 300px"
 	>
-		<div class="container row p-2 w-100 mx-0">
-			<div class="d-flex justify-content-between align-items-center px-0">
-				<h5 class="mb-0" style="line-height: 1.5">Conversations</h5>
+		<div class="container row w-100 m-0 p-0">
+			<div class="d-flex justify-content-between align-items-center p-1">
+				<h5 class="mb-0"><b>Conversations</b></h5>
 				<button
-					class="btn btn-light p-1 d-flex align-items-center justify-content-center"
+					class="btn btn-light rounded-circle d-flex align-items-center justify-content-center"
 					type="button"
 					data-bs-toggle="modal"
 					data-bs-target="#newConversationModal"
 					style="width: 24px; height: 24px"
 				>
-					<img :src="WriteIcon" alt="New Conversation" />
+					<i class="bi bi-pencil-square"></i>
 				</button>
 			</div>
 		</div>
@@ -636,7 +634,7 @@ export default {
 				v-if="conversations.length === 0"
 				class="container d-flex flex-column align-items-center justify-content-center text-center p-4"
 			>
-				<p class="text-muted mb-2 fw-semibold">
+				<p class="text-muted mb-2">
 					You have no chats yet!
 				</p>
 				<button
@@ -645,7 +643,7 @@ export default {
 					data-bs-target="#newConversationModal"
 				>
 					<span class="me-2">Start a Conversation</span>
-					<img :src="WriteIcon" alt="New Conversation" width="16" />
+					<i class="bi bi-pencil-square"></i>
 				</button>
 			</div>
 
