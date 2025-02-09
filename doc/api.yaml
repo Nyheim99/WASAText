@@ -557,7 +557,7 @@ paths:
         "400":
           description: Invalid request
         "404":
-          description: Message not found or already deleted.
+          description: Message not found or already deleted
         "500":
           description: Internal server error
 
@@ -591,13 +591,10 @@ paths:
         "204":
           description: Reaction added successfully
         "400":
-          description: Bad request - Invalid message ID or missing/invalid emoticon
-        "403":
-          description: Unauthorized - User is not a participant in the conversation
-        "404":
-          description: Message not found
+          description: Invalid request
         "500":
           description: Internal server error
+
   /conversations/{conversationId}/messages/{messageId}/reactions/me:
     delete:
       tags: ["message"]
@@ -612,11 +609,7 @@ paths:
         "204":
           description: Reaction removed successfully
         "400":
-          description: Bad request - Invalid message ID
-        "403":
-          description: Unauthorized - User is not a participant in the conversation or does not have a reaction on this message
-        "404":
-          description: Message or reaction not found
+          description: Invalid request
         "500":
           description: Internal server error
 
