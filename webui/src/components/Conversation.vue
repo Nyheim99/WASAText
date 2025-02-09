@@ -730,7 +730,7 @@ export default {
 <template>
 	<div class="bg-white d-flex flex-column shadow-sm rounded h-100">
 		<div
-			class="d-flex align-items-center mb-2 p-4 pb-0 justify-content-between"
+			class="d-flex align-items-center p-3 justify-content-between"
 		>
 			<div class="d-flex align-items-center">
 				<img

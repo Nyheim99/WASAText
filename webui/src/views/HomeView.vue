@@ -44,10 +44,6 @@ export default {
 			try {
 				const response = await axios.get("/conversations");
 				conversations.value = response.data;
-				console.log(
-					"Fetched conversations in HomeView.vue: ",
-					response.data
-				);
 			} catch (error) {
 				console.error("Failed to fetch conversations:", error);
 			}
@@ -65,7 +61,6 @@ export default {
 					`/conversations/${conversationId}`
 				);
 				selectedConversationDetails.value = response.data;
-				console.log("Conversation details in HomeView:", response.data);
 			} catch (error) {
 				console.error("Failed to fetch conversation details:", error);
 			}
@@ -120,7 +115,6 @@ export default {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 
-				console.log("Profile picture updated:", response.data);
 				user.value.photo_url = response.data.photo_url;
 				return true;
 			} catch (error) {
@@ -219,7 +213,6 @@ export default {
 				await axios.put(
 					`/conversations/${conversationId}/messages/read`
 				);
-				console.log("Messages marked as read");
 			} catch (error) {
 				console.error("Failed to mark messages as read:", error);
 			}

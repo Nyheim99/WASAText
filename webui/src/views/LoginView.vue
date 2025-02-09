@@ -15,8 +15,6 @@ const handleLogin = async () => {
 
 		localStorage.setItem("userId", userId);
 
-		console.log("Login successful:", response.data);
-
 		router.push("/");
 	} catch (error) {
 		console.error("Login failed:", error.response?.data || error.message);
