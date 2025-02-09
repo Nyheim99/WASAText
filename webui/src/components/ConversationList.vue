@@ -531,7 +531,7 @@ export default {
 									style="max-height: 300px; overflow-y: auto"
 								>
 									<li
-										v-for="user in allUsers"
+										v-for="user in allUsers.filter((u) => u.id !== user.id)"
 										:key="user.id"
 										class="dropdown-item d-flex align-items-center justify-content-between"
 									>
@@ -621,7 +621,7 @@ export default {
 								class="btn btn-primary"
 								@click="createGroupConversation"
 							>
-								Send message Group
+								Start Conversation!
 							</button>
 						</div>
 					</div>
