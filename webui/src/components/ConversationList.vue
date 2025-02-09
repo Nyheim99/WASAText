@@ -696,8 +696,7 @@ export default {
 							{{ conversation.last_message_sender }}:
 						</strong>
 						<strong
-							v-else
-							v-if="
+							v-else-if="
 								conversation.last_message_sender_id === user.id
 							"
 						>
