@@ -6,6 +6,21 @@ info:
     WASAText application.
   version: 1.0.3
 
+
+tags:
+  - name: conversation
+    description: A single conversation or group
+  - name: conversations
+    description: Conversations between users or groups
+  - name: login
+    description: Login on the system
+  - name: message
+    description: A message in a conversation or group
+  - name: user
+    description: A single user on the system
+  - name: users
+    description: Users of the system
+
 paths:
   /session:
     post:
@@ -18,18 +33,19 @@ paths:
       operationId: doLogin
       requestBody:
         description: User details
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
                 username:
+                  description: Username of the user logging in or registering
                   type: string
                   example: Maria
                   pattern: "^[a-zA-Z0-9]*$"
                   minLength: 3
                   maxLength: 16
-        required: true
       responses:
         "201":
           description: User log-in action successful
@@ -39,6 +55,7 @@ paths:
                 type: object
                 properties:
                   identifier:
+                    description: Id of the logged in user
                     type: integer
                     example: 1
         "400":
@@ -63,9 +80,9 @@ paths:
                 maxItems: 100
                 items: { $ref: "#/components/schemas/User" }
         "404":
-          description: "No users found"
+          description: No users found
         "500":
-          description: "Failed to fetch users"
+          description: Failed to fetch users
 
   /user:
     get:
@@ -80,9 +97,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/User" }
         "404":
-          description: "User not found"
+          description: User not found
         "500":
-          description: "Internal server error"
+          description: Internal server error
 
   /user/username:
     put:
@@ -93,18 +110,19 @@ paths:
       operationId: setMyUserName
       requestBody:
         description: The new username
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
                 username:
+                  description: The new username to replace the old one
                   type: string
+                  example: Marco
+                  pattern: "^[a-zA-Z0-9]*$"
                   minLength: 3
                   maxLength: 16
-                  pattern: "^[a-zA-Z0-9]*$"
-                  example: Marco
-        required: true
       responses:
         "204":
           description: Username updated successfully
@@ -123,16 +141,16 @@ paths:
       operationId: setMyPhoto
       requestBody:
         description: the new profile picture
+        required: true
         content:
           multipart/form-data:
             schema:
               type: object
               properties:
                 photo:
+                  description: The profile picture to be uploaded.
                   type: string
                   format: binary
-                  description: The profile picture to be uploaded.
-        required: true
       responses:
         "200":
           description: Profile picture uploaded successfully
@@ -142,9 +160,10 @@ paths:
                 type: object
                 properties:
                   photo_url:
+                    description: The new profile picture uri reference
                     type: string
-                    format: uri
-                    example: /service/profile_pictures/user_1.jpg
+                    format: uri-reference
+                    example: /service/photos/users/user_1.jpg
         "400":
           description: Invalid file upload
         "500":
@@ -167,7 +186,7 @@ paths:
                 minItems: 0
                 maxItems: 50
                 items: { $ref: "#/components/schemas/ConversationPreview" }
-              example: []
+                example: []
         "500":
           description: Internal server error
     post:
@@ -188,40 +207,40 @@ paths:
                 - message
               properties:
                 conversation_type:
+                  description: Type of conversation. Either "private" or "group".
                   type: string
                   enum: ["private", "group"]
-                  example: "group"
-                  description: Type of conversation. Either "private" or "group".
+                  example: group
                 message:
+                  description: Initial message to start the conversation
                   type: string
                   minLength: 1
                   maxLength: 1000
                   pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
                   example: "Hey guys, whats up?"
-                  description: Initial message to start the conversation.
                 recipientID:
+                  description: Required if `conversation_type` is "private". The user ID of the recipient.
                   type: integer
                   example: 1
-                  description: Required if `conversation_type` is "private". The user ID of the recipient.
                 group_name:
+                  description: Required if `conversation_type` is "group". The name of the group.
                   type: string
                   minLength: 3
                   maxLength: 20
                   pattern: "^[a-zA-Z0-9 ]*$"
                   example: "WASA Students"
-                  description: Required if `conversation_type` is "group". The name of the group.
                 participants:
+                  description: List of participant user IDs (excluding the creator).
                   type: array
+                  minItems: 2
+                  maxItems: 100
                   items:
                     type: integer
-                  minItems: 1
-                  maxItems: 50
-                  description: List of participant user IDs (excluding the creator).
                   example: [2, 3, 4]
                 group_photo:
+                  description: Optional group photo to be uploaded.
                   type: string
                   format: binary
-                  description: Optional group photo to be uploaded.
       responses:
         "201":
           description: Conversation created successfully.
@@ -249,34 +268,37 @@ paths:
                 type: object
                 properties:
                   conversation_id:
+                    description: Unique identifier of the conversation
                     type: integer
-                    description: Unique conversation identifier
                     example: 2
                   conversation_type:
+                    description: Type of conversation. Either "private" or "group".
                     type: string
-                    description: Type of the conversation
-                    enum: ["group", "private"]
-                    example: "group"
+                    enum: ["private", "group"]
+                    example: group
                   display_name:
-                    type: string
                     description: Name of the group or the other participant (for private chats)
+                    type: string
+                    minLength: 3
+                    maxLength: 20
+                    pattern: "^[a-zA-Z0-9 ]*$"
                     example: "WASA Chat"
                   display_photo_url:
+                    description: Uri reference of the conversation photo
                     type: string
-                    format: uri
-                    description: URL of the conversation photo
+                    format: uri-reference
                     example: "/service/photos/groups/group_2.jpg"
                   messages:
-                    type: array
-                    minLength: 1
-                    maxLength: 1000
                     description: List of messages in conversation
+                    type: array
+                    minItems: 1
+                    maxItems: 1000
                     items: { $ref: "#/components/schemas/Message" }
                   participants:
-                    type: array
-                    minLength: 2
-                    maxLength: 100
                     description: List of participants (only for group conversations)
+                    type: array
+                    minItems: 2
+                    maxItems: 100
                     items: { $ref: "#/components/schemas/User" }
         "400":
           description: Invalid conversation ID
@@ -303,22 +325,24 @@ paths:
               type: object
               properties:
                 name:
+                  description: The new group name to replace the old one
                   type: string
+                  example: "Study Group"
+                  pattern: "^[a-zA-Z0-9 ]*$"
                   minLength: 3
                   maxLength: 20
-                  pattern: "^[a-zA-Z0-9 ]*$"
-                  example: "Study Group"
       responses:
         "200":
           description: Group name updated successfully
           content:
             application/json:
               schema:
+                description: The new group name to replace the old one
                 type: string
+                example: "Study Group"
+                pattern: "^[a-zA-Z0-9 ]*$"
                 minLength: 3
                 maxLength: 20
-                pattern: "^[a-zA-Z0-9 ]*$"
-                example: "Study Group"
         "400":
           description: Invalid request
         "500":
@@ -343,9 +367,9 @@ paths:
               type: object
               properties:
                 photo:
+                  description: The group photo to be uploaded
                   type: string
                   format: binary
-                  description: The group photo to be uploaded.
       responses:
         "200":
           description: Group photo uploaded successfully
@@ -355,9 +379,10 @@ paths:
                 type: object
                 properties:
                   photo_url:
+                    description: Uri reference of the new conversation photo
                     type: string
-                    format: uri
-                    example: /service/profile_pictures/user_1.jpg
+                    format: uri-reference
+                    example: /service/photos/users/user_1.jpg
         "400":
           description: Invalid request
         "500":
@@ -382,12 +407,13 @@ paths:
               type: object
               properties:
                 participants:
+                  description: List of user IDs that are new members
                   type: array
                   minItems: 1
                   maxItems: 100
                   items:
-                    type: integer
                     description: ID of the user to be added
+                    type: integer
                   example: [3, 4, 5]
       responses:
         "204":
@@ -443,16 +469,16 @@ paths:
               type: object
               properties:
                 message:
+                  description: The text content of the message
                   type: string
                   minLength: 1
                   maxLength: 1000
                   pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
                   example: "Hello everyone!"
-                  description: The text content of the message
                 photo:
+                  description: The image to be stored in the database
                   type: string
                   format: binary
-                  description: The image to be stored in the database
       responses:
         "201":
           description: Message sent successfully
@@ -462,36 +488,36 @@ paths:
                 type: object
                 properties:
                   message_id:
-                    type: integer
                     description: Unique identifier of the sent message
+                    type: integer
                     example: 123
                   message_type:
+                    description: Type of message sent. Either "text" or "photo"
                     type: string
                     enum: ["text", "photo"]
-                    description: Type of message sent
-                    example: "text"
+                    example: text
                   content:
+                    description: The text content of the message (empty if it's a photo message)
                     type: string
                     minLength: 0
                     maxLength: 1000
                     pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
-                    description: The text content of the message (empty if it's a photo message)
                     example: "Hello everyone!"
                   sender_id:
-                    type: integer
                     description: ID of the user who sent the message
+                    type: integer
                     example: 2
                   sender_name:
-                    type: string
                     description: Name of the user who sent the message
+                    type: string
                     pattern: "^[a-zA-Z0-9]*$"
                     minLength: 3
                     maxLength: 16
                     example: "JohnDoe"
                   timestamp:
+                    description: Time when the message was sent
                     type: string
                     format: date-time
-                    description: Time when the message was sent
                     example: "2024-02-02T15:04:05Z"
         "400":
           description: Invalid request
@@ -520,17 +546,18 @@ paths:
                 type: object
                 properties:
                   message_id:
-                    type: integer
                     description: Unique identifier of the deleted message
+                    type: integer
                     example: 45
                   conversation_id:
-                    type: integer
                     description: Unique identifier of the conversation
+                    type: integer
                     example: 12
                   status:
-                    type: string
                     description: Confirmation message
-                    example: "deleted"
+                    type: string
+                    enum: ["sent", "read"]
+                    example: sent
         "400":
           description: Invalid request parameters.
         "401":
@@ -541,6 +568,64 @@ paths:
           description: Message not found or already deleted.
         "500":
           description: Internal server error.
+  /conversations/{conversationId}/messages/{messageId}/reactions:
+    post:
+      tags: ["message"]
+      summary: Add a reaction to a message
+      description: |
+        Adds a reaction (emoticon) to a specific message in a conversation. 
+        The reaction must be one of the predefined emoticons.
+      operationId: addReaction
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+        - $ref: "#/components/parameters/messageId"
+      requestBody:
+        description: Reaction details
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - emoticon
+              properties:
+                emoticon:
+                  description: The emoticon representing the reaction. Must be one of ["👍", "😂", "❤️", "🔥", "😢"].
+                  type: string
+                  enum: ["👍", "😂", "❤️", "🔥", "😢"]
+                  example: "😂"
+      responses:
+        "204":
+          description: Reaction added successfully
+        "400":
+          description: Bad request - Invalid message ID or missing/invalid emoticon
+        "403":
+          description: Unauthorized - User is not a participant in the conversation
+        "404":
+          description: Message not found
+        "500":
+          description: Internal server error
+  /conversations/{conversationId}/messages/{messageId}/reactions/me:
+    delete:
+      tags: ["message"]
+      summary: Remove your reaction from a message
+      description: |
+        Removes the current user's reaction (if it exists) from a specific message in the conversation.
+      operationId: removeReaction
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+        - $ref: "#/components/parameters/messageId"
+      responses:
+        "204":
+          description: Reaction removed successfully
+        "400":
+          description: Bad request - Invalid message ID
+        "403":
+          description: Unauthorized - User is not a participant in the conversation or does not have a reaction on this message
+        "404":
+          description: Message or reaction not found
+        "500":
+          description: Internal server error
 
 components:
   schemas:
@@ -554,22 +639,20 @@ components:
           type: integer
           example: 1
         username:
-          type: string
           description: "The user's username"
+          type: string
           example: Maria
           pattern: "^[a-zA-Z0-9]*$"
           minLength: 3
           maxLength: 16
         photo_url:
-          description: "URL of user's profile picture"
+          description: Uri reference of user's profile picture
           type: string
-          format: uri
-          minLength: 10
-          maxLength: 2048
-          example: "https://url.com/photo.jpg"
+          format: uri-reference
+          example: /service/photos/users/user_1.jpg
     Message:
       title: Message
-      description: "This object represents a single message"
+      description: This object represents a single message
       type: object
       properties:
         id:
@@ -577,36 +660,37 @@ components:
           type: integer
           example: 1
         sender_id:
-          description: "Id of user who sent the message"
+          description: Unique identifier of the user who sent the message
           type: integer
           example: 1
         sender_username:
-          description: "Name of user who sent the message"
+          description: Name of user who sent the message
           type: string
           example: Maria
           pattern: "^[a-zA-Z0-9]*$"
           minLength: 3
           maxLength: 16
         content:
-          description: "Content of the message"
+          description: Content of the message
           type: string
           minLength: 1
           maxLength: 1000
           pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
           example: "Hello guys!"
         conversation_id:
-          description: "Id of conversation message belongs in"
+          description: Unique identifier of the conversation
           type: integer
           example: 1
         timestamp:
-          description: "Timestamp of when the message was sent"
+          description: Timestamp of when the message was sent
           type: string
           format: date-time
+          example: "2024-02-02T15:04:05Z"
         status:
-          description: "Status of the message"
+          description: Status of the message
           type: string
           enum: ["sent", "read"]
-          example: "sent"
+          example: sent
         is_deleted:
           description: |-
             Indicates whether a message is deleted (true9 or not (false)
@@ -633,105 +717,105 @@ components:
           type: integer
           example: 0
         reactions:
-          description: "A list of reactions to the message"
+          description: A list of reactions to the message
           type: array
           minItems: 0
           maxItems: 100
           items: { $ref: "#/components/schemas/Reaction" }
     Reaction:
       title: Reaction
-      description: "Represents a single reaction to a message"
+      description: Represents a single reaction to a message
       type: object
       properties:
         emoticon:
-          description: "The emoticon used in the comment"
+          description: The emoticon used in the reaction
           type: string
-          example: "👍"
+          example: 👍
           enum: ["👍", "😂", "❤️", "🔥", "😢"]
         user_id:
-          description: "ID of the user who commented"
+          description: Unique identifier of the user who reacted
           type: integer
           example: 2
         message_id:
-          description: "ID of the message"
+          description: Unique identifier of the message
           type: integer
           example: 1
     ConversationPreview:
       title: ConversationPreview
-      description: "This object represents a preview of a conversation for listing"
+      description: This object represents a preview of a conversation for listing
       type: object
       properties:
         conversation_id:
-          description: "Unique conversation identifier"
+          description: Unique identifier of the conversation
           type: integer
           example: 1
         conversation_type:
-          description: "Indicates whether the conversation is a group or private conversation"
+          description: Type of conversation. Either "private" or "group".
           type: string
-          enum: ["group", "private"]
-          example: "group"
+          enum: ["private", "group"]
+          example: group
         display_name:
-          description: "The name displayed for the conversation (group name or other user's name)"
+          description: The name displayed for the conversation (group name or other user's name)
           type: string
           minLength: 3
           maxLength: 20
-          pattern: "^[a-zA-Z0-9]*$"
-          example: "WASA Co-Students"
+          pattern: "^[a-zA-Z0-9 ]*$"
+          example: "WASA Students"
         display_photo_url:
-          description: "URL of the display photo for the conversation (group photo or other user's profile picture)"
+          description: Uri reference of the display photo for the conversation (group photo or other user's profile picture)
           type: string
-          format: uri
-          example: "https://url.com/photo.jpg"
+          format: uri-reference
+          example: /service/photos/groups/group_2.jpg
         last_message_id:
-          description: "ID of last message in the conversation"
+          description: ID of last message in the conversation
           type: integer
           example: 789
         last_message_content:
-          description: "Content of the last message in the conversation"
+          description: Content of the last message in the conversation
           type: string
           nullable: true
           minLength: 1
           maxLength: 1000
           example: "Hey, how are you?"
         last_message_has_photo:
-          description: "Indicates if the last message contains a photo"
+          description: Indicates if the last message contains a photo
           type: boolean
           example: true
         last_message_timestamp:
-          description: "Timestamp of the last message"
+          description: Timestamp of the last message
           type: string
           format: date-time
           example: "2024-02-05T12:00:00Z"
         last_message_sender_id:
-          description: "ID of the user who sent the last message"
+          description: ID of the user who sent the last message
           type: integer
           example: 2
         last_message_sender:
-          description: "Username of the last message sender"
+          description: Username of the last message sender
           type: string
           minLength: 3
           maxLength: 16
           pattern: "^[a-zA-Z0-9]*$"
-          example: "Alice"
+          example: Alice
         last_message_is_deleted:
-          description: "Indicates if the last message was deleted"
+          description: Indicates if the last message was deleted
           type: boolean
           example: false
 
   parameters:
     conversationId:
+      description: Conversation Id
       schema:
         type: integer
         example: 1
       name: conversationId
       in: path
       required: true
-      description: "Conversation Id"
     messageId:
+      description: Message Id
       schema:
         type: integer
         example: 1
       name: messageId
       in: path
       required: true
-      description: "Message Id"
