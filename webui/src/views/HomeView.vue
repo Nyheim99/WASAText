@@ -55,7 +55,7 @@ export default {
 
 		const selectConversation = async (conversation) => {
 			selectedConversation.value = conversation;
-			await markMessagesAsRead(conversation.conversation_id)
+			await markMessagesAsRead(conversation.conversation_id);
 			fetchConversationDetails(conversation.conversation_id);
 		};
 
@@ -307,6 +307,10 @@ export default {
 					@message-forwarded="updateConversationWithNewMessage"
 					@message-deleted="updateConversationWithDeletedMessage"
 				/>
+				<div
+					v-else
+					class="bg-white d-flex flex-column shadow-sm rounded h-100"
+				></div>
 			</div>
 		</div>
 	</div>
