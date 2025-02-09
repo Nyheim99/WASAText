@@ -363,6 +363,7 @@ export default {
 					type="button"
 					data-bs-toggle="modal"
 					data-bs-target="#newConversationModal"
+					title="New Conversation"
 					style="width: 24px; height: 24px"
 				>
 					<i class="bi bi-pencil-square"></i>

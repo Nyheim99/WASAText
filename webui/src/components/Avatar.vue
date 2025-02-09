@@ -121,6 +121,7 @@ export default {
 			data-bs-toggle="dropdown"
 			data-bs-auto-close="outside"
 			data-bs-offset="0, 10"
+			title="User Actions"
 			aria-expanded="false"
 			style="
 				width: 60px;

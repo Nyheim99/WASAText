@@ -729,7 +729,9 @@ export default {
 
 <template>
 	<div class="bg-white d-flex flex-column shadow-sm rounded h-100">
-		<div class="d-flex align-items-center mb-2 p-4 pb-0">
+		<div
+			class="d-flex align-items-center mb-2 p-4 pb-0 justify-content-between"
+		>
 			<div class="d-flex align-items-center">
 				<img
 					:src="conversationPhoto()"
@@ -742,39 +744,64 @@ export default {
 				</h2>
 			</div>
 
-			<button
-				v-if="conversation.conversation_type === 'group'"
-				class="btn btn-outline-primary ms-2"
-				data-bs-toggle="modal"
-				data-bs-target="#groupNameModal"
-			>
-				Update Group Name
-			</button>
-
-			<button
-				v-if="conversation.conversation_type === 'group'"
-				class="btn btn-outline-primary"
-				data-bs-toggle="modal"
-				data-bs-target="#groupPhotoModal"
-			>
-				Update Group Picture
-			</button>
-			<button
-				v-if="conversation.conversation_type === 'group'"
-				class="btn btn-outline-primary"
-				data-bs-toggle="modal"
-				data-bs-target="#addMembersModal"
-			>
-				Add Members
-			</button>
-			<button
-				v-if="conversation.conversation_type === 'group'"
-				class="btn btn-outline-danger"
-				data-bs-toggle="modal"
-				data-bs-target="#leaveGroupModal"
-			>
-				Leave Group
-			</button>
+			<div class="dropdown ms-2">
+				<button
+					class="btn btn-light p-1 d-flex align-items-center justify-content-center rounded-circle"
+					type="button"
+					id="groupActionsDropdown"
+					data-bs-toggle="dropdown"
+					aria-expanded="false"
+					data-bs-placement="top"
+					title="Group Actions"
+					style="width: 36px; height: 36px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
+				>
+					<i class="bi bi-three-dots fs-4"></i>
+				</button>
+				<ul
+					class="dropdown-menu"
+					aria-labelledby="groupActionsDropdown"
+				>
+					<li>
+						<button
+							class="dropdown-item"
+							data-bs-toggle="modal"
+							data-bs-target="#groupNameModal"
+						>
+							Update Group Name
+						</button>
+					</li>
+					<li>
+						<button
+							class="dropdown-item"
+							data-bs-toggle="modal"
+							data-bs-target="#groupPhotoModal"
+						>
+							Update Group Picture
+						</button>
+					</li>
+					<li>
+						<button
+							class="dropdown-item"
+							data-bs-toggle="modal"
+							data-bs-target="#addMembersModal"
+						>
+							Add Members
+						</button>
+					</li>
+					<li>
+						<hr class="dropdown-divider" />
+					</li>
+					<li>
+						<button
+							class="dropdown-item text-danger"
+							data-bs-toggle="modal"
+							data-bs-target="#leaveGroupModal"
+						>
+							Leave Group
+						</button>
+					</li>
+				</ul>
+			</div>
 		</div>
 
 		<hr class="m-0" />
@@ -985,7 +1012,9 @@ export default {
 							class="mt-2 rounded"
 							style="max-width: 200px; border-radius: 8px"
 						/>
-						<div class="d-flex align-items-center gap-1 align-self-end">
+						<div
+							class="d-flex align-items-center gap-1 align-self-end"
+						>
 							<small
 								class="text-muted"
 								style="
@@ -997,16 +1026,22 @@ export default {
 							>
 								{{ formatTimestamp(message.timestamp) }}
 							</small>
-								<i
-									v-if="message.status === 'sent' && message.sender_id == user.id"
-									class="bi bi-check align-self-end"
-									title="Sent"
-								></i>
-								<i
-									v-if="message.status === 'read' && message.sender_id == user.id"
-									class="bi bi-check-all text-primary align-self-end"
-									title="Read"
-								></i>
+							<i
+								v-if="
+									message.status === 'sent' &&
+									message.sender_id == user.id
+								"
+								class="bi bi-check align-self-end"
+								title="Sent"
+							></i>
+							<i
+								v-if="
+									message.status === 'read' &&
+									message.sender_id == user.id
+								"
+								class="bi bi-check-all text-primary align-self-end"
+								title="Read"
+							></i>
 						</div>
 					</div>
 
@@ -1183,7 +1218,7 @@ export default {
 						@keyup.enter="handleEnterPress"
 					/>
 				</div>
-				<button class="btn btn-primary ms-2" @click="sendMessage">
+				<button class="btn btn-primary ms-2" @click="sendMessage" title="Send Message">
 					<img :src="SendIcon" alt="Send Message" width="24" />
 				</button>
 			</div>
