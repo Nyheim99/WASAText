@@ -554,21 +554,13 @@ paths:
                     description: Unique identifier of the conversation
                     type: integer
                     example: 12
-                  status:
-                    description: Confirmation message
-                    type: string
-                    enum: ["sent", "read"]
-                    example: sent
         "400":
-          description: Invalid request parameters.
-        "401":
-          description: Unauthorized - User is not authenticated.
-        "403":
-          description: Forbidden - User is not the sender of this message.
+          description: Invalid request
         "404":
           description: Message not found or already deleted.
         "500":
-          description: Internal server error.
+          description: Internal server error
+
   /conversations/{conversationId}/messages/{messageId}/reactions:
     post:
       tags: ["message"]

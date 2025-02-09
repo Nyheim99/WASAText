@@ -204,19 +204,13 @@ export default {
 			}
 		};
 
-		const updateConversationWithNewMessage = (payload) => {
-			const { conversationId, lastMessage } = payload;
-
-			console.log(lastMessage);
+		const updateConversationWithNewMessage = (conversationId) => {
 
 			fetchConversations();
 			fetchConversationDetails(conversationId);
 		};
 
-		const updateConversationWithDeletedMessage = (payload) => {
-			const { conversationId, deletedMessage } = payload;
-
-			console.log(deletedMessage);
+		const updateConversationWithDeletedMessage = (conversationId) => {
 
 			fetchConversations();
 			fetchConversationDetails(conversationId);

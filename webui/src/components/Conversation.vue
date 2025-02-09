@@ -57,6 +57,7 @@ export default {
 		const photoInput = ref(null);
 		const photoPreviewDiv = ref(null);
 		const selectedPhoto = ref(null);
+		const messageToDelete = ref(null);
 		const messages = computed(
 			() => props.conversationDetails?.messages || []
 		);
@@ -331,7 +332,7 @@ export default {
 			}
 
 			try {
-				const response = await axios.post(
+				await axios.post(
 					`/conversations/${props.conversation.conversation_id}/messages`,
 					formData,
 					{ headers: { "Content-Type": "multipart/form-data" } }
@@ -340,10 +341,7 @@ export default {
 				newMessage.value = "";
 				selectedPhoto.value = null;
 
-				emit("message-sent", {
-					conversationId: props.conversation.conversation_id,
-					lastMessage: response.data,
-				});
+				emit("message-sent", props.conversation.conversation_id);
 			} catch (error) {
 				console.error(
 					"Failed to send message:",
@@ -352,30 +350,33 @@ export default {
 			}
 		};
 
-		const deleteMessage = async (message) => {
-			if (!confirm("Are you sure you want to delete this message?"))
-				return;
-
+		const deleteMessage = async () => {
 			try {
-				const response = await axios.delete(
-					`/conversations/${props.conversation.conversation_id}/messages/${message.id}`
+				await axios.delete(
+					`/conversations/${props.conversation.conversation_id}/messages/${messageToDelete.value.id}`
 				);
 
-				message.is_deleted = true;
-				message.content = null;
+				emit("message-deleted", props.conversation.conversation_id);
 
-				emit("message-deleted", {
-					conversationId: props.conversation.conversation_id,
-					deletedMessage: response.data,
-				});
-
-				console.log("Message deleted:", message.id);
+				messageToDelete.value = null;
+				
+				const deleteModal = bootstrap.Modal.getInstance(
+					document.getElementById("deleteMessageModal")
+				);
+				if (deleteModal) deleteModal.hide();
 			} catch (error) {
 				console.error("Failed to delete message:", error);
-				alert("Failed to delete message.");
 			} finally {
 				contextMenu.value.visible = false;
 			}
+		};
+
+		const confirmDeleteMessage = (message) => {
+			messageToDelete.value = message;
+			const deleteModal = new bootstrap.Modal(
+				document.getElementById("deleteMessageModal")
+			);
+			deleteModal.show();
 		};
 
 		const triggerFileUpload = () => {
@@ -653,6 +654,7 @@ export default {
 			toggleReaction,
 			showReactionDetails,
 			deleteMessage,
+			confirmDeleteMessage,
 			messageContainer,
 			scrollToBottom,
 			groupReactions,
@@ -735,7 +737,7 @@ export default {
 			<hr class="my-2" v-if="contextMenu.canDelete" />
 			<div
 				v-if="contextMenu.canDelete"
-				@click="deleteMessage(contextMenu.message)"
+				@click="confirmDeleteMessage(contextMenu.message)"
 				class="text-danger"
 			>
 				Delete
@@ -1245,6 +1247,7 @@ export default {
 			</div>
 		</div>
 	</div>
+
 	<!-- Leave Group Confirmation Modal -->
 	<div
 		class="modal fade"
@@ -1283,6 +1286,50 @@ export default {
 						@click="handleLeaveGroup"
 					>
 						Leave Group
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Delete Message Confirmation Modal -->
+	<div
+		class="modal fade"
+		id="deleteMessageModal"
+		tabindex="-1"
+		aria-labelledby="deleteMessageModalLabel"
+		aria-hidden="true"
+	>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="deleteMessageModalLabel">
+						Delete Message
+					</h5>
+					<button
+						type="button"
+						class="btn-close"
+						data-bs-dismiss="modal"
+						aria-label="Close"
+					></button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to delete this message?</p>
+				</div>
+				<div class="modal-footer">
+					<button
+						type="button"
+						class="btn btn-secondary"
+						data-bs-dismiss="modal"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="btn btn-danger"
+						@click="deleteMessage"
+					>
+						Delete Message
 					</button>
 				</div>
 			</div>
