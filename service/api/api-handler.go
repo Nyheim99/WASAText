@@ -26,6 +26,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.DELETE("/conversations/:conversationID/members/me", rt.validateAuthorization(rt.leaveGroup))
 
 	rt.router.POST("/conversations/:conversationID/messages", rt.validateAuthorization(rt.sendMessage))
+	rt.router.POST("/conversations/:conversationID/messages/:messageID/forward", rt.validateAuthorization(rt.forwardMessage))
 	rt.router.DELETE("/conversations/:conversationID/messages/:messageID", rt.validateAuthorization(rt.deleteMessage))
 	
 	rt.router.POST("/conversations/:conversationID/messages/:messageID/reactions", rt.validateAuthorization(rt.commentMessage))

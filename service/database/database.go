@@ -64,6 +64,7 @@ type AppDatabase interface {
 	DeleteMessage(conversationID, messageID, userID int64) error
 	CommentMessage(messageID, userID int64, emoticon string) error
 	UncommentMessage(messageID, userID int64) error
+	ForwardMessage(conversationID, senderID, originalMessageID int64) (int64, error)
 
 	Ping() error
 }

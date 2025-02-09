@@ -295,6 +295,7 @@ export default {
 					@group-members-updated="fetchConversationDetails"
 					@group-left="removeConversation"
 					@message-sent="updateConversationWithNewMessage"
+					@message-forwarded="updateConversationWithNewMessage"
 					@message-deleted="updateConversationWithDeletedMessage"
 				/>
 			</div>

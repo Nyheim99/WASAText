@@ -40,6 +40,7 @@ export default {
 		"group-left",
 		"message-sent",
 		"message-deleted",
+		"message-forwarded",
 	],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
@@ -58,6 +59,8 @@ export default {
 		const photoPreviewDiv = ref(null);
 		const selectedPhoto = ref(null);
 		const messageToDelete = ref(null);
+		const forwardMessage = ref(null);
+		const availableConversations = ref([]);
 		const messages = computed(
 			() => props.conversationDetails?.messages || []
 		);
@@ -350,6 +353,46 @@ export default {
 			}
 		};
 
+		const confirmForwardMessage = (message) => {
+			forwardMessage.value = message;
+			fetchAvailableConversations();
+			const modal = new bootstrap.Modal(
+				document.getElementById("forwardMessageModal")
+			);
+			modal.show();
+		};
+
+		const fetchAvailableConversations = async () => {
+			try {
+				const response = await axios.get("/conversations");
+				availableConversations.value = response.data.filter(
+					(conv) =>
+						conv.conversation_id !==
+						props.conversation.conversation_id
+				);
+			} catch (error) {
+				console.error("Failed to fetch conversations:", error);
+			}
+		};
+
+		const forwardMessageTo = async (conversationId) => {
+			try {
+				await axios.post(
+					`/conversations/${conversationId}/messages/${forwardMessage.value.id}/forward`
+				);
+
+				emit("message-forwarded", props.conversation.conversation_id);
+
+				forwardMessage.value = null;
+				const modal = bootstrap.Modal.getInstance(
+					document.getElementById("forwardMessageModal")
+				);
+				if (modal) modal.hide();
+			} catch (error) {
+				console.error("Failed to forward message:", error);
+			}
+		};
+
 		const deleteMessage = async () => {
 			try {
 				await axios.delete(
@@ -359,7 +402,7 @@ export default {
 				emit("message-deleted", props.conversation.conversation_id);
 
 				messageToDelete.value = null;
-				
+
 				const deleteModal = bootstrap.Modal.getInstance(
 					document.getElementById("deleteMessageModal")
 				);
@@ -658,6 +701,9 @@ export default {
 			messageContainer,
 			scrollToBottom,
 			groupReactions,
+			forwardMessageTo,
+			confirmForwardMessage,
+			availableConversations,
 		};
 	},
 };
@@ -718,27 +764,34 @@ export default {
 		<!-- Context Menu -->
 		<div
 			v-if="contextMenu.visible"
+			class="position-absolute bg-white border rounded shadow-sm p-1"
 			:style="{
-				position: 'absolute',
-				background: 'white',
-				border: '1px solid #ccc',
-				padding: '5px 10px',
-				borderRadius: '5px',
-				boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.2)',
-				cursor: 'pointer',
 				zIndex: '1000',
 				top: contextMenu.y + 'px',
 				left: contextMenu.x + 'px',
+				width: '150px',
 			}"
 		>
-			<div @click="showReactionPicker($event, contextMenu.message)">
+			<div
+				class="px-3 py-2 rounded hover-bg"
+				style="cursor: pointer"
+				@click="showReactionPicker($event, contextMenu.message)"
+			>
 				React
 			</div>
-			<hr class="my-2" v-if="contextMenu.canDelete" />
+			<div
+				class="px-3 py-2 rounded hover-bg"
+				style="cursor: pointer"
+				@click="confirmForwardMessage(contextMenu.message)"
+			>
+				Forward
+			</div>
+			<hr class="my-1" v-if="contextMenu.canDelete" />
 			<div
 				v-if="contextMenu.canDelete"
+				class="px-3 py-2 text-danger rounded hover-bg"
+				style="cursor: pointer"
 				@click="confirmDeleteMessage(contextMenu.message)"
-				class="text-danger"
 			>
 				Delete
 			</div>
@@ -837,6 +890,9 @@ export default {
 						textAlign: 'left',
 					}"
 				>
+					<p v-if="message.is_forwarded" class="text-muted mb-0">
+						<i class="bi bi-forward-fill px-1"></i><i>Forwarded</i>
+					</p>
 					<p
 						v-if="
 							conversation.conversation_type === 'group' &&
@@ -1292,6 +1348,60 @@ export default {
 		</div>
 	</div>
 
+	<!-- Forward Message Modal -->
+	<div class="modal fade" id="forwardMessageModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Forward Message</h5>
+					<button
+						type="button"
+						class="btn-close"
+						data-bs-dismiss="modal"
+					></button>
+				</div>
+				<div class="modal-body">
+					<div
+						v-if="availableConversations.length === 0"
+						class="d-flex flex-column align-items-center p-4 text-muted"
+					>
+						<i class="bi bi-chat-dots fs-1 mb-2"></i>
+						<p class="m-0">
+							No conversation available to forward to.
+						</p>
+					</div>
+					<div v-else class="p-3">
+						<p class="mb-3 fw-bold">
+							Select the conversation where you want to forward
+							this message:
+						</p>
+						<ul class="list-group">
+							<li
+								v-for="conv in availableConversations"
+								:key="conv.conversation_id"
+								class="list-group-item d-flex align-items-center justify-content-between hover-bg"
+								style="cursor: pointer"
+								@click="forwardMessageTo(conv.conversation_id)"
+							>
+								<span>{{ conv.display_name }}</span>
+								<i class="bi bi-arrow-right-circle"></i>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						type="button"
+						class="btn btn-secondary"
+						data-bs-dismiss="modal"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Delete Message Confirmation Modal -->
 	<div
 		class="modal fade"
@@ -1336,3 +1446,11 @@ export default {
 		</div>
 	</div>
 </template>
+
+<style scoped>
+.hover-bg:hover {
+	background-color: var(--bs-gray-200);
+	transition: background-color 0.3s ease;
+	cursor: pointer;
+}
+</style>

@@ -5,25 +5,20 @@ import (
 	"fmt"
 )
 
-// SendMessage adds a message to a conversation, supporting both text and image messages.
 func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error) {
-	// Ensure that either content or photoData is provided, but not both
 	if (content != nil && photoData != nil) || (content == nil && photoData == nil) {
 		return 0, fmt.Errorf("a message must contain either text or an image, but not both")
 	}
 
-	// Prepare the query dynamically based on whether it's a text or photo message
 	var result sql.Result
 	var err error
 
 	if content != nil {
-		// Insert a text message
 		result, err = db.c.Exec(`
 			INSERT INTO messages (conversation_id, sender_id, content, timestamp, status)
 			VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'sent')
 		`, conversationID, senderID, *content)
 	} else {
-		// Insert an image message
 		result, err = db.c.Exec(`
 			INSERT INTO messages (conversation_id, sender_id, photo_data, photo_mime_type, timestamp, status)
 			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent')
@@ -39,7 +34,6 @@ func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string
 		return 0, fmt.Errorf("failed to retrieve message ID: %w", err)
 	}
 
-	// Update the last message ID in the conversations table
 	_, err = db.c.Exec(`
 		UPDATE conversations
 		SET last_message_id = ?
@@ -52,9 +46,7 @@ func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string
 	return messageID, nil
 }
 
-// DeleteMessage performs a soft delete by setting is_deleted to TRUE.
 func (db *appdbimpl) DeleteMessage(conversationID, messageID, userID int64) error {
-	// Check if the message exists and belongs to the conversation
 	var count int
 	err := db.c.QueryRow(`
 		SELECT COUNT(*) FROM messages 
@@ -69,7 +61,6 @@ func (db *appdbimpl) DeleteMessage(conversationID, messageID, userID int64) erro
 		return fmt.Errorf("message not found or already deleted")
 	}
 
-	// Perform the soft delete
 	_, err = db.c.Exec(`
 		UPDATE messages 
 		SET is_deleted = TRUE
@@ -109,4 +100,54 @@ func (db *appdbimpl) UncommentMessage(messageID, userID int64) error {
 
 	return nil
 }
+
+func (db *appdbimpl) ForwardMessage(conversationID, senderID, originalMessageID int64) (int64, error) {
+	var content sql.NullString
+	var photoData []byte
+	var photoMimeType sql.NullString
+	err := db.c.QueryRow(`
+		SELECT content, photo_data, photo_mime_type 
+		FROM messages 
+		WHERE id = ? AND is_deleted = FALSE
+	`, originalMessageID).Scan(&content, &photoData, &photoMimeType)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, fmt.Errorf("original message not found")
+		}
+		return 0, fmt.Errorf("failed to retrieve original message: %w", err)
+	}
+
+	var result sql.Result
+	if content.Valid {
+		result, err = db.c.Exec(`
+			INSERT INTO messages (conversation_id, sender_id, content, timestamp, is_forwarded, original_message_id)
+			VALUES (?, ?, ?, CURRENT_TIMESTAMP, TRUE, ?)
+		`, conversationID, senderID, content.String, originalMessageID)
+	} else {
+		result, err = db.c.Exec(`
+			INSERT INTO messages (conversation_id, sender_id, photo_data, photo_mime_type, timestamp, is_forwarded, original_message_id)
+			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, TRUE, ?)
+		`, conversationID, senderID, photoData, photoMimeType.String, originalMessageID)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("failed to forward message: %w", err)
+	}
+
+	messageID, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to retrieve new message ID: %w", err)
+	}
+
+	_, err = db.c.Exec(`
+		UPDATE conversations
+		SET last_message_id = ?
+		WHERE id = ?
+	`, messageID, conversationID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to update last message ID for conversation: %w", err)
+	}
+
+	return messageID, nil
+}
+
 
