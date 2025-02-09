@@ -4,7 +4,7 @@ info:
   description: |-
     This document describes the API is for the 
     WASAText application.
-  version: 1.0.3
+  version: 1.0.4
 
 tags:
   - name: conversation
