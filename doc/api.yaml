@@ -430,12 +430,12 @@ paths:
       summary: Send a message in a conversation
       description: |
         Sends a message (either text or photo) in the specified conversation.
-        Users can send a plain text message, a photo, or both.
+        Users can send a plain text message or a photo.
       operationId: sendMessage
       parameters:
         - $ref: "#/components/parameters/conversationId"
       requestBody:
-        description: message to be sent
+        description: Message to be sent
         required: true
         content:
           multipart/form-data:
@@ -444,12 +444,15 @@ paths:
               properties:
                 message:
                   type: string
-                  description: The text content of the message
+                  minLength: 1
+                  maxLength: 1000
+                  pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
                   example: "Hello everyone!"
+                  description: The text content of the message
                 photo:
                   type: string
                   format: binary
-                  description: The image file to be uploaded
+                  description: The image to be stored in the database
       responses:
         "201":
           description: Message sent successfully
@@ -469,6 +472,9 @@ paths:
                     example: "text"
                   content:
                     type: string
+                    minLength: 0
+                    maxLength: 1000
+                    pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
                     description: The text content of the message (empty if it's a photo message)
                     example: "Hello everyone!"
                   sender_id:
@@ -478,6 +484,9 @@ paths:
                   sender_name:
                     type: string
                     description: Name of the user who sent the message
+                    pattern: "^[a-zA-Z0-9]*$"
+                    minLength: 3
+                    maxLength: 16
                     example: "JohnDoe"
                   timestamp:
                     type: string
@@ -485,13 +494,11 @@ paths:
                     description: Time when the message was sent
                     example: "2024-02-02T15:04:05Z"
         "400":
-          description: Bad request - Either no content provided, invalid file type, or malformed request.
-        "401":
-          description: Unauthorized - User is not authenticated.
+          description: Invalid request
         "404":
-          description: Conversation not found.
+          description: Sender not found
         "500":
-          description: Internal server error.
+          description: Internal server error
 
   /conversations/{conversationId}/messages/{messageId}:
     delete:

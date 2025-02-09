@@ -320,14 +320,14 @@ export default {
 
 		const sendMessage = async () => {
 			if (!newMessage.value && !selectedPhoto.value) {
-				alert("Please enter a message or select a photo.");
 				return;
 			}
 
 			const formData = new FormData();
-			formData.append("message", newMessage.value);
 			if (selectedPhoto.value) {
 				formData.append("photo", selectedPhoto.value);
+			} else {
+				formData.append("message", newMessage.value);
 			}
 
 			try {
@@ -336,8 +336,6 @@ export default {
 					formData,
 					{ headers: { "Content-Type": "multipart/form-data" } }
 				);
-
-				console.log("Message sent in Conversation:", response.data);
 
 				newMessage.value = "";
 				selectedPhoto.value = null;
@@ -362,8 +360,6 @@ export default {
 				const response = await axios.delete(
 					`/conversations/${props.conversation.conversation_id}/messages/${message.id}`
 				);
-
-				console.log("Deleted message in Conversation: ", response.data);
 
 				message.is_deleted = true;
 				message.content = null;
