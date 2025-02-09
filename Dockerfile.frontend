@@ -1,7 +1,7 @@
 FROM node:lts AS builder
 
-WORKDIR /app
-COPY . .
+WORKDIR /app/webui
+COPY webui .
 
 RUN yarn install
 RUN yarn run build-prod
