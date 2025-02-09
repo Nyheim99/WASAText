@@ -244,11 +244,15 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			m.id, m.conversation_id, m.sender_id, u.username, 
 			m.content, m.photo_data, m.photo_mime_type, m.timestamp, m.status, 
 			m.is_reply, m.original_message_id, 
-			m.is_forwarded, m.is_deleted
-		FROM messages m
-		JOIN users u ON m.sender_id = u.id
-		WHERE m.conversation_id = ?
-		ORDER BY m.timestamp ASC`, conversationID)
+			m.is_forwarded, m.is_deleted,
+			om.content AS original_message_content,
+			ou.username AS original_message_sender
+	FROM messages m
+	JOIN users u ON m.sender_id = u.id
+	LEFT JOIN messages om ON m.original_message_id = om.id
+	LEFT JOIN users ou ON om.sender_id = ou.id
+	WHERE m.conversation_id = ?
+	ORDER BY m.timestamp ASC`, conversationID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve messages: %w", err)
 	}
@@ -257,6 +261,8 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	messages := []Message{}
 	for messageRows.Next() {
 		var msg Message
+		var originalMessageContent sql.NullString
+		var originalMessageSender sql.NullString
 		var photoData []byte
 		var photoMimeType sql.NullString
 
@@ -274,6 +280,8 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			&msg.OriginalMessageID,
 			&msg.IsForwarded,
 			&msg.IsDeleted,
+			&originalMessageContent,
+			&originalMessageSender,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
@@ -284,6 +292,14 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		}
 		if photoMimeType.Valid {
 			msg.PhotoMimeType = &photoMimeType.String
+		}
+
+		if msg.IsReply && originalMessageContent.Valid {
+			msg.OriginalMessage = &OriginalMessage{
+				ID:      msg.OriginalMessageID,
+				Content: originalMessageContent.String,
+				Sender:  originalMessageSender.String,
+			}
 		}
 
 		// Fetch reactions for the message

@@ -702,6 +702,22 @@ components:
             If the message is standalone this will be 0.
           type: integer
           example: 0
+        original_message:
+          description: Details of the original message if this message is a reply
+          type: object
+          properties:
+            id:
+              description: ID of the original message
+              type: integer
+              example: 5
+            content:
+              description: Content of the original message
+              type: string
+              example: This is the original message content
+            sender:
+              description: Username of the original message sender
+              type: string
+              example: Marco
         reactions:
           description: A list of reactions to the message
           type: array

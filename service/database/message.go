@@ -5,24 +5,25 @@ import (
 	"fmt"
 )
 
-func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error) {
+func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string, originalMessageID int64) (int64, error) {
 	if (content != nil && photoData != nil) || (content == nil && photoData == nil) {
 		return 0, fmt.Errorf("a message must contain either text or an image, but not both")
 	}
 
+	isReply := originalMessageID > 0
 	var result sql.Result
 	var err error
 
 	if content != nil {
 		result, err = db.c.Exec(`
-			INSERT INTO messages (conversation_id, sender_id, content, timestamp, status)
-			VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'sent')
-		`, conversationID, senderID, *content)
+			INSERT INTO messages (conversation_id, sender_id, content, timestamp, status, is_reply, original_message_id)
+			VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'sent', ?, ?)
+		`, conversationID, senderID, *content, isReply, originalMessageID)
 	} else {
 		result, err = db.c.Exec(`
-			INSERT INTO messages (conversation_id, sender_id, photo_data, photo_mime_type, timestamp, status)
-			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent')
-		`, conversationID, senderID, *photoData, *photoMimeType)
+			INSERT INTO messages (conversation_id, sender_id, photo_data, photo_mime_type, timestamp, status, is_reply, original_message_id)
+			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent', ?, ?)
+		`, conversationID, senderID, *photoData, *photoMimeType, isReply, originalMessageID)
 	}
 
 	if err != nil {

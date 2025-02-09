@@ -81,7 +81,17 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	messageID, err := rt.db.SendMessage(conversationID, senderID, textContent, photoData, photoMimeType)
+	originalMessageIDStr := r.FormValue("original_message_id")
+	var originalMessageID int64 = 0
+	if originalMessageIDStr != "" {
+		originalMessageID, err = strconv.ParseInt(originalMessageIDStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid original_message_id", http.StatusBadRequest)
+			return
+		}
+	}
+
+	messageID, err := rt.db.SendMessage(conversationID, senderID, textContent, photoData, photoMimeType, originalMessageID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -107,7 +117,7 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 			return
 		}
 
-		if match, _ := regexp.MatchString(`^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$`, *textContent); !match {
+		if match, _ := regexp.MatchString(`^[a-zA-Z0-9À-ÿ.,!?()\-\"' ]+$`, *textContent); !match {
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}

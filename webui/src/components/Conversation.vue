@@ -60,6 +60,7 @@ export default {
 		const selectedPhoto = ref(null);
 		const messageToDelete = ref(null);
 		const forwardMessage = ref(null);
+		const replyToMessage = ref(null);
 		const availableConversations = ref([]);
 		const messages = computed(
 			() => props.conversationDetails?.messages || []
@@ -334,6 +335,10 @@ export default {
 				formData.append("message", newMessage.value);
 			}
 
+			if (replyToMessage.value) {
+				formData.append("original_message_id", replyToMessage.value.id);
+			}
+
 			try {
 				await axios.post(
 					`/conversations/${props.conversation.conversation_id}/messages`,
@@ -343,6 +348,7 @@ export default {
 
 				newMessage.value = "";
 				selectedPhoto.value = null;
+				replyToMessage.value = null;
 
 				emit("message-sent", props.conversation.conversation_id);
 			} catch (error) {
@@ -657,6 +663,15 @@ export default {
 			}
 		});
 
+		const setReplyTo = (message) => {
+			replyToMessage.value = message;
+			scrollToBottom();
+		};
+
+		const cancelReply = () => {
+			replyToMessage.value = null;
+		};
+
 		return {
 			fileInput,
 			uploading,
@@ -704,14 +719,17 @@ export default {
 			forwardMessageTo,
 			confirmForwardMessage,
 			availableConversations,
+			setReplyTo,
+			cancelReply,
+			replyToMessage,
 		};
 	},
 };
 </script>
 
 <template>
-	<div class="bg-white d-flex flex-column shadow-sm rounded p-4 h-100">
-		<div class="d-flex align-items-center mb-2">
+	<div class="bg-white d-flex flex-column shadow-sm rounded h-100">
+		<div class="d-flex align-items-center mb-2 p-4 pb-0">
 			<div class="d-flex align-items-center">
 				<img
 					:src="conversationPhoto()"
@@ -786,6 +804,13 @@ export default {
 			>
 				Forward
 			</div>
+			<div
+				class="px-3 py-2 rounded hover-bg"
+				style="cursor: pointer"
+				@click="setReplyTo(contextMenu.message)"
+			>
+				Reply
+			</div>
 			<hr class="my-1" v-if="contextMenu.canDelete" />
 			<div
 				v-if="contextMenu.canDelete"
@@ -840,7 +865,7 @@ export default {
 		</div>
 
 		<div
-			class="flex-grow-1 overflow-auto p-3 d-flex flex-column"
+			class="flex-grow-1 overflow-auto p-2 d-flex flex-column"
 			ref="messageContainer"
 		>
 			<div
@@ -890,6 +915,21 @@ export default {
 						textAlign: 'left',
 					}"
 				>
+					<div v-if="message.is_reply" class="reply-reference bg-light p-1 rounded mb-1">
+						<div class="text-muted">
+							<div>
+								<strong>
+									{{ message.original_message.sender }}
+								</strong>
+							</div>
+							<span class="original-message-content">
+								{{
+									message.original_message.content ||
+									"This message was deleted"
+								}}
+							</span>
+						</div>
+					</div>
 					<p v-if="message.is_forwarded" class="text-muted mb-0">
 						<i class="bi bi-forward-fill px-1"></i><i>Forwarded</i>
 					</p>
@@ -1015,78 +1055,124 @@ export default {
 		</div>
 
 		<!-- Message Input -->
-		<div class="d-flex align-items-end pt-2">
-			<input
-				type="file"
-				ref="photoInput"
-				class="d-none"
-				@change="handlePhotoUpload"
-			/>
-			<button
-				class="btn btn-outline-secondary me-2 position-relative"
-				@click="triggerFileUpload"
-				data-bs-toggle="tooltip"
-				title="Attach a photo"
-			>
-				<img :src="ImageIcon" alt="Select Photo" width="24" />
-			</button>
-
+		<div class="border-top">
 			<div
-				class="flex-grow-1 d-flex align-items-center border rounded bg-light"
-				style="height: 100%"
+				v-if="replyToMessage"
+				class="d-flex align-items-center gap-2 p-2 pb-0"
 			>
-				<!-- Photo Preview -->
-				<div
-					v-if="selectedPhoto"
-					@keyup.enter="handleEnterPress"
-					ref="photoPreviewDiv"
-					tabindex="0"
-					class="d-flex align-items-center w-100"
-				>
-					<div class="position-relative">
-						<!-- Preview Image -->
-						<img
-							:src="photoPreview"
-							alt="Photo Preview"
-							class="rounded"
-							style="
-								width: auto;
-								height: 100px;
-								object-fit: cover;
-								border: 1px solid #ddd;
+				<div class="text-muted p-1 m-0 rounded flex-grow-1">
+					<div>
+						<strong
+							v-if="
+								replyToMessage.sender_username === user.username
 							"
-						/>
-
-						<!-- Remove Photo Button -->
-						<button
-							class="btn btn-sm btn-danger rounded-circle position-absolute"
-							style="
-								top: -5px;
-								right: -5px;
-								width: 20px;
-								height: 20px;
-								font-size: 12px;
-								padding: 0;
-							"
-							@click="selectedPhoto = null"
 						>
-							×
-						</button>
+							Answering yourself
+						</strong>
+						<strong v-else>{{
+							replyToMessage.sender_username
+						}}</strong>
+					</div>
+					<div>
+						<span v-if="replyToMessage.content">
+							{{
+								replyToMessage.content.length > 50
+									? replyToMessage.content.substring(0, 50) +
+									  "..."
+									: replyToMessage.content
+							}}
+						</span>
+						<span v-else-if="replyToMessage.photo_data"
+							>Photo message</span
+						>
 					</div>
 				</div>
-
-				<input
-					v-else
-					v-model="newMessage"
-					type="text"
-					class="form-control border-0 bg-transparent w-100"
-					placeholder="Type a message..."
-					@keyup.enter="handleEnterPress"
-				/>
+				<div
+					class="hover-bg rounded-circle d-flex align-items-center justify-content-center"
+					style="
+						width: 30px;
+						height: 30px;
+						overflow: hidden;
+						font-size: 16px;
+						line-height: 1;
+					"
+				>
+					<i @click="cancelReply" class="bi bi-x"></i>
+				</div>
 			</div>
-			<button class="btn btn-primary ms-2" @click="sendMessage">
-				<img :src="SendIcon" alt="Send Message" width="24" />
-			</button>
+
+			<div class="d-flex align-items-end p-2">
+				<input
+					type="file"
+					ref="photoInput"
+					class="d-none"
+					@change="handlePhotoUpload"
+				/>
+				<button
+					class="btn btn-outline-secondary me-2 position-relative"
+					@click="triggerFileUpload"
+					data-bs-toggle="tooltip"
+					title="Attach a photo"
+				>
+					<img :src="ImageIcon" alt="Select Photo" width="24" />
+				</button>
+
+				<div
+					class="flex-grow-1 d-flex align-items-center border rounded bg-light"
+					style="height: 100%"
+				>
+					<!-- Photo Preview -->
+					<div
+						v-if="selectedPhoto"
+						@keyup.enter="handleEnterPress"
+						ref="photoPreviewDiv"
+						tabindex="0"
+						class="d-flex align-items-center w-100"
+					>
+						<div class="position-relative">
+							<!-- Preview Image -->
+							<img
+								:src="photoPreview"
+								alt="Photo Preview"
+								class="rounded"
+								style="
+									width: auto;
+									height: 100px;
+									object-fit: cover;
+									border: 1px solid #ddd;
+								"
+							/>
+
+							<!-- Remove Photo Button -->
+							<button
+								class="btn btn-sm btn-danger rounded-circle position-absolute"
+								style="
+									top: -5px;
+									right: -5px;
+									width: 20px;
+									height: 20px;
+									font-size: 12px;
+									padding: 0;
+								"
+								@click="selectedPhoto = null"
+							>
+								×
+							</button>
+						</div>
+					</div>
+					<input
+						v-else
+						v-model="newMessage"
+						type="text"
+						class="form-control border-0 bg-transparent w-100"
+						placeholder="Type a message..."
+						@keyup.enter="handleEnterPress"
+					/>
+				</div>
+				<button class="btn btn-primary ms-2" @click="sendMessage">
+					<img :src="SendIcon" alt="Send Message" width="24" />
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -1452,5 +1538,9 @@ export default {
 	background-color: var(--bs-gray-200);
 	transition: background-color 0.3s ease;
 	cursor: pointer;
+}
+.reply-reference {
+	font-size: 0.9em;
+	border-left: 3px solid #ddd;
 }
 </style>

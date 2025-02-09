@@ -38,6 +38,13 @@ type Message struct {
 	IsForwarded       bool        `json:"is_forwarded"`       
 	IsDeleted         bool        `json:"is_deleted"`
 	Reactions         []Reaction  `json:"reactions"`
+	OriginalMessage   *OriginalMessage `json:"original_message,omitempty"`
+}
+
+type OriginalMessage struct {
+    ID       int64  `json:"id"`
+    Content  string `json:"content"`
+    Sender   string `json:"sender"`
 }
 
 type MessageStatus struct {

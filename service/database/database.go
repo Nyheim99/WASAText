@@ -60,7 +60,7 @@ type AppDatabase interface {
 	GetConversation(conversationID int64) (*ConversationDetails, error)
 	GetMyConversations(userID int64) ([]ConversationPreview, error)
 
-	SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string) (int64, error)
+	SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string, originalMessageID int64) (int64, error)
 	DeleteMessage(conversationID, messageID, userID int64) error
 	CommentMessage(messageID, userID int64, emoticon string) error
 	UncommentMessage(messageID, userID int64) error

@@ -120,7 +120,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	_, err = rt.db.SendMessage(conversationID, userID, &message, nil, nil)
+	_, err = rt.db.SendMessage(conversationID, userID, &message, nil, nil, 0)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return

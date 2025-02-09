@@ -355,7 +355,7 @@ export default {
 <template>
 	<div
 		class="rounded shadow-sm bg-white p-1 d-flex flex-column h-100"
-		style="max-width: 270px"
+		style="width: 300px"
 	>
 		<div class="container row p-2 w-100 mx-0">
 			<div class="d-flex justify-content-between align-items-center px-0">
