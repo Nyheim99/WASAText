@@ -24,18 +24,39 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="d-flex justify-content-center align-items-center vh-100 bg-transparent">
-    <div class="card p-4 shadow-sm" style="max-width: 300px;">
-      <h1 class="text-center mb-3">Login</h1>
+	<div class="d-flex justify-content-center align-items-center vh-100">
+		<div
+			class="p-4 shadow-sm"
+			style="
+				max-width: 300px;
+				background-color: #C8E1FF;
+				border-radius: 12px;
+			"
+		>
+			<h1 class="text-center mb-3">Login</h1>
 
-      <input
-        type="text"
-        v-model="username"
-        placeholder="Enter your username"
-        class="form-control mb-3"
-      />
+			<input
+				type="text"
+				v-model="username"
+				placeholder="Enter your username"
+				class="form-control mb-3"
+				style="border: 1px solid #A7C7E7; background-color: #ffffff"
+			/>
 
-      <button @click="handleLogin" class="btn btn-primary w-100">Login</button>
-    </div>
-  </div>
+			<button
+				@click="handleLogin"
+				class="btn w-100"
+				style="
+					background-color: #4a90e2;
+					color: white;
+					border: none;
+					transition: background-color 0.2s ease;
+				"
+				onmouseover="this.style.backgroundColor='#357ABD';"
+				onmouseout="this.style.backgroundColor='#4A90E2';"
+			>
+				Login
+			</button>
+		</div>
+	</div>
 </template>

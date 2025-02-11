@@ -351,7 +351,6 @@ export default {
 				emit("message-sent", props.conversation.conversation_id);
 
 				scrollToBottom();
-
 			} catch (error) {
 				console.error(
 					"Failed to send message:",
@@ -724,10 +723,11 @@ export default {
 </script>
 
 <template>
-	<div class="bg-white d-flex flex-column shadow-sm rounded h-100">
-		<div
-			class="d-flex align-items-center p-3 justify-content-between"
-		>
+	<div
+		class="d-flex flex-column shadow-sm rounded h-100"
+		style="background-color: #C8E1FF"
+	>
+		<div class="d-flex align-items-center p-3 justify-content-between">
 			<div class="d-flex align-items-center">
 				<img
 					:src="conversationPhoto()"
@@ -740,7 +740,10 @@ export default {
 				</h5>
 			</div>
 
-			<div v-if="conversation.conversation_type == 'group'" class="dropdown ms-2">
+			<div
+				v-if="conversation.conversation_type == 'group'"
+				class="dropdown ms-2"
+			>
 				<button
 					class="btn btn-light p-1 d-flex align-items-center justify-content-center rounded-circle"
 					type="button"
@@ -749,7 +752,11 @@ export default {
 					aria-expanded="false"
 					data-bs-placement="top"
 					title="Group Actions"
-					style="width: 36px; height: 36px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
+					style="
+						width: 36px;
+						height: 36px;
+						box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+					"
 				>
 					<i class="bi bi-three-dots fs-4"></i>
 				</button>
@@ -1215,7 +1222,11 @@ export default {
 						@keyup.enter="handleEnterPress"
 					/>
 				</div>
-				<button class="btn btn-primary ms-2" @click="sendMessage" title="Send Message">
+				<button
+					class="btn btn-primary ms-2"
+					@click="sendMessage"
+					title="Send Message"
+				>
 					<i class="bi bi-send"></i>
 				</button>
 			</div>

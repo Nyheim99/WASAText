@@ -352,19 +352,27 @@ export default {
 
 <template>
 	<div
-		class="rounded shadow-sm bg-white p-1 d-flex flex-column h-100"
-		style="width: 300px"
+		class="rounded shadow-sm p-1 d-flex flex-column h-100"
+		style="width: 300px; background-color: #C8E1FF"
 	>
 		<div class="container row w-100 m-0 p-0">
 			<div class="d-flex justify-content-between align-items-center p-1">
 				<h5 class="mb-0"><b>Conversations</b></h5>
 				<button
-					class="btn btn-light rounded-circle d-flex align-items-center justify-content-center"
+					class="btn rounded-circle d-flex align-items-center justify-content-center"
 					type="button"
 					data-bs-toggle="modal"
 					data-bs-target="#newConversationModal"
 					title="New Conversation"
-					style="width: 24px; height: 24px"
+					style="
+						width: 24px;
+						height: 24px;
+						background-color: #dfecff;
+						color: #2c3e50;
+						border: none;
+					"
+					onmouseover="this.style.backgroundColor='#B0CFFB';"
+					onmouseout="this.style.backgroundColor='#DFECFF';"
 				>
 					<i class="bi bi-pencil-square"></i>
 				</button>
@@ -407,7 +415,7 @@ export default {
 						)
 					"
 					alt="Avatar"
-					class="rounded-circle me-2"
+					class="rounded-circle me-2 bg-white"
 					style="width: 40px; height: 40px; object-fit: cover"
 				/>
 
@@ -624,7 +632,8 @@ export default {
 							/>
 							<div v-if="groupName">
 								<div class="mb-2">
-									<strong>Step 3 (optional):</strong> Upload Group Photo
+									<strong>Step 3 (optional):</strong> Upload
+									Group Photo
 								</div>
 								<input
 									type="file"
@@ -636,7 +645,8 @@ export default {
 								/>
 
 								<div class="mb-2">
-									<strong>Step 4:</strong> Select Group Members
+									<strong>Step 4:</strong> Select Group
+									Members
 								</div>
 
 								<div class="dropdown">
@@ -723,7 +733,8 @@ export default {
 								</div>
 
 								<div class="my-2">
-									<strong>Step 5:</strong> Write the first message!
+									<strong>Step 5:</strong> Write the first
+									message!
 								</div>
 
 								<textarea
