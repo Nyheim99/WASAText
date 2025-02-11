@@ -347,14 +347,14 @@ export default {
 
 <template>
 	<div
-		class="rounded shadow-sm p-1 d-flex flex-column h-100"
-		style="width: 300px; background-color: #c8e1ff"
+		class="bg-white rounded shadow-sm p-1 d-flex flex-column h-100"
+		style="width: 300px;"
 	>
 		<div class="container row w-100 m-0 p-0">
 			<div class="d-flex justify-content-between align-items-center p-1">
-				<h5 class="mb-0"><b>Conversations</b></h5>
+				<h5 class="mb-2"><b>Conversations</b></h5>
 				<button
-					class="btn rounded-circle d-flex align-items-center justify-content-center"
+					class="btn bg-body-secondary rounded-circle d-flex align-items-center justify-content-center hover-bg"
 					type="button"
 					data-bs-toggle="modal"
 					data-bs-target="#newConversationModal"
@@ -362,12 +362,8 @@ export default {
 					style="
 						width: 24px;
 						height: 24px;
-						background-color: #dfecff;
-						color: #2c3e50;
 						border: none;
 					"
-					onmouseover="this.style.backgroundColor='#B0CFFB';"
-					onmouseout="this.style.backgroundColor='#DFECFF';"
 				>
 					<i class="bi bi-pencil-square"></i>
 				</button>
@@ -381,9 +377,10 @@ export default {
 			>
 				<p class="text-muted mb-2">You have no chats yet!</p>
 				<button
-					class="btn btn-secondary btn-sm d-flex align-items-center"
+					class="btn btn-sm d-flex align-items-center"
 					data-bs-toggle="modal"
 					data-bs-target="#newConversationModal"
+					style="background-color: #dfecff"
 				>
 					<span class="me-2">Start a Conversation</span>
 					<i class="bi bi-pencil-square"></i>
@@ -394,12 +391,9 @@ export default {
 				v-for="conversation in conversations"
 				v-else
 				:key="conversation.conversation_id"
-				class="container d-flex align-items-center p-2 border-bottom"
-				:class="{
-					'bg-light':
-						selectedConversation?.conversation_id ===
-						conversation.conversation_id,
-				}"
+				class="container d-flex align-items-center p-2 border-bottom hover-bg"
+				:class="selectedConversation?.conversation_id ===
+							conversation.conversation_id && 'bg-body-secondary'"
 				@click="$emit('select-conversation', conversation)"
 			>
 				<img
@@ -762,3 +756,11 @@ export default {
 		</div>
 	</div>
 </template>
+
+<style scoped>
+.hover-bg:hover {
+	background-color: var(--bs-gray-100);
+	transition: background-color 0.3s ease;
+	cursor: pointer;
+}
+</style>

@@ -720,8 +720,7 @@ export default {
 
 <template>
 	<div
-		class="d-flex flex-column shadow-sm rounded h-100"
-		style="background-color: #c8e1ff"
+		class=" bg-white d-flex flex-column shadow-sm rounded h-100"
 	>
 		<div class="d-flex align-items-center p-3 justify-content-between">
 			<div class="d-flex align-items-center">
@@ -923,13 +922,10 @@ export default {
 
 				<!-- Message Bubble -->
 				<div
-					class="p-2 rounded shadow-sm position-relative"
+					class="p-2 rounded shadow-sm position-relative mw-75"
+					:class="message.sender_id === user.id
+								? 'bg-info-subtle' : 'bg-body-secondary'"
 					:style="{
-						backgroundColor:
-							message.sender_id === user.id
-								? '#dcf8c6'
-								: '#f1f0f0',
-						maxWidth: '75%',
 						wordWrap: 'break-word',
 						padding: '10px',
 						borderRadius: '18px',
@@ -943,7 +939,9 @@ export default {
 				>
 					<div
 						v-if="message.is_reply"
-						class="reply-reference bg-light p-1 rounded mb-1"
+						class="p-1 rounded mb-1"
+						:class="message.sender_id === user.id
+								? 'bg-primary-subtle' : 'bg-dark-subtle'"
 					>
 						<div class="text-muted">
 							<div>
