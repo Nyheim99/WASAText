@@ -29,22 +29,21 @@ const handleLogin = async () => {
 			class="p-4 shadow-sm"
 			style="
 				max-width: 300px;
-				background-color: #C8E1FF;
+				background-color: #c8e1ff;
 				border-radius: 12px;
 			"
 		>
 			<h1 class="text-center mb-3">Login</h1>
 
 			<input
-				type="text"
 				v-model="username"
+				type="text"
 				placeholder="Enter your username"
 				class="form-control mb-3"
-				style="border: 1px solid #A7C7E7; background-color: #ffffff"
+				style="border: 1px solid #a7c7e7; background-color: #ffffff"
 			/>
 
 			<button
-				@click="handleLogin"
 				class="btn w-100"
 				style="
 					background-color: #4a90e2;
@@ -54,6 +53,7 @@ const handleLogin = async () => {
 				"
 				onmouseover="this.style.backgroundColor='#357ABD';"
 				onmouseout="this.style.backgroundColor='#4A90E2';"
+				@click="handleLogin"
 			>
 				Login
 			</button>

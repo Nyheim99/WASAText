@@ -2,6 +2,9 @@
 import Avatar from "./Avatar.vue";
 
 export default {
+	components: {
+		Avatar,
+	},
 	props: {
 		logout: Function,
 		updateUsername: Function,
@@ -10,9 +13,6 @@ export default {
 			type: Object,
 			required: true,
 		},
-	},
-	components: {
-		Avatar,
 	},
 };
 </script>

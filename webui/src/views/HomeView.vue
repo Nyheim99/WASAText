@@ -276,13 +276,13 @@ export default {
 			<div class="col-auto">
 				<ConversationList
 					v-if="user.id"
-					@feedback="handleFeedback"
-					@select-conversation="selectConversation"
-					@conversation-created="addNewConversation"
 					:user="user"
 					:conversations="conversations"
 					:allUsers="allUsers"
 					:selectedConversation="selectedConversation"
+					@feedback="handleFeedback"
+					@select-conversation="selectConversation"
+					@conversation-created="addNewConversation"
 				/>
 			</div>
 			<div class="col">

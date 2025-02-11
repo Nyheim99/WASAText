@@ -5,7 +5,6 @@ import { ref, onMounted, onUnmounted } from "vue";
 import axios from "../services/axios";
 
 export default {
-	emits: ["feedback", "select-conversation", "conversation-created"],
 	props: {
 		user: {
 			type: Object,
@@ -25,6 +24,7 @@ export default {
 			default: () => ({}),
 		},
 	},
+	emits: ["feedback", "select-conversation", "conversation-created"],
 	setup(props, { emit }) {
 		const modalMode = ref("");
 		const searchQuery = ref("");
@@ -353,7 +353,7 @@ export default {
 <template>
 	<div
 		class="rounded shadow-sm p-1 d-flex flex-column h-100"
-		style="width: 300px; background-color: #C8E1FF"
+		style="width: 300px; background-color: #c8e1ff"
 	>
 		<div class="container row w-100 m-0 p-0">
 			<div class="d-flex justify-content-between align-items-center p-1">
@@ -396,8 +396,8 @@ export default {
 			</div>
 
 			<div
-				v-else
 				v-for="conversation in conversations"
+				v-else
 				:key="conversation.conversation_id"
 				class="container d-flex align-items-center p-2 border-bottom"
 				:class="{
@@ -485,8 +485,8 @@ export default {
 		</div>
 
 		<div
-			class="modal fade"
 			id="newConversationModal"
+			class="modal fade"
 			tabindex="-1"
 			aria-labelledby="newConversationModalLabel"
 			aria-hidden="true"
@@ -494,7 +494,7 @@ export default {
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
-						<h5 class="modal-title" id="newConversationModalLabel">
+						<h5 id="newConversationModalLabel" class="modal-title">
 							Start a New Conversation
 						</h5>
 						<button
@@ -545,10 +545,10 @@ export default {
 								<strong>Step 2:</strong> Select a user
 							</div>
 							<input
+								v-model="searchQuery"
 								type="text"
 								class="form-control"
 								placeholder="Search for a user"
-								v-model="searchQuery"
 								@input="searchUsers"
 								@focus="showAllUsersOnFocus"
 							/>
@@ -612,9 +612,9 @@ export default {
 								></textarea>
 							</div>
 							<p
+								v-if="showValidation"
 								class="text-danger small mt-2"
 								aria-live="assertive"
-								v-if="showValidation"
 							>
 								{{ validationMessage }}
 							</p>
@@ -625,10 +625,10 @@ export default {
 								<strong>Step 2:</strong> Enter group name
 							</div>
 							<input
+								v-model="groupName"
 								type="text"
 								class="form-control mb-2"
 								placeholder="Group name..."
-								v-model="groupName"
 							/>
 							<div v-if="groupName">
 								<div class="mb-2">
@@ -651,9 +651,9 @@ export default {
 
 								<div class="dropdown">
 									<button
+										id="selectUsersDropdown"
 										class="btn btn-light dropdown-toggle"
 										type="button"
-										id="selectUsersDropdown"
 										data-bs-toggle="dropdown"
 										aria-expanded="false"
 									>
@@ -720,12 +720,12 @@ export default {
 											<button
 												class="btn-close btn-close-white ms-2"
 												aria-label="Remove"
-												@click="
-													toggleUserSelection(user)
-												"
 												style="
 													font-size: 10px;
 													opacity: 0.8;
+												"
+												@click="
+													toggleUserSelection(user)
 												"
 											></button>
 										</span>
@@ -746,9 +746,9 @@ export default {
 							</div>
 
 							<p
+								v-if="showValidation"
 								class="text-danger small mt-2"
 								aria-live="assertive"
-								v-if="showValidation"
 							>
 								{{ validationMessage }}
 							</p>

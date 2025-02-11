@@ -160,8 +160,6 @@ export default {
 					}
 				);
 
-				props.conversation.display_name = response.data;
-
 				emit("group-name-updated", {
 					conversationId: props.conversation.conversation_id,
 					newName: response.data,
@@ -315,7 +313,6 @@ export default {
 				const modal = bootstrap.Modal.getInstance(modalElement);
 				if (modal) modal.hide();
 
-				props.conversationDetails = null;
 			} catch (error) {
 				console.error("Failed to leave group:", error);
 			}
@@ -725,7 +722,7 @@ export default {
 <template>
 	<div
 		class="d-flex flex-column shadow-sm rounded h-100"
-		style="background-color: #C8E1FF"
+		style="background-color: #c8e1ff"
 	>
 		<div class="d-flex align-items-center p-3 justify-content-between">
 			<div class="d-flex align-items-center">
@@ -745,9 +742,9 @@ export default {
 				class="dropdown ms-2"
 			>
 				<button
+					id="groupActionsDropdown"
 					class="btn btn-light p-1 d-flex align-items-center justify-content-center rounded-circle"
 					type="button"
-					id="groupActionsDropdown"
 					data-bs-toggle="dropdown"
 					aria-expanded="false"
 					data-bs-placement="top"
@@ -841,7 +838,7 @@ export default {
 			>
 				Reply
 			</div>
-			<hr class="my-1" v-if="contextMenu.canDelete" />
+			<hr v-if="contextMenu.canDelete" class="my-1" />
 			<div
 				v-if="contextMenu.canDelete"
 				class="px-3 py-2 text-danger rounded hover-bg"
@@ -873,7 +870,6 @@ export default {
 			<span
 				v-for="emoji in availableReactions"
 				:key="emoji"
-				@click="toggleReaction(reactionPicker.message, emoji)"
 				:style="{
 					fontSize: '20px',
 					cursor: 'pointer',
@@ -889,14 +885,15 @@ export default {
 						? '#ddd'
 						: 'transparent',
 				}"
+				@click="toggleReaction(reactionPicker.message, emoji)"
 			>
 				{{ emoji }}
 			</span>
 		</div>
 
 		<div
-			class="flex-grow-1 overflow-auto p-2 d-flex flex-column"
 			ref="messageContainer"
+			class="flex-grow-1 overflow-auto p-2 d-flex flex-column"
 		>
 			<div
 				v-for="message in messages"
@@ -928,7 +925,6 @@ export default {
 				<!-- Message Bubble -->
 				<div
 					class="p-2 rounded shadow-sm position-relative"
-					@contextmenu.prevent="showContextMenu($event, message)"
 					:style="{
 						backgroundColor:
 							message.sender_id === user.id
@@ -944,6 +940,7 @@ export default {
 								: 'flex-start',
 						textAlign: 'left',
 					}"
+					@contextmenu.prevent="showContextMenu($event, message)"
 				>
 					<div
 						v-if="message.is_reply"
@@ -1149,23 +1146,23 @@ export default {
 						line-height: 1;
 					"
 				>
-					<i @click="cancelReply" class="bi bi-x"></i>
+					<i class="bi bi-x" @click="cancelReply"></i>
 				</div>
 			</div>
 
 			<div class="d-flex align-items-end p-2">
 				<input
-					type="file"
 					ref="photoInput"
+					type="file"
 					accept="image/jpeg, image/png"
 					class="d-none"
 					@change="handlePhotoUpload"
 				/>
 				<button
 					class="btn btn-outline-secondary me-2 position-relative"
-					@click="triggerFileUpload"
 					data-bs-toggle="tooltip"
 					title="Attach a photo"
+					@click="triggerFileUpload"
 				>
 					<i class="bi bi-image"></i>
 				</button>
@@ -1177,10 +1174,10 @@ export default {
 					<!-- Photo Preview -->
 					<div
 						v-if="selectedPhoto"
-						@keyup.enter="handleEnterPress"
 						ref="photoPreviewDiv"
 						tabindex="0"
 						class="d-flex align-items-center w-100"
+						@keyup.enter="handleEnterPress"
 					>
 						<div class="position-relative">
 							<!-- Preview Image -->
@@ -1224,8 +1221,8 @@ export default {
 				</div>
 				<button
 					class="btn btn-primary ms-2"
-					@click="sendMessage"
 					title="Send Message"
+					@click="sendMessage"
 				>
 					<i class="bi bi-send"></i>
 				</button>
@@ -1234,8 +1231,8 @@ export default {
 	</div>
 
 	<div
-		class="modal fade"
 		id="groupNameModal"
+		class="modal fade"
 		tabindex="-1"
 		aria-labelledby="groupNameModalLabel"
 		aria-hidden="true"
@@ -1243,7 +1240,7 @@ export default {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="groupNameModalLabel">
+					<h1 id="groupNameModalLabel" class="modal-title fs-5">
 						Update Group Name
 					</h1>
 					<button
@@ -1255,12 +1252,12 @@ export default {
 				</div>
 				<div class="modal-body">
 					<input
-						type="text"
 						v-model="newGroupName"
+						type="text"
 						class="form-control"
 						placeholder="Enter new group name"
 					/>
-					<p class="text-danger small mt-2" v-if="validationMessage">
+					<p v-if="validationMessage" class="text-danger small mt-2">
 						{{ validationMessage }}
 					</p>
 				</div>
@@ -1275,8 +1272,8 @@ export default {
 					<button
 						type="button"
 						class="btn btn-primary"
-						@click="handleUpdateGroupName"
 						:disabled="updatingName"
+						@click="handleUpdateGroupName"
 					>
 						{{ updatingName ? "Updating..." : "Update" }}
 					</button>
@@ -1286,8 +1283,8 @@ export default {
 	</div>
 
 	<div
-		class="modal fade"
 		id="groupPhotoModal"
+		class="modal fade"
 		tabindex="-1"
 		aria-labelledby="groupPhotoModalLabel"
 		aria-hidden="true"
@@ -1295,7 +1292,7 @@ export default {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="groupPhotoModalLabel">
+					<h1 id="groupPhotoModalLabel" class="modal-title fs-5">
 						Upload a new group picture
 					</h1>
 					<button
@@ -1308,13 +1305,13 @@ export default {
 				<div class="modal-body">
 					<div class="input-group flex-nowrap">
 						<input
-							type="file"
 							ref="fileInput"
+							type="file"
 							accept="image/jpeg, image/png"
 							class="form-control"
 						/>
 					</div>
-					<p class="text-danger small mt-2" v-if="validationMessage">
+					<p v-if="validationMessage" class="text-danger small mt-2">
 						{{ validationMessage }}
 					</p>
 				</div>
@@ -1329,8 +1326,8 @@ export default {
 					<button
 						type="button"
 						class="btn btn-primary"
-						@click="handleUpdateGroupPhoto"
 						:disabled="uploading"
+						@click="handleUpdateGroupPhoto"
 					>
 						{{ uploading ? "Uploading..." : "Upload" }}
 					</button>
@@ -1340,8 +1337,8 @@ export default {
 	</div>
 
 	<div
-		class="modal fade"
 		id="addMembersModal"
+		class="modal fade"
 		tabindex="-1"
 		aria-labelledby="addMembersModalLabel"
 		aria-hidden="true"
@@ -1349,7 +1346,7 @@ export default {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="addMembersModalLabel">
+					<h1 id="addMembersModalLabel" class="modal-title fs-5">
 						Add Members to Group
 					</h1>
 					<button
@@ -1362,9 +1359,9 @@ export default {
 				<div class="modal-body">
 					<div class="dropdown">
 						<button
+							id="selectUsersDropdown"
 							class="btn btn-light dropdown-toggle"
 							type="button"
-							id="selectUsersDropdown"
 							data-bs-toggle="dropdown"
 							aria-expanded="false"
 						>
@@ -1416,13 +1413,13 @@ export default {
 								<button
 									class="btn-close btn-close-white ms-2"
 									aria-label="Remove"
-									@click="toggleUserSelection(userId)"
 									style="font-size: 10px; opacity: 0.8"
+									@click="toggleUserSelection(userId)"
 								></button>
 							</span>
 						</div>
 					</div>
-					<p class="text-danger small mt-2" v-if="validationMessage">
+					<p v-if="validationMessage" class="text-danger small mt-2">
 						{{ validationMessage }}
 					</p>
 				</div>
@@ -1437,8 +1434,8 @@ export default {
 					<button
 						type="button"
 						class="btn btn-primary"
-						@click="handleAddMembers"
 						:disabled="addingMembers"
+						@click="handleAddMembers"
 					>
 						{{ addingMembers ? "Adding..." : "Add to Group" }}
 					</button>
@@ -1449,8 +1446,8 @@ export default {
 
 	<!-- Leave Group Confirmation Modal -->
 	<div
-		class="modal fade"
 		id="leaveGroupModal"
+		class="modal fade"
 		tabindex="-1"
 		aria-labelledby="leaveGroupModalLabel"
 		aria-hidden="true"
@@ -1458,7 +1455,7 @@ export default {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="leaveGroupModalLabel">
+					<h5 id="leaveGroupModalLabel" class="modal-title">
 						Leave Group
 					</h5>
 					<button
@@ -1492,7 +1489,7 @@ export default {
 	</div>
 
 	<!-- Forward Message Modal -->
-	<div class="modal fade" id="forwardMessageModal" tabindex="-1">
+	<div id="forwardMessageModal" class="modal fade" tabindex="-1">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -1547,8 +1544,8 @@ export default {
 
 	<!-- Delete Message Confirmation Modal -->
 	<div
-		class="modal fade"
 		id="deleteMessageModal"
+		class="modal fade"
 		tabindex="-1"
 		aria-labelledby="deleteMessageModalLabel"
 		aria-hidden="true"
@@ -1556,7 +1553,7 @@ export default {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="deleteMessageModalLabel">
+					<h5 id="deleteMessageModalLabel" class="modal-title">
 						Delete Message
 					</h5>
 					<button
