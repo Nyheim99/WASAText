@@ -312,7 +312,6 @@ export default {
 				const modalElement = document.getElementById("leaveGroupModal");
 				const modal = bootstrap.Modal.getInstance(modalElement);
 				if (modal) modal.hide();
-
 			} catch (error) {
 				console.error("Failed to leave group:", error);
 			}
@@ -952,7 +951,14 @@ export default {
 									{{ message.original_message.sender }}
 								</strong>
 							</div>
-							<span class="original-message-content">
+							<i
+								v-if="
+									message.original_message.content ==
+									'[Photo Message]'
+								"
+								class="bi bi-image-fill"
+							></i>
+							<span v-else class="original-message-content">
 								{{
 									message.original_message.content ||
 									"This message was deleted"
@@ -1131,9 +1137,10 @@ export default {
 									: replyToMessage.content
 							}}
 						</span>
-						<span v-else-if="replyToMessage.photo_data"
-							>Photo message</span
-						>
+						<i
+							v-else-if="replyToMessage.photo_data"
+							class="bi bi-image-fill"
+						></i>
 					</div>
 				</div>
 				<div

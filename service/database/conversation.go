@@ -246,8 +246,8 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			m.content, m.photo_data, m.photo_mime_type, m.timestamp, m.status, 
 			m.is_reply, m.original_message_id, 
 			m.is_forwarded, m.is_deleted,
-			om.content AS original_message_content,
-			ou.username AS original_message_sender
+			COALESCE(om.content, '[Photo Message]') AS original_message_content,
+    	COALESCE(ou.username, 'Unknown') AS original_message_sender
 	FROM messages m
 	JOIN users u ON m.sender_id = u.id
 	LEFT JOIN messages om ON m.original_message_id = om.id
@@ -329,7 +329,6 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			msg.Status = "sent"
 		}
 
-		// Fetch reactions for the message
 		reactionRows, err := db.c.Query(`
 			SELECT user_id, message_id, emoticon
 			FROM reactions
