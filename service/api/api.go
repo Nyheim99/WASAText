@@ -43,8 +43,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 
-	"path/filepath"
 	"log"
+	"path/filepath"
 )
 
 // Config is used to provide dependencies and configuration to the New function.
@@ -92,7 +92,7 @@ func New(cfg Config) (Router, error) {
 		log.Fatal("Failed to resolve group photos directory:", err)
 	}
 	router.ServeFiles("/service/photos/groups/*filepath", http.Dir(staticGroupsDir))
-	
+
 	return &_router{
 		router:     router,
 		baseLogger: cfg.Logger,

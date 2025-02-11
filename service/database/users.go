@@ -1,7 +1,7 @@
 package database
 
 import (
-    "fmt"
+	"fmt"
 )
 
 func (db *appdbimpl) GetUsers() ([]User, error) {
@@ -16,16 +16,16 @@ func (db *appdbimpl) GetUsers() ([]User, error) {
 	var users []User
 
 	for rows.Next() {
-    var user User
-    if err := rows.Scan(&user.ID, &user.Username, &user.PhotoURL); err != nil {
-        return nil, fmt.Errorf("error scanning user: %w", err)
-    }
-    users = append(users, user)
+		var user User
+		if err := rows.Scan(&user.ID, &user.Username, &user.PhotoURL); err != nil {
+			return nil, fmt.Errorf("error scanning user: %w", err)
+		}
+		users = append(users, user)
 
-    if err := rows.Err(); err != nil {
-        return nil, fmt.Errorf("error during row iteration: %w", err)
-    }
-}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("error during row iteration: %w", err)
+		}
+	}
 
 	return users, nil
 }

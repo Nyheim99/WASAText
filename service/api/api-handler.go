@@ -18,7 +18,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.GET("/conversations", rt.validateAuthorization(rt.getMyConversations))
 
 	rt.router.GET("/conversations/:conversationID", rt.validateAuthorization(rt.getConversation))
-	
+
 	rt.router.PUT("/conversations/:conversationID/photo", rt.validateAuthorization(rt.setGroupPhoto))
 	rt.router.PUT("/conversations/:conversationID/name", rt.validateAuthorization(rt.setGroupName))
 
@@ -28,7 +28,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.POST("/conversations/:conversationID/messages", rt.validateAuthorization(rt.sendMessage))
 	rt.router.POST("/conversations/:conversationID/messages/:messageID/forward", rt.validateAuthorization(rt.forwardMessage))
 	rt.router.DELETE("/conversations/:conversationID/messages/:messageID", rt.validateAuthorization(rt.deleteMessage))
-	
+
 	rt.router.POST("/conversations/:conversationID/messages/:messageID/reactions", rt.validateAuthorization(rt.commentMessage))
 	rt.router.DELETE("/conversations/:conversationID/messages/:messageID/reactions/me", rt.validateAuthorization(rt.uncommentMessage))
 

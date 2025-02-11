@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
+	"github.com/julienschmidt/httprouter"
 )
 
 type setMyUsernameRequest struct {
