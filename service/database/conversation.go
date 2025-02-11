@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -20,7 +21,7 @@ func (db *appdbimpl) CreatePrivateConversation(userID, recipientID int64) (int64
 
 	if err == nil {
 		return existingConversationID, fmt.Errorf("a private conversation between these users already exists")
-	} else if err != sql.ErrNoRows {
+	} else if !errors.Is(err, sql.ErrNoRows) {
 		return 0, fmt.Errorf("failed to check for existing conversation: %w", err)
 	}
 
@@ -232,7 +233,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 		&conversation.DisplayName,
 		&conversation.PhotoURL,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("conversation not found")
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to retrieve conversation: %w", err)
@@ -391,7 +392,7 @@ func (db *appdbimpl) AddToGroup(conversationID int64, newParticipants []int64) e
 		SELECT conversation_type FROM conversations WHERE id = ?
 	`, conversationID).Scan(&conversationType)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("conversation does not exist")
 	} else if err != nil {
 		return fmt.Errorf("failed to retrieve conversation: %w", err)
@@ -424,7 +425,7 @@ func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
 		SELECT conversation_type FROM conversations WHERE id = ?
 	`, conversationID).Scan(&conversationType)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("conversation does not exist")
 	} else if err != nil {
 		return fmt.Errorf("failed to retrieve conversation: %w", err)

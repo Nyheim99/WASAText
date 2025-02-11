@@ -2,13 +2,14 @@ package database
 
 import (
     "database/sql"
-		"fmt"
+	"fmt"
+    "errors"
 )
 
 func (db *appdbimpl) GetUserByUsername(username string) (int64, error) {
     var identifier int64
     err := db.c.QueryRow("SELECT id FROM users WHERE username = ?", username).Scan(&identifier)
-    if err == sql.ErrNoRows {
+    if errors.Is(err, sql.ErrNoRows) {
         return 0, nil
     }
     return identifier, err
@@ -36,7 +37,7 @@ func (db *appdbimpl) GetUser(userId int64) (*User, error) {
     var user User
     query := `SELECT id, username, photo_url FROM users WHERE id = ?`
     err := db.c.QueryRow(query, userId).Scan(&user.ID, &user.Username, &user.PhotoURL)
-    if err == sql.ErrNoRows {
+    if errors.Is(err, sql.ErrNoRows) {
         return nil, nil
     } else if err != nil {
         return nil, fmt.Errorf("error retrieving user: %w", err)

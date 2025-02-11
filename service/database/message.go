@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"errors"
 )
 
 func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string, originalMessageID int64) (int64, error) {
@@ -128,7 +129,7 @@ func (db *appdbimpl) ForwardMessage(conversationID, senderID, originalMessageID 
 		WHERE id = ? AND is_deleted = FALSE
 	`, originalMessageID).Scan(&content, &photoData, &photoMimeType)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, fmt.Errorf("original message not found")
 		}
 		return 0, fmt.Errorf("failed to retrieve original message: %w", err)
