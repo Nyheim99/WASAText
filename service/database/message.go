@@ -190,7 +190,6 @@ func (db *appdbimpl) MarkMessagesAsRead(conversationID, userID int64) error {
 		return fmt.Errorf("failed to mark messages as read: %w", err)
 	}
 
-	// Optionally, check if all participants have read all messages and update the message status to 'read'
 	_, err = db.c.Exec(`
 		UPDATE messages 
 		SET status = 'read'
