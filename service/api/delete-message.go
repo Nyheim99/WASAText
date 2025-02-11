@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
+	"github.com/julienschmidt/httprouter"
 )
 
 type DeleteMessageResponse struct {
-	MessageID      int64  `json:"message_id"`
-	ConversationID int64  `json:"conversation_id"`
+	MessageID      int64 `json:"message_id"`
+	ConversationID int64 `json:"conversation_id"`
 }
 
 func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -46,8 +46,12 @@ func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps http
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(DeleteMessageResponse{
+	err = json.NewEncoder(w).Encode(DeleteMessageResponse{
 		MessageID:      messageID,
 		ConversationID: conversationID,
 	})
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }

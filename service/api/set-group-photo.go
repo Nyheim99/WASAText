@@ -79,7 +79,11 @@ func (rt *_router) setGroupPhoto(w http.ResponseWriter, r *http.Request, ps http
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+	err = json.NewEncoder(w).Encode(map[string]string{
 		"photo_url": photoURL,
 	})
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }

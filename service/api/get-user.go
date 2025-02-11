@@ -3,8 +3,9 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"github.com/julienschmidt/httprouter"
+
 	"github.com/Nyheim99/WASAText/service/api/reqcontext"
+	"github.com/julienschmidt/httprouter"
 )
 
 func (rt *_router) getUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -29,5 +30,9 @@ func (rt *_router) getUser(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }

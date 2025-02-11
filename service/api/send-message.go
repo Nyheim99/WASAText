@@ -130,7 +130,7 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(SendMessageResponse{
+	err = json.NewEncoder(w).Encode(SendMessageResponse{
 		MessageID:   messageID,
 		MessageType: messageType,
 		Content:     content,
@@ -138,4 +138,8 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		SenderName:  sender.Username,
 		Timestamp:   timestamp,
 	})
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }

@@ -52,5 +52,9 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Authorization", fmt.Sprintf("Bearer %d", identifier))
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }
