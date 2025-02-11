@@ -36,9 +36,6 @@ export default {
 		const showValidation = ref(false);
 		const validationMessage = ref("");
 
-		const feedbackMessage = ref("");
-		const showFeedback = ref(false);
-
 		const selectedUsers = ref(new Set());
 		const groupName = ref("");
 		const groupPhoto = ref(null);
@@ -338,8 +335,6 @@ export default {
 			groupPhoto,
 			toggleUserSelection,
 			isUserSelected,
-			feedbackMessage,
-			showFeedback,
 			formatTimestamp,
 			resolvePhotoURL,
 			truncateMessage,

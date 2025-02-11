@@ -34,7 +34,7 @@ export default {
 		const fetchUsers = async () => {
 			try {
 				const response = await axios.get("/users");
-				allUsers.value = response.data.filter((u) => u.id !== user.id);
+				allUsers.value = response.data.filter((u) => u.id !== user.value.id);
 			} catch (error) {
 				console.error("Failed to fetch users:", error);
 			}
