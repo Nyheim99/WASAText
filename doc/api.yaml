@@ -164,6 +164,8 @@ paths:
                     type: string
                     format: uri-reference
                     example: /service/photos/users/user_1.jpg
+                    minLength: 5
+                    maxLength: 255
         "400":
           description: Invalid file upload
         "500":
@@ -211,6 +213,8 @@ paths:
                   type: string
                   enum: ["private", "group"]
                   example: group
+                  minLength: 5
+                  maxLength: 7
                 message:
                   description: Initial message to start the conversation
                   type: string
@@ -242,7 +246,7 @@ paths:
                   type: string
                   format: binary
       responses:
-        "201":
+        "204":
           description: Conversation created successfully.
         "400":
           description: Invalid request
@@ -288,6 +292,8 @@ paths:
                     type: string
                     format: uri-reference
                     example: "/service/photos/groups/group_2.jpg"
+                    minLength: 5
+                    maxLength: 255
                   messages:
                     description: List of messages in conversation
                     type: array
@@ -383,6 +389,8 @@ paths:
                     type: string
                     format: uri-reference
                     example: /service/photos/users/user_1.jpg
+                    minLength: 5
+                    maxLength: 255
         "400":
           description: Invalid request
         "500":
@@ -496,14 +504,15 @@ paths:
                     type: string
                     enum: ["text", "photo"]
                     example: text
+                    minLength: 4
+                    maxLength: 5
                   content:
                     description: The text content of the message (empty if it's a photo message)
                     type: string
                     minLength: 0
                     maxLength: 1000
-                    pattern: "^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
+                    pattern: "^$|^[a-zA-Z0-9À-ÿ.,!?()\\-\"' ]+$"
                     example: ""
-                    nullable: true
                   sender_id:
                     description: ID of the user who sent the message
                     type: integer
@@ -520,10 +529,30 @@ paths:
                     type: string
                     format: date-time
                     example: "2024-02-02T15:04:05Z"
+                    minLength: 20
+                    maxLength: 25
         "400":
           description: Invalid request
         "404":
           description: Sender not found
+        "500":
+          description: Internal server error
+
+  /conversations/{conversationId}/messages/{messageId}/forward:
+    post:
+      tags: ["message"]
+      summary: Forward a message in a conversation
+      description: |
+        Forward a message (either text or photo) in the specified conversation.
+      operationId: forwardMessage
+      parameters:
+        - $ref: "#/components/parameters/conversationId"
+        - $ref: "#/components/parameters/messageId"
+      responses:
+        "204":
+          description: Message forwarded successfully
+        "400":
+          description: Invalid request
         "500":
           description: Internal server error
 
@@ -586,7 +615,7 @@ paths:
       description: |
         Adds a reaction (emoticon) to a specific message in a conversation. 
         The reaction must be one of the predefined emoticons.
-      operationId: addReaction
+      operationId: commentMessage
       parameters:
         - $ref: "#/components/parameters/conversationId"
         - $ref: "#/components/parameters/messageId"
@@ -619,7 +648,7 @@ paths:
       summary: Remove your reaction from a message
       description: |
         Removes the current user's reaction (if it exists) from a specific message in the conversation.
-      operationId: removeReaction
+      operationId: uncommentMessage
       parameters:
         - $ref: "#/components/parameters/conversationId"
         - $ref: "#/components/parameters/messageId"
@@ -639,21 +668,23 @@ components:
       type: object
       properties:
         id:
-          description: "Unique user identifier"
+          description: Unique identifier for the user
           type: integer
           example: 1
         username:
-          description: "The user's username"
+          description: Unique username of the user
           type: string
           example: Maria
           pattern: "^[a-zA-Z0-9]*$"
           minLength: 3
           maxLength: 16
         photo_url:
-          description: Uri reference of user's profile picture
+          description: URI reference to the user's profile picture
           type: string
           format: uri-reference
           example: /service/photos/users/user_1.jpg
+          minLength: 5
+          maxLength: 255
     Message:
       title: Message
       description: This object represents a single message
@@ -690,11 +721,15 @@ components:
           type: string
           format: date-time
           example: "2024-02-02T15:04:05Z"
+          minLength: 20
+          maxLength: 25
         status:
           description: Status of the message
           type: string
           enum: ["sent", "read"]
           example: sent
+          minLength: 4
+          maxLength: 4
         is_deleted:
           description: |-
             Indicates whether a message is deleted (true9 or not (false)
@@ -731,11 +766,16 @@ components:
             content:
               description: Content of the original message
               type: string
-              example: This is the original message content
+              minLength: 0
+              maxLength: 1000
+              example: "Hey, how are you?"
             sender:
               description: Username of the original message sender
               type: string
               example: Marco
+              minLength: 3
+              maxLength: 16
+              pattern: "^[a-zA-Z0-9]*$"
         reactions:
           description: A list of reactions to the message
           type: array
@@ -774,6 +814,8 @@ components:
           type: string
           enum: ["private", "group"]
           example: group
+          minLength: 5
+          maxLength: 7
         display_name:
           description: The name displayed for the conversation (group name or other user's name)
           type: string
@@ -786,6 +828,8 @@ components:
           type: string
           format: uri-reference
           example: /service/photos/groups/group_2.jpg
+          minLength: 5
+          maxLength: 255
         last_message_id:
           description: ID of last message in the conversation
           type: integer
@@ -793,7 +837,6 @@ components:
         last_message_content:
           description: Content of the last message in the conversation
           type: string
-          nullable: true
           minLength: 1
           maxLength: 1000
           example: "Hey, how are you?"
@@ -806,6 +849,8 @@ components:
           type: string
           format: date-time
           example: "2024-02-05T12:00:00Z"
+          minLength: 20
+          maxLength: 25
         last_message_sender_id:
           description: ID of the user who sent the last message
           type: integer

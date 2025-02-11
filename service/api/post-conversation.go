@@ -126,7 +126,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (rt *_router) saveUploadedFile(file io.Reader, handler *multipart.FileHeader, conversationID int64) (string, error) {
