@@ -48,34 +48,13 @@ export default {
 					utcTimestamp.getTimezoneOffset() * 60000
 			);
 
-			const now = new Date();
-			const diffInMs = now - localTimestamp;
-
-			const seconds = diffInMs / 1000;
-			const minutes = seconds / 60;
-			const hours = minutes / 60;
-			const days = hours / 24;
-			const weeks = days / 7;
-			const months = days / 30;
-			const years = days / 365;
-
-			if (hours < 12) {
-				return localTimestamp.toLocaleTimeString("en-GB", {
-					hour: "2-digit",
-					minute: "2-digit",
-					hour12: false,
-				});
-			} else if (hours < 24) {
-				return `${Math.floor(hours)}H`;
-			} else if (days < 7) {
-				return `${Math.floor(days)}d`;
-			} else if (weeks < 4) {
-				return `${Math.floor(weeks)}w`;
-			} else if (months < 12) {
-				return `${Math.floor(months)}m`;
-			} else {
-				return `${Math.floor(years)}y`;
-			}
+			return localTimestamp.toLocaleTimeString("en-GB", {
+				day: "2-digit",
+				month: "2-digit",
+				hour: "2-digit",
+				minute: "2-digit",
+				hour12: false,
+			});
 		};
 
 		const resetModalState = () => {
@@ -348,7 +327,7 @@ export default {
 <template>
 	<div
 		class="bg-white rounded shadow-sm p-1 d-flex flex-column h-100"
-		style="width: 300px;"
+		style="width: 300px"
 	>
 		<div class="container row w-100 m-0 p-0">
 			<div class="d-flex justify-content-between align-items-center p-1">
@@ -359,11 +338,7 @@ export default {
 					data-bs-toggle="modal"
 					data-bs-target="#newConversationModal"
 					title="New Conversation"
-					style="
-						width: 24px;
-						height: 24px;
-						border: none;
-					"
+					style="width: 24px; height: 24px; border: none"
 				>
 					<i class="bi bi-pencil-square"></i>
 				</button>
@@ -392,8 +367,10 @@ export default {
 				v-else
 				:key="conversation.conversation_id"
 				class="container d-flex align-items-center p-2 border-bottom hover-bg"
-				:class="selectedConversation?.conversation_id ===
-							conversation.conversation_id && 'bg-body-secondary'"
+				:class="
+					selectedConversation?.conversation_id ===
+						conversation.conversation_id && 'bg-body-secondary'
+				"
 				@click="$emit('select-conversation', conversation)"
 			>
 				<img
@@ -405,10 +382,15 @@ export default {
 					"
 					alt="Avatar"
 					class="rounded-circle me-2 bg-white"
-					style="width: 40px; height: 40px; object-fit: cover"
+					style="
+						width: 40px;
+						height: 40px;
+						object-fit: cover;
+						min-width: 40px;
+					"
 				/>
 
-				<div class="flex-grow-1">
+				<div class="flex-grow-1 overflow-hidden">
 					<h6 class="mb-1">{{ conversation.display_name }}</h6>
 					<span
 						v-if="conversation.last_message_is_deleted"
@@ -450,7 +432,7 @@ export default {
 				</div>
 
 				<small
-					class="text-muted"
+					class="text-muted p-1"
 					style="align-self: flex-start; font-size: 0.7rem"
 				>
 					{{ formatTimestamp(conversation.last_message_timestamp) }}

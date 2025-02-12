@@ -510,6 +510,8 @@ export default {
 		const formatTimestamp = (timestamp) => {
 			const date = new Date(timestamp);
 			return date.toLocaleTimeString("en-GB", {
+				day: "2-digit",
+				month: "2-digit",
 				hour: "2-digit",
 				minute: "2-digit",
 				hour12: false,
@@ -957,12 +959,13 @@ export default {
 						height: 35px;
 						object-fit: cover;
 						align-self: flex-end;
+						min-width: 35px;
 					"
 				/>
 
 				<!-- Message Bubble -->
 				<div
-					class="p-2 rounded shadow-sm position-relative mw-75"
+					class="p-2 rounded shadow-sm position-relative"
 					:class="
 						message.sender_id === user.id
 							? 'bg-info-subtle'
@@ -970,6 +973,7 @@ export default {
 					"
 					:style="{
 						wordWrap: 'break-word',
+						maxWidth: '75%',
 						padding: '10px',
 						borderRadius: '18px',
 						alignSelf:
@@ -1029,18 +1033,18 @@ export default {
 					<p v-if="message.is_deleted" class="text-muted">
 						<i>This message was deleted</i>
 					</p>
+
 					<div
 						v-else
 						style="
-							display: flex;
-							flex-direction: row;
+							display: inline-block;
+							width: 100%;
 							position: relative;
-							gap: 10px;
 						"
 					>
-						<p
+						<span
 							v-if="message.content"
-							class="mb-0"
+							class="mb-1"
 							style="
 								margin: 0;
 								word-break: break-word;
@@ -1048,7 +1052,7 @@ export default {
 							"
 						>
 							{{ message.content }}
-						</p>
+						</span>
 						<!-- Image Message -->
 						<img
 							v-if="message.photo_data"
@@ -1062,18 +1066,14 @@ export default {
 							class="mt-2 rounded"
 							style="max-width: 200px; border-radius: 8px"
 						/>
+
 						<div
-							class="d-flex align-items-center gap-1 align-self-end"
+							style="
+								float: right;
+								margin-left: 10px;
+							"
 						>
-							<small
-								class="text-muted"
-								style="
-									font-size: 12px;
-									color: gray;
-									margin-top: 4px;
-									white-space: nowrap;
-								"
-							>
+							<small class="text-muted" style="font-size: 12px">
 								{{ formatTimestamp(message.timestamp) }}
 							</small>
 							<i
