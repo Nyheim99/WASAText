@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -39,8 +40,9 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 
 	var conversationID int64
 	var err error
+	sendMessage := true
 
-	if conversationType == "private" {
+	if conversationType == "private" || conversationType == "new_user" {
 		recipientIDStr := r.FormValue("recipientID")
 
 		recipientID, err := strconv.ParseInt(recipientIDStr, 10, 64)
@@ -53,6 +55,10 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
+		}
+
+		if conversationType == "new_user" {
+			sendMessage = false
 		}
 
 	} else if conversationType == "group" {
@@ -108,25 +114,35 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
-	message := r.FormValue("message")
+	if sendMessage {
+		message := r.FormValue("message")
 
-	if len(message) < 1 || len(message) > 1000 {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
+		if len(message) < 1 || len(message) > 1000 {
+			http.Error(w, "Invalid message length", http.StatusBadRequest)
+			return
+		}
+
+		if match, _ := regexp.MatchString(`^[a-zA-Z0-9À-ÿ.,!?()\-\"' ]+$`, message); !match {
+			http.Error(w, "Invalid message format", http.StatusBadRequest)
+			return
+		}
+
+		_, err = rt.db.SendMessage(conversationID, userID, &message, nil, nil, 0)
+		if err != nil {
+			http.Error(w, "Failed to send message", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	if match, _ := regexp.MatchString(`^[a-zA-Z0-9À-ÿ.,!?()\-\"' ]+$`, message); !match {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-
-	_, err = rt.db.SendMessage(conversationID, userID, &message, nil, nil, 0)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(map[string]int64{
+		"conversation_id": conversationID,
+	})
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (rt *_router) saveUploadedFile(file io.Reader, handler *multipart.FileHeader, conversationID int64) (string, error) {

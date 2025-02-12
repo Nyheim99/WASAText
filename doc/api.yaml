@@ -195,7 +195,10 @@ paths:
       tags: ["conversation"]
       summary: Create a new conversation or group
       description: |-
-        Create a new private conversation with a user or a new group conversation.
+        Create a new private conversation with a user, a new group conversation, 
+        or initiate a connection with a new user (`new_user`).  
+        If `conversation_type` is "new_user", no initial message is sent.  
+        Otherwise, an initial text message is required.
       operationId: createConversation
       requestBody:
         description: Conversation details
@@ -206,17 +209,16 @@ paths:
               type: object
               required:
                 - conversation_type
-                - message
               properties:
                 conversation_type:
-                  description: Type of conversation. Either "private" or "group".
+                  description: Type of conversation. Can be "private", "group", or "new_user".
                   type: string
-                  enum: ["private", "group"]
+                  enum: ["private", "group", "new_user"]
                   example: group
                   minLength: 5
-                  maxLength: 7
+                  maxLength: 8
                 message:
-                  description: Initial message to start the conversation
+                  description: Only for group types "private" and "group". Initial message to start the conversation
                   type: string
                   minLength: 1
                   maxLength: 1000
@@ -234,7 +236,7 @@ paths:
                   pattern: "^[a-zA-Z0-9 ]*$"
                   example: "WASA Students"
                 participants:
-                  description: List of participant user IDs (excluding the creator).
+                  description: Required if `conversation_type` is "group". List of participant user IDs (excluding the creator).
                   type: array
                   minItems: 2
                   maxItems: 100

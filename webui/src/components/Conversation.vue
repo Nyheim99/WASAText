@@ -39,6 +39,7 @@ export default {
 		"message-sent",
 		"message-deleted",
 		"message-forwarded",
+		"conversation-created",
 	],
 	setup(props, { emit }) {
 		const fileInput = ref(null);
@@ -367,23 +368,64 @@ export default {
 		const fetchAvailableConversations = async () => {
 			try {
 				const response = await axios.get("/conversations");
-				availableConversations.value = response.data.filter(
-					(conv) =>
-						conv.conversation_id !==
-						props.conversation.conversation_id
+				const conversationList = response.data;
+
+				const privateConversationUsernames = conversationList
+					.filter((conv) => conv.conversation_type === "private")
+					.map((conv) => conv.display_name);
+
+				const additionalUsers = props.allUsers.filter(
+					(user) =>
+						!privateConversationUsernames.includes(user.username)
 				);
+
+				const fullRecipientList = [
+					...conversationList.filter(
+						(conv) =>
+							conv.conversation_id !==
+							props.conversation.conversation_id
+					),
+					...additionalUsers.map((user) => ({
+						user_id: user.id,
+						display_name: user.username,
+						conversation_type: "new_user",
+						photo_url: user.photo_url,
+					})),
+				];
+
+				availableConversations.value = fullRecipientList;
 			} catch (error) {
 				console.error("Failed to fetch conversations:", error);
 			}
 		};
 
-		const forwardMessageTo = async (conversationId) => {
+		const forwardMessageTo = async (conversationId, convType, userId) => {
 			try {
+				let targetConversationID;
+				if (convType === "new_user") {
+					const formData = new FormData();
+					formData.append("conversation_type", convType);
+					formData.append("recipientID", userId);
+
+					const response = await axios.post(
+						"/conversations",
+						formData,
+						{
+							headers: { "Content-Type": "multipart/form-data" },
+						}
+					);
+
+					targetConversationID = response.data.conversation_id;
+				} else {
+					targetConversationID = conversationId;
+				}
+
 				await axios.post(
-					`/conversations/${conversationId}/messages/${forwardMessage.value.id}/forward`
+					`/conversations/${targetConversationID}/messages/${forwardMessage.value.id}/forward`
 				);
 
 				emit("message-forwarded", props.conversation.conversation_id);
+				if (convType === "new_user") emit("conversation-created");
 
 				forwardMessage.value = null;
 				const modal = bootstrap.Modal.getInstance(
@@ -719,9 +761,7 @@ export default {
 </script>
 
 <template>
-	<div
-		class=" bg-white d-flex flex-column shadow-sm rounded h-100"
-	>
+	<div class="bg-white d-flex flex-column shadow-sm rounded h-100">
 		<div class="d-flex align-items-center p-3 justify-content-between">
 			<div class="d-flex align-items-center">
 				<img
@@ -923,8 +963,11 @@ export default {
 				<!-- Message Bubble -->
 				<div
 					class="p-2 rounded shadow-sm position-relative mw-75"
-					:class="message.sender_id === user.id
-								? 'bg-info-subtle' : 'bg-body-secondary'"
+					:class="
+						message.sender_id === user.id
+							? 'bg-info-subtle'
+							: 'bg-body-secondary'
+					"
 					:style="{
 						wordWrap: 'break-word',
 						padding: '10px',
@@ -940,8 +983,11 @@ export default {
 					<div
 						v-if="message.is_reply"
 						class="p-1 rounded mb-1"
-						:class="message.sender_id === user.id
-								? 'bg-primary-subtle' : 'bg-dark-subtle'"
+						:class="
+							message.sender_id === user.id
+								? 'bg-primary-subtle'
+								: 'bg-dark-subtle'
+						"
 					>
 						<div class="text-muted">
 							<div>
@@ -1526,7 +1572,13 @@ export default {
 								:key="conv.conversation_id"
 								class="list-group-item d-flex align-items-center justify-content-between hover-bg"
 								style="cursor: pointer"
-								@click="forwardMessageTo(conv.conversation_id)"
+								@click="
+									forwardMessageTo(
+										conv.conversation_id,
+										conv.conversation_type,
+										conv.user_id
+									)
+								"
 							>
 								<span>{{ conv.display_name }}</span>
 								<i class="bi bi-arrow-right-circle"></i>
@@ -1597,9 +1649,5 @@ export default {
 	background-color: var(--bs-gray-200);
 	transition: background-color 0.3s ease;
 	cursor: pointer;
-}
-.reply-reference {
-	font-size: 0.9em;
-	border-left: 3px solid #ddd;
 }
 </style>

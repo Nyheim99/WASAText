@@ -299,6 +299,7 @@ export default {
 					@message-sent="updateConversationWithNewMessage"
 					@message-forwarded="updateConversationWithNewMessage"
 					@message-deleted="updateConversationWithDeletedMessage"
+					@conversation-created="addNewConversation"
 				/>
 				<div
 					v-else
