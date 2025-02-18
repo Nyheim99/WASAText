@@ -41,6 +41,7 @@ export default {
 		const groupPhoto = ref(null);
 		const groupMessage = ref("");
 
+		//Helper function to format the preview timestamp
 		const formatTimestamp = (timestamp) => {
 			const utcTimestamp = new Date(timestamp);
 			const localTimestamp = new Date(
@@ -57,6 +58,7 @@ export default {
 			});
 		};
 
+		//Helper funciton to reset the modal states
 		const resetModalState = () => {
 			showValidation.value = false;
 			validationMessage.value = "";
@@ -70,6 +72,7 @@ export default {
 			groupMessage.value = "";
 		};
 
+		//User selection when creating group conversations
 		const toggleUserSelection = (user) => {
 			if (selectedUsers.value.has(user)) {
 				selectedUsers.value.delete(user);
@@ -78,24 +81,29 @@ export default {
 			}
 		};
 
+		//Check if user is selected
 		const isUserSelected = (user) => selectedUsers.value.has(user);
 
+		//Set modal mode
 		const setMode = (mode) => {
 			modalMode.value = mode;
 		};
 
+		//Search for users when creating conversation
 		const searchUsers = () => {
 			if (!searchQuery.value) {
 				searchResults.value = [];
 				return;
 			}
 
+			//Create a set of all users
 			const privateConversationUsers = new Set(
 				props.conversations
 					.filter((conv) => conv.conversation_type === "private")
 					.map((conv) => conv.display_name)
 			);
 
+			//Only display users the user does not already have a conversation with
 			const availableUsers = props.allUsers.filter(
 				(user) =>
 					user.id !== props.user.id &&
@@ -105,6 +113,7 @@ export default {
 						.includes(searchQuery.value.toLowerCase())
 			);
 
+			//Deal with no available users
 			if (availableUsers.length === 0) {
 				searchResults.value = [];
 				validationMessage.value =
@@ -116,6 +125,7 @@ export default {
 			}
 		};
 
+		//Show all available users when the search bar is focused
 		const showAllUsersOnFocus = () => {
 			const privateConversationUsers = new Set(
 				props.conversations
@@ -123,12 +133,14 @@ export default {
 					.map((conv) => conv.display_name)
 			);
 
+			//Filter out users the that the user already has a conversation with
 			const availableUsers = props.allUsers.filter(
 				(user) =>
 					user.id !== props.user.id &&
 					!privateConversationUsers.has(user.username)
 			);
 
+			//Deal with no users left
 			if (availableUsers.length === 0) {
 				searchResults.value = [];
 				validationMessage.value =
@@ -142,13 +154,16 @@ export default {
 			}
 		};
 
+		//Selecting a user to start a private conversation
 		const selectUser = (user) => {
 			selectedUser.value = user;
 			privateMessage.value = "";
 			searchResults.value = [];
 		};
 
+		//Creating a private conversation
 		const createPrivateConversation = async () => {
+			//Validate all the input
 			if (!selectedUser.value) {
 				showValidation.value = true;
 				validationMessage.value =
@@ -161,21 +176,26 @@ export default {
 				return;
 			}
 
+			//Append all the data
 			const formData = new FormData();
 			formData.append("conversation_type", "private");
 			formData.append("message", privateMessage.value);
 			formData.append("recipientID", selectedUser.value.id);
 
 			try {
+				//Attempt to create the conversation
 				await axios.post("/conversations", formData, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 
+				//Resets the modal state
 				resetModalState();
 
+				//Emits the feedback to HomeView and tells it to update conversations
 				emit("conversation-created");
 				emit("feedback", "Conversation started successfully!");
 
+				//Close the modal on success
 				const modal = document.getElementById("newConversationModal");
 				const bootstrapModal = bootstrap.Modal.getInstance(modal);
 				bootstrapModal.hide();
@@ -189,7 +209,9 @@ export default {
 			}
 		};
 
+		//Creating a group conversation
 		const createGroupConversation = async () => {
+			//Validate the inputs
 			if (!validateGroupName(groupName.value)) {
 				showValidation.value = true;
 				return;
@@ -206,6 +228,7 @@ export default {
 				return;
 			}
 
+			//Append all the data
 			const formData = new FormData();
 			formData.append("conversation_type", "group");
 			formData.append("group_name", groupName.value);
@@ -219,13 +242,16 @@ export default {
 			}
 
 			try {
+				//Attempt to create the conversation
 				await axios.post("/conversations", formData, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 
+				//Notify HomeView of the new conversation
 				emit("conversation-created");
 				emit("feedback", "Group conversation created successfully!");
 
+				//Close the modal on success
 				const modal = document.getElementById("newConversationModal");
 				const bootstrapModal = bootstrap.Modal.getInstance(modal);
 				bootstrapModal.hide();
@@ -239,6 +265,7 @@ export default {
 			}
 		};
 
+		//Validate the new group name
 		const validateGroupName = (groupname) => {
 			if (groupname.length < 3 || groupname.length > 20) {
 				validationMessage.value =
@@ -253,6 +280,7 @@ export default {
 			return true;
 		};
 
+		//Validate the sent message
 		const validateMessage = (message) => {
 			if (message.trim().length < 1 || message.length > 1000) {
 				validationMessage.value =
@@ -267,6 +295,7 @@ export default {
 			return true;
 		};
 
+		//Get the picture source for display photo
 		const resolvePhotoURL = (photoURL, conversationType) => {
 			if (photoURL && photoURL.startsWith("/")) {
 				return `${__API_URL__}${photoURL}`;
@@ -274,6 +303,7 @@ export default {
 			return conversationType === "group" ? PeopleIcon : AvatarIcon;
 		};
 
+		//Truncate long messages
 		const truncateMessage = (message, maxLength) => {
 			if (message.length > maxLength) {
 				return message.slice(0, maxLength) + "...";
@@ -281,6 +311,7 @@ export default {
 			return message;
 		};
 
+		//Functionality to reset modal states on component loads
 		onMounted(() => {
 			const modal = document.getElementById("newConversationModal");
 			if (modal) {
@@ -329,7 +360,10 @@ export default {
 		class="bg-white rounded shadow-sm p-1 d-flex flex-column h-100"
 		style="width: 300px"
 	>
+		<!-- Conversation List -->
 		<div class="container row w-100 m-0 p-0">
+
+			<!-- Top Section -->
 			<div class="d-flex justify-content-between align-items-center p-1">
 				<h5 class="mb-2"><b>Conversations</b></h5>
 				<button
@@ -345,7 +379,10 @@ export default {
 			</div>
 		</div>
 
+		<!-- Conversation Previews-->
 		<div class="overflow-auto">
+
+			<!-- If user has no conversations-->
 			<div
 				v-if="conversations.length === 0"
 				class="container d-flex flex-column align-items-center justify-content-center text-center p-4"
@@ -362,6 +399,7 @@ export default {
 				</button>
 			</div>
 
+			<!-- Display conversations in a list-->
 			<div
 				v-for="conversation in conversations"
 				v-else
@@ -390,8 +428,11 @@ export default {
 					"
 				/>
 
+				<!-- Single Conversation Preview-->
 				<div class="flex-grow-1 overflow-hidden">
 					<h6 class="mb-1">{{ conversation.display_name }}</h6>
+
+					<!-- Deleted messages -->
 					<span
 						v-if="conversation.last_message_is_deleted"
 						class="text-muted"
@@ -406,6 +447,8 @@ export default {
 							deleted a message</i
 						>
 					</span>
+
+					<!-- Normal messages -->
 					<p v-else class="mb-0 text-muted" style="font-size: 0.8rem">
 						<strong
 							v-if="conversation.conversation_type === 'group'"
@@ -431,6 +474,7 @@ export default {
 					</p>
 				</div>
 
+				<!-- Timestamp -->
 				<small
 					class="text-muted p-1"
 					style="align-self: flex-start; font-size: 0.7rem"
@@ -440,6 +484,7 @@ export default {
 			</div>
 		</div>
 
+		<!-- Modal for creating new conversations -->
 		<div
 			id="newConversationModal"
 			class="modal fade"
@@ -449,6 +494,8 @@ export default {
 		>
 			<div class="modal-dialog">
 				<div class="modal-content">
+
+					<!-- Header section -->
 					<div class="modal-header">
 						<h5 id="newConversationModalLabel" class="modal-title">
 							Start a New Conversation
@@ -460,7 +507,11 @@ export default {
 							aria-label="Close"
 						></button>
 					</div>
+
+					<!-- Group Creation Form -->
 					<div class="modal-body">
+
+						<!-- Conversation Type selector -->
 						<div class="mb-2">
 							<strong>Step 1:</strong> Select conversation type
 						</div>
@@ -496,7 +547,10 @@ export default {
 							</button>
 						</div>
 
+						<!-- Form for creating private conversation-->
 						<div v-if="modalMode === 'private'">
+
+							<!-- Selecting recipient with search-->
 							<div class="mb-2">
 								<strong>Step 2:</strong> Select a user
 							</div>
@@ -555,6 +609,8 @@ export default {
 									</li>
 								</ul>
 							</div>
+
+							<!-- Initial private message input -->
 							<div v-if="selectedUser" class="mt-3">
 								<div class="mb-2">
 									<strong>Step 3:</strong> Send the first
@@ -567,6 +623,8 @@ export default {
 									rows="3"
 								></textarea>
 							</div>
+
+							<!-- Validation field for errors-->
 							<p
 								v-if="showValidation"
 								class="text-danger small mt-2"
@@ -576,7 +634,10 @@ export default {
 							</p>
 						</div>
 
+						<!-- Form for creating private conversation-->
 						<div v-if="modalMode === 'group'">
+
+							<!-- Group name input -->
 							<div class="mb-2">
 								<strong>Step 2:</strong> Enter group name
 							</div>
@@ -586,6 +647,8 @@ export default {
 								class="form-control mb-2"
 								placeholder="Group name..."
 							/>
+
+							<!-- Optional group photo input -->
 							<div v-if="groupName">
 								<div class="mb-2">
 									<strong>Step 3 (optional):</strong> Upload
@@ -600,6 +663,7 @@ export default {
 									"
 								/>
 
+								<!-- Group member selection -->
 								<div class="mb-2">
 									<strong>Step 4:</strong> Select Group
 									Members
@@ -660,6 +724,7 @@ export default {
 									</ul>
 								</div>
 
+								<!-- Selected users display -->
 								<div v-if="selectedUsers.size > 0" class="mt-3">
 									<h6>Users selected:</h6>
 									<div class="d-flex flex-wrap gap-2">
@@ -688,6 +753,7 @@ export default {
 									</div>
 								</div>
 
+								<!-- Initial group message input -->
 								<div class="my-2">
 									<strong>Step 5:</strong> Write the first
 									message!
@@ -701,6 +767,7 @@ export default {
 								></textarea>
 							</div>
 
+							<!-- Validation field for errors -->
 							<p
 								v-if="showValidation"
 								class="text-danger small mt-2"
@@ -710,7 +777,11 @@ export default {
 							</p>
 						</div>
 					</div>
+
+					<!-- Modal footer-->
 					<div class="modal-footer">
+
+						<!-- Button for creating private conversation -->
 						<div
 							v-if="modalMode === 'private'"
 							class="mt-2 d-flex justify-content-end"
@@ -723,6 +794,8 @@ export default {
 								Start Conversation!
 							</button>
 						</div>
+
+						<!-- Button for creating group conversation -->
 						<div v-else class="mt-2 d-flex justify-content-end">
 							<button
 								type="button"

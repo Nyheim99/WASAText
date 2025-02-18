@@ -19,6 +19,7 @@ export default {
 
 <template>
 	<div class="h-100 rounded d-flex flex-column justify-content-end">
+		<!-- User Avatar -->
 		<Avatar
 			:logout="logout"
 			:user="user"

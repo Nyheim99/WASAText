@@ -77,6 +77,7 @@ export default {
 		const availableReactions = ["👍", "😂", "❤️", "🔥", "😢"];
 		let activePopover = null;
 
+		//Get conversation photo url or backup icon
 		const conversationPhoto = () => {
 			if (props.conversation.display_photo_url?.startsWith("/")) {
 				return `${__API_URL__}${props.conversation.display_photo_url}?t=${cacheBuster.value}`;
@@ -86,10 +87,12 @@ export default {
 				: AvatarIcon;
 		};
 
+		//Update the group name based on the existing one
 		const setGroupNameOnModalOpen = () => {
 			newGroupName.value = props.conversation.display_name || "";
 		};
 
+		//Removes event listener for group name modal
 		onBeforeUnmount(() => {
 			const modal = document.getElementById("groupNameModal");
 			if (modal) {
@@ -101,6 +104,7 @@ export default {
 		});
 
 		onMounted(() => {
+			//When in a group conversation, update the users that the user can add
 			updateUsersNotInGroup();
 			const modal = document.getElementById("groupNameModal");
 			if (modal) {
@@ -111,6 +115,8 @@ export default {
 			}
 		});
 
+		//Find all the users that are available to be added in a group converation
+		//Ergo all users not already in the conversation or the user themselves
 		const updateUsersNotInGroup = () => {
 			if (
 				!props.conversationDetails ||
@@ -129,6 +135,7 @@ export default {
 			);
 		};
 
+		//Toggle a user in selection of adding new users
 		const toggleUserSelection = (userId) => {
 			if (selectedUsers.value.has(userId)) {
 				selectedUsers.value.delete(userId);
@@ -137,6 +144,7 @@ export default {
 			}
 		};
 
+		//Get the username of a user based on their id
 		const getUsername = (userId) => {
 			if (userId === props.user.id) {
 				return props.user.username;
@@ -146,7 +154,9 @@ export default {
 			return user ? user.username : "Unknown";
 		};
 
+		//Updating the group name
 		const handleUpdateGroupName = async () => {
+			//Validate input
 			if (!validateGroupName(newGroupName.value.trim())) {
 				return;
 			}
@@ -154,6 +164,7 @@ export default {
 			updatingName.value = true;
 
 			try {
+				//Attempt to update the group name
 				const response = await axios.put(
 					`/conversations/${props.conversation.conversation_id}/name`,
 					{
@@ -161,11 +172,13 @@ export default {
 					}
 				);
 
+				//Notify HomeView to update the display name in Conversation List
 				emit("group-name-updated", {
 					conversationId: props.conversation.conversation_id,
 					newName: response.data,
 				});
 
+				//Close the modal on success
 				const modal = document.getElementById("groupNameModal");
 				if (modal) {
 					const bootstrapModal = bootstrap.Modal.getInstance(modal);
@@ -174,6 +187,7 @@ export default {
 					}
 				}
 
+				//Reset values
 				newGroupName.value = "";
 				validationMessage.value = "";
 			} catch (error) {
@@ -186,6 +200,7 @@ export default {
 			}
 		};
 
+		//Validate group name input
 		const validateGroupName = (groupname) => {
 			if (groupname.length < 3 || groupname.length > 20) {
 				validationMessage.value =
@@ -200,7 +215,9 @@ export default {
 			return true;
 		};
 
+		//Updating a groups photo
 		const handleUpdateGroupPhoto = async () => {
+			//Validate the input
 			const file = fileInput.value?.files[0];
 			if (!file) {
 				validationMessage.value = "Please select a file.";
@@ -216,6 +233,7 @@ export default {
 			formData.append("photo", file);
 
 			try {
+				//Attempt to update the photo
 				const response = await axios.put(
 					`/conversations/${props.conversation.conversation_id}/photo`,
 					formData,
@@ -224,8 +242,10 @@ export default {
 					}
 				);
 
+				//Update cacheBuster to update display photo (since filename remains the same)
 				cacheBuster.value = Date.now();
 
+				//Notify HomeView to update preview photo
 				emit("group-photo-updated", {
 					conversationId: props.conversation.conversation_id,
 					newPhotoUrl:
@@ -236,6 +256,7 @@ export default {
 					fileInput.value.value = "";
 				}
 
+				//Close the modal
 				const modal = document.getElementById("groupPhotoModal");
 				if (modal) {
 					const bootstrapModal = bootstrap.Modal.getInstance(modal);
@@ -254,6 +275,7 @@ export default {
 			}
 		};
 
+		//Validate the new group photo
 		const validateImage = (file) => {
 			const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 			if (!allowedTypes.includes(file.type)) {
@@ -264,7 +286,9 @@ export default {
 			return true;
 		};
 
+		//Adding new members to a group
 		const handleAddMembers = async () => {
+			//Check that at least one member is selected
 			if (selectedUsers.value.size === 0) {
 				validationMessage.value = "Please select at least one user.";
 				return;
@@ -273,6 +297,7 @@ export default {
 			addingMembers.value = true;
 
 			try {
+				//Attempt to add members
 				await axios.post(
 					`/conversations/${props.conversation.conversation_id}/members`,
 					{
@@ -280,14 +305,17 @@ export default {
 					}
 				);
 
+				//Notify HomeView to update preview
 				emit(
 					"group-members-updated",
 					props.conversation.conversation_id
 				);
 
+				//Update the local variables
 				selectedUsers.value.clear();
 				updateUsersNotInGroup();
 
+				//Close the modal
 				const modal = document.getElementById("addMembersModal");
 				if (modal) {
 					const bootstrapModal = bootstrap.Modal.getInstance(modal);
@@ -302,14 +330,18 @@ export default {
 			}
 		};
 
+		//Function to leave a group
 		const handleLeaveGroup = async () => {
 			try {
+				//Attempt to leave the group
 				await axios.delete(
 					`/conversations/${props.conversation.conversation_id}/members/me`
 				);
 
+				//Notify HomeView to update preview and remove conversation
 				emit("group-left", props.conversation.conversation_id);
 
+				//Close the modal
 				const modalElement = document.getElementById("leaveGroupModal");
 				const modal = bootstrap.Modal.getInstance(modalElement);
 				if (modal) modal.hide();
@@ -318,11 +350,14 @@ export default {
 			}
 		};
 
+		//Send a message in a conversation
 		const sendMessage = async () => {
+			//Check that either textmessage or an uploaded photo exists
 			if (!newMessage.value && !selectedPhoto.value) {
 				return;
 			}
 
+			//Appending data, prioritzing photo
 			const formData = new FormData();
 			if (selectedPhoto.value) {
 				formData.append("photo", selectedPhoto.value);
@@ -330,23 +365,28 @@ export default {
 				formData.append("message", newMessage.value);
 			}
 
+			//Check if it's a reply
 			if (replyToMessage.value) {
 				formData.append("original_message_id", replyToMessage.value.id);
 			}
 
 			try {
+				//Attempt to send the message
 				await axios.post(
 					`/conversations/${props.conversation.conversation_id}/messages`,
 					formData,
 					{ headers: { "Content-Type": "multipart/form-data" } }
 				);
 
+				//Reset the variables
 				newMessage.value = "";
 				selectedPhoto.value = null;
 				replyToMessage.value = null;
 
+				//Notify HomeView to update preview message
 				emit("message-sent", props.conversation.conversation_id);
 
+				//Scroll to bottom to make newest message visible
 				scrollToBottom();
 			} catch (error) {
 				console.error(
@@ -356,6 +396,7 @@ export default {
 			}
 		};
 
+		//Forwarding a message
 		const confirmForwardMessage = (message) => {
 			forwardMessage.value = message;
 			fetchAvailableConversations();
@@ -365,20 +406,25 @@ export default {
 			modal.show();
 		};
 
+		//Get an overview of all conversations a user can forward to
 		const fetchAvailableConversations = async () => {
 			try {
+				//Get all conversations the user is a part of
 				const response = await axios.get("/conversations");
 				const conversationList = response.data;
 
+				//Filter out all private conversations the user has already
 				const privateConversationUsernames = conversationList
 					.filter((conv) => conv.conversation_type === "private")
 					.map((conv) => conv.display_name);
 
+				//Calculate all the private users that dont already exist in a conversation
 				const additionalUsers = props.allUsers.filter(
 					(user) =>
 						!privateConversationUsernames.includes(user.username)
 				);
 
+				//Create the full list of available recipients for a forwarded message
 				const fullRecipientList = [
 					...conversationList.filter(
 						(conv) =>
@@ -399,9 +445,14 @@ export default {
 			}
 		};
 
+		//Function to forward a message
 		const forwardMessageTo = async (conversationId, convType, userId) => {
 			try {
+				//Set targetConversationId as a variable
 				let targetConversationID;
+
+				//If the user is a new recipient, create a new conversation and set that as the
+				//target of the forwarded message
 				if (convType === "new_user") {
 					const formData = new FormData();
 					formData.append("conversation_type", convType);
@@ -416,14 +467,18 @@ export default {
 					);
 
 					targetConversationID = response.data.conversation_id;
+
+					//Otherwise send to existing message
 				} else {
 					targetConversationID = conversationId;
 				}
 
+				//Attempt to forward the message
 				await axios.post(
 					`/conversations/${targetConversationID}/messages/${forwardMessage.value.id}/forward`
 				);
 
+				//Notify HomeView of changes to update preview
 				emit("message-forwarded", props.conversation.conversation_id);
 				if (convType === "new_user") emit("conversation-created");
 
@@ -437,16 +492,20 @@ export default {
 			}
 		};
 
+		//Function to delete a message
 		const deleteMessage = async () => {
 			try {
+				//Attempt to delete the message
 				await axios.delete(
 					`/conversations/${props.conversation.conversation_id}/messages/${messageToDelete.value.id}`
 				);
 
+				//Notify HomeView to update preview
 				emit("message-deleted", props.conversation.conversation_id);
 
 				messageToDelete.value = null;
 
+				//Close the confirmation modal
 				const deleteModal = bootstrap.Modal.getInstance(
 					document.getElementById("deleteMessageModal")
 				);
@@ -1067,12 +1126,7 @@ export default {
 							style="max-width: 200px; border-radius: 8px"
 						/>
 
-						<div
-							style="
-								float: right;
-								margin-left: 10px;
-							"
-						>
+						<div style="float: right; margin-left: 10px">
 							<small class="text-muted" style="font-size: 12px">
 								{{ formatTimestamp(message.timestamp) }}
 							</small>

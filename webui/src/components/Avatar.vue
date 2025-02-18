@@ -20,6 +20,7 @@ export default {
 		const showValidation = ref(false);
 		const validationMessage = ref("");
 
+		//Validate new username
 		const validateUsername = (username) => {
 			if (username.length < 3 || username.length > 16) {
 				validationMessage.value =
@@ -34,14 +35,18 @@ export default {
 			return true;
 		};
 
+		//Updating the user's username
 		const handleUpdateUsername = async () => {
+			//Validate the input
 			if (!validateUsername(newUsername.value)) {
 				showValidation.value = true;
 				return;
 			}
 
+			//Update the username in HomeView
 			const response = await props.updateUsername(newUsername.value);
 
+			//Display success or failure depending on response
 			if (response === true) {
 				newUsername.value = "";
 				showValidation.value = false;
@@ -54,6 +59,7 @@ export default {
 			}
 		};
 
+		//Validate the new profile picture
 		const validateImage = (file) => {
 			const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 			if (!allowedTypes.includes(file.type)) {
@@ -64,7 +70,9 @@ export default {
 			return true;
 		};
 
+		//Update the user's profile picture
 		const handleUpdatePhoto = async () => {
+			//Validate the input
 			const file = fileInput.value?.files[0];
 			if (!file) {
 				validationMessage.value = "Please select a file.";
@@ -77,10 +85,12 @@ export default {
 				return;
 			}
 
+			//Upload the file in HomeView
 			uploading.value = true;
 			const response = await props.updatePhoto(file);
 			uploading.value = false;
 
+			//Display success or failure depending on response
 			if (response === true) {
 				cacheBuster.value = Date.now();
 				const modal = document.getElementById("photoModal");
@@ -92,6 +102,7 @@ export default {
 			}
 		};
 
+		//Return the display photo for the avatar
 		const getAvatarSrc = computed(() => {
 			if (!props.user.photo_url || props.user.photo_url === "") {
 				return AvatarIcon;
@@ -115,6 +126,7 @@ export default {
 </script>
 
 <template>
+	<!-- Avatar -->
 	<div class="dropup">
 		<button
 			class="btn btn-light shadow-sm p-0 align-items-center justify-content-center"
@@ -137,11 +149,16 @@ export default {
 				style="width: 100%; height: 100%; object-fit: cover"
 			/>
 		</button>
+
+		<!-- Dropup menu -->
 		<ul class="dropdown-menu">
+			<!-- Display logged in user's username -->
 			<li>
 				<span class="dropdown-item-text"> @{{ user.username }} </span>
 			</li>
 			<li><hr class="dropdown-divider" /></li>
+
+			<!-- Uploading/Changing profile picture -->
 			<li>
 				<button
 					class="dropdown-item"
@@ -152,6 +169,8 @@ export default {
 					Update Profile Picture
 				</button>
 			</li>
+
+			<!-- Uploading/Changing username -->
 			<li>
 				<button
 					class="dropdown-item"
@@ -163,6 +182,8 @@ export default {
 				</button>
 			</li>
 			<li><hr class="dropdown-divider" /></li>
+
+			<!-- Logout button -->
 			<li>
 				<button class="dropdown-item" type="button" @click="logout">
 					Log out
@@ -171,6 +192,7 @@ export default {
 		</ul>
 	</div>
 
+	<!-- Modal to upload new profile picture -->
 	<div
 		id="photoModal"
 		class="modal fade"
@@ -229,6 +251,7 @@ export default {
 		</div>
 	</div>
 
+	<!-- Modal to update the user's username -->
 	<div
 		id="usernameModal"
 		class="modal fade"

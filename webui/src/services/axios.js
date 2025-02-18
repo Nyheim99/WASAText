@@ -8,6 +8,7 @@ const instance = axios.create({
 	},
 });
 
+//Set Auth header if userId exists
 instance.interceptors.request.use((config) => {
 	const userId = localStorage.getItem("userId");
 	if (userId) {

@@ -22,24 +22,31 @@ export default {
 		const selectedConversationDetails = ref(null);
 		const allUsers = ref([]);
 
+		//Fetch user details
 		const fetchUser = async () => {
 			try {
 				const response = await axios.get("/user");
+
+				//Set the user object on success
 				user.value = response.data;
 			} catch (error) {
 				console.error("Failed to fetch user:", error);
 			}
 		};
 
+		//Fetch all users
 		const fetchUsers = async () => {
 			try {
 				const response = await axios.get("/users");
-				allUsers.value = response.data.filter((u) => u.id !== user.value.id);
+				allUsers.value = response.data.filter(
+					(u) => u.id !== user.value.id
+				);
 			} catch (error) {
 				console.error("Failed to fetch users:", error);
 			}
 		};
 
+		//Fetch all conversations
 		const fetchConversations = async () => {
 			try {
 				const response = await axios.get("/conversations");
@@ -49,12 +56,14 @@ export default {
 			}
 		};
 
+		//Select a conversation
 		const selectConversation = async (conversation) => {
 			selectedConversation.value = conversation;
 			await markMessagesAsRead(conversation.conversation_id);
 			fetchConversationDetails(conversation.conversation_id);
 		};
 
+		//Fetch details about a single conversation
 		const fetchConversationDetails = async (conversationId) => {
 			try {
 				const response = await axios.get(
@@ -66,11 +75,13 @@ export default {
 			}
 		};
 
+		//Logging out
 		const logout = () => {
 			localStorage.removeItem("userId");
 			router.push("/login");
 		};
 
+		//Handling feedback messages from other components
 		const handleFeedback = (message) => {
 			feedbackMessage.value = message;
 			showFeedback.value = true;
@@ -80,16 +91,22 @@ export default {
 			}, 3000);
 		};
 
+		//Updating a user's username
 		const updateUsername = async (newUsername) => {
 			try {
+				//Attempt to update username
 				await axios.put("/user/username", {
 					username: newUsername,
 				});
+
+				//Set feedback on success
 				feedbackMessage.value = "Username updated successfully!";
 				showFeedback.value = true;
 
+				//Optimistically update the username locally
 				user.value.username = newUsername;
 
+				//setTimeout for feedback
 				setTimeout(() => {
 					showFeedback.value = false;
 				}, 3000);
@@ -106,15 +123,18 @@ export default {
 			}
 		};
 
+		//Update a user's profile picture
 		const updatePhoto = async (file) => {
 			const formData = new FormData();
 			formData.append("photo", file);
 
 			try {
+				//Attempt to update photo
 				const response = await axios.put("/user/photo", formData, {
 					headers: { "Content-Type": "multipart/form-data" },
 				});
 
+				//Optimistically update the picture locally
 				user.value.photo_url = response.data.photo_url;
 				return true;
 			} catch (error) {
@@ -128,10 +148,13 @@ export default {
 			}
 		};
 
+		//Updating conversations after adding a new one
 		const addNewConversation = async () => {
 			try {
+				//Fetching details about all conversations
 				await fetchConversations();
 
+				//As long as one exist, select the newest one
 				if (conversations.value.length > 0) {
 					selectConversation(conversations.value[0]);
 				}
@@ -140,29 +163,38 @@ export default {
 			}
 		};
 
+		//Remove a conversation after the user leaves a group
 		const removeConversation = (conversationId) => {
+			//Remove the conversation locally
 			conversations.value = conversations.value.filter(
 				(conv) => conv.conversation_id !== conversationId
 			);
+
+			//Remove the selected conversation
 			selectedConversation.value = null;
 			selectedConversationDetails.value = null;
 
+			//If the user still has conversations remaining, select it
 			if (conversations.value.length > 0) {
 				selectConversation(conversations.value[0]);
 			}
 		};
 
+		//Change the name of the group conversation after updating it
 		const updateConversationName = (payload) => {
+			//Find the index of the conversation
 			const index = conversations.value.findIndex(
 				(conv) => conv.conversation_id === payload.conversationId
 			);
 
+			//If the index is valid, update display name
 			if (index !== -1) {
 				conversations.value[index] = {
 					...conversations.value[index],
 					display_name: payload.newName,
 				};
 
+				//If the user is in the selected conversation, also updates its name
 				if (
 					selectedConversation.value?.conversation_id ===
 					payload.conversationId
@@ -175,11 +207,14 @@ export default {
 			}
 		};
 
+		//Update the group photo when the user uploads a new one
 		const updateConversationPhoto = (payload) => {
+			//Find the index of the conversation
 			const index = conversations.value.findIndex(
 				(conv) => conv.conversation_id === payload.conversationId
 			);
 
+			//if the index is valid, update the display photo url
 			if (index !== -1) {
 				conversations.value[index] = {
 					...conversations.value[index],
@@ -187,6 +222,7 @@ export default {
 				};
 			}
 
+			//Also update for the selected conversation
 			if (
 				selectedConversation.value?.conversation_id ===
 				payload.conversationId
@@ -198,16 +234,25 @@ export default {
 			}
 		};
 
+		//Update conversation preview and conversation with new message
 		const updateConversationWithNewMessage = (conversationId) => {
+			//Get all conversations to update the preview
 			fetchConversations();
+
+			//Get the details of the current conversation to update with new message
 			fetchConversationDetails(conversationId);
 		};
 
+		//Update conversation preview and conversation with new message
 		const updateConversationWithDeletedMessage = (conversationId) => {
+			//Get all conversations to update the preview
 			fetchConversations();
+
+			//Get all the details of the current conversation to update with deleted message
 			fetchConversationDetails(conversationId);
 		};
 
+		//Mark all messages as read for a user in a conversation
 		const markMessagesAsRead = async (conversationId) => {
 			try {
 				await axios.put(
@@ -218,11 +263,13 @@ export default {
 			}
 		};
 
+		//Fetch all data in component mount
 		onMounted(async () => {
 			await fetchUser();
 			await fetchUsers();
 			await fetchConversations();
 
+			//Automatically select the newest conversation if one exists
 			if (conversations.value.length > 0) {
 				selectConversation(conversations.value[0]);
 			}
@@ -255,6 +302,7 @@ export default {
 
 <template>
 	<div class="container-fluid d-flex vh-100 flex-column p-3">
+		<!-- Feedback box-->
 		<div
 			v-if="showFeedback"
 			class="alert alert-success position-fixed top-2 start-50 translate-middle-x shadow"
@@ -264,7 +312,10 @@ export default {
 			{{ feedbackMessage }}
 		</div>
 
+		<!-- Main window -->
 		<div class="row flex-grow-1 g-3 flex-nowrap h-100">
+
+			<!-- Sidebar -->
 			<div class="col-auto p-0">
 				<Sidebar
 					:logout="logout"
@@ -273,6 +324,8 @@ export default {
 					:updatePhoto="updatePhoto"
 				/>
 			</div>
+
+			<!-- Conversation List -->
 			<div class="col-auto">
 				<ConversationList
 					v-if="user.id"
@@ -285,6 +338,8 @@ export default {
 					@conversation-created="addNewConversation"
 				/>
 			</div>
+
+			<!-- Conversation Window -->
 			<div class="col">
 				<Conversation
 					v-if="selectedConversation"
@@ -301,6 +356,8 @@ export default {
 					@message-deleted="updateConversationWithDeletedMessage"
 					@conversation-created="addNewConversation"
 				/>
+
+				<!-- If user has no conversations, display an empty box -->
 				<div
 					v-else
 					class="bg-white d-flex flex-column shadow-sm rounded h-100"
