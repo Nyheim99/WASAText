@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+//Get a list of all users
 func (db *appdbimpl) GetUsers() ([]User, error) {
 	query := "SELECT id, username, photo_url FROM users ORDER BY username ASC"
 

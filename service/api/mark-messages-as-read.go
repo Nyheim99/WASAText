@@ -9,6 +9,8 @@ import (
 )
 
 func (rt *_router) markMessagesAsRead(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get conversation ID
 	conversationIDStr := ps.ByName("conversationID")
 	conversationID, err := strconv.ParseInt(conversationIDStr, 10, 64)
 	if err != nil {
@@ -16,6 +18,7 @@ func (rt *_router) markMessagesAsRead(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -23,6 +26,7 @@ func (rt *_router) markMessagesAsRead(w http.ResponseWriter, r *http.Request, ps
 	}
 	userID := reqCtx.UserID
 
+	//Mark all messages as read in database
 	err = rt.db.MarkMessagesAsRead(conversationID, userID)
 	if err != nil {
 		http.Error(w, "Failed to mark messages as read", http.StatusInternalServerError)

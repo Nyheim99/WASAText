@@ -9,6 +9,8 @@ import (
 )
 
 func (rt *_router) uncommentMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get message ID
 	messageIDStr := ps.ByName("messageID")
 	messageID, err := strconv.ParseInt(messageIDStr, 10, 64)
 	if err != nil {
@@ -16,6 +18,7 @@ func (rt *_router) uncommentMessage(w http.ResponseWriter, r *http.Request, ps h
 		return
 	}
 
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -28,6 +31,7 @@ func (rt *_router) uncommentMessage(w http.ResponseWriter, r *http.Request, ps h
 		return
 	}
 
+	//Update the message in the database
 	err = rt.db.UncommentMessage(messageID, userID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

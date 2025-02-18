@@ -81,12 +81,14 @@ func New(cfg Config) (Router, error) {
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
 
+	//Serve profile pictures
 	staticUsersDir, err := filepath.Abs("service/photos/users")
 	if err != nil {
 		log.Fatal("Failed to resolve user photos directory:", err)
 	}
 	router.ServeFiles("/service/photos/users/*filepath", http.Dir(staticUsersDir))
 
+	//Serve group pictures
 	staticGroupsDir, err := filepath.Abs("service/photos/groups")
 	if err != nil {
 		log.Fatal("Failed to resolve group photos directory:", err)

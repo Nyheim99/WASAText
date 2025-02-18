@@ -14,6 +14,8 @@ type setGroupNameRequest struct {
 }
 
 func (rt *_router) setGroupName(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get conversation ID
 	conversationID := ps.ByName("conversationID")
 	if conversationID == "" {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -26,6 +28,7 @@ func (rt *_router) setGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 		return
 	}
 
+	//Validate the request
 	var req setGroupNameRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -42,12 +45,14 @@ func (rt *_router) setGroupName(w http.ResponseWriter, r *http.Request, ps httpr
 		return
 	}
 
+	//Set the group name in the database
 	err = rt.db.SetGroupName(convID, req.Name)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	//Return the new group name
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(req.Name)

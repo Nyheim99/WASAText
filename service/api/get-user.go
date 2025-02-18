@@ -9,6 +9,8 @@ import (
 )
 
 func (rt *_router) getUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get user id
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -17,6 +19,7 @@ func (rt *_router) getUser(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	userId := reqCtx.UserID
 
+	//Fetch the user from database
 	user, err := rt.db.GetUser(userId)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -28,6 +31,7 @@ func (rt *_router) getUser(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
+	//Return the user
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(user)

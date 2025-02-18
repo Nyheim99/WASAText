@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+//Sends a new message
 func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string, photoData *[]byte, photoMimeType *string, originalMessageID int64) (int64, error) {
 	if (content != nil && photoData != nil) || (content == nil && photoData == nil) {
 		return 0, fmt.Errorf("a message must contain either text or an image, but not both")
@@ -58,6 +59,7 @@ func (db *appdbimpl) SendMessage(conversationID, senderID int64, content *string
 	return messageID, nil
 }
 
+//Deletes a message
 func (db *appdbimpl) DeleteMessage(conversationID, messageID, userID int64) error {
 	var count int
 	err := db.c.QueryRow(`
@@ -92,6 +94,7 @@ func (db *appdbimpl) DeleteMessage(conversationID, messageID, userID int64) erro
 	return nil
 }
 
+//Comments a messsage
 func (db *appdbimpl) CommentMessage(messageID, userID int64, emoticon string) error {
 	_, err := db.c.Exec(`
 		INSERT INTO reactions (message_id, user_id, emoticon)
@@ -107,6 +110,7 @@ func (db *appdbimpl) CommentMessage(messageID, userID int64, emoticon string) er
 	return nil
 }
 
+//Uncomments a message
 func (db *appdbimpl) UncommentMessage(messageID, userID int64) error {
 	_, err := db.c.Exec(`
 		DELETE FROM reactions WHERE message_id = ? AND user_id = ?
@@ -119,6 +123,7 @@ func (db *appdbimpl) UncommentMessage(messageID, userID int64) error {
 	return nil
 }
 
+//Forwards a message
 func (db *appdbimpl) ForwardMessage(conversationID, senderID, originalMessageID int64) (int64, error) {
 	var content sql.NullString
 	var photoData []byte
@@ -178,6 +183,7 @@ func (db *appdbimpl) ForwardMessage(conversationID, senderID, originalMessageID 
 	return messageID, nil
 }
 
+//Marks all messages in a specific conversation as read
 func (db *appdbimpl) MarkMessagesAsRead(conversationID, userID int64) error {
 	_, err := db.c.Exec(`
 		UPDATE message_status 

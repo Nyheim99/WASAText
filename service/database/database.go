@@ -82,6 +82,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		return nil, errors.New("database is required when building an AppDatabase")
 	}
 
+	// Create database if it does not exist
 	sqlStmts := []string{
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,25 +105,25 @@ func New(db *sql.DB) (AppDatabase, error) {
 			FOREIGN KEY (user_id) REFERENCES users(id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    conversation_id INTEGER NOT NULL,
-    sender_id INTEGER NOT NULL,
-    content TEXT DEFAULT NULL,
-    photo_data BLOB DEFAULT NULL,
-    photo_mime_type TEXT DEFAULT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT CHECK(status IN ('sent', 'read')) DEFAULT 'sent',
-    is_reply BOOLEAN DEFAULT FALSE,
-    original_message_id INTEGER NOT NULL DEFAULT 0,
-    is_forwarded BOOLEAN DEFAULT FALSE,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    CHECK (
-        (content IS NOT NULL AND photo_data IS NULL) OR
-        (content IS NULL AND photo_data IS NOT NULL)
-    ),
-    FOREIGN KEY (conversation_id) REFERENCES conversations(id),
-    FOREIGN KEY (sender_id) REFERENCES users(id),
-    FOREIGN KEY (original_message_id) REFERENCES messages(id)
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		conversation_id INTEGER NOT NULL,
+		sender_id INTEGER NOT NULL,
+		content TEXT DEFAULT NULL,
+		photo_data BLOB DEFAULT NULL,
+		photo_mime_type TEXT DEFAULT NULL,
+		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+		status TEXT CHECK(status IN ('sent', 'read')) DEFAULT 'sent',
+		is_reply BOOLEAN DEFAULT FALSE,
+		original_message_id INTEGER NOT NULL DEFAULT 0,
+		is_forwarded BOOLEAN DEFAULT FALSE,
+		is_deleted BOOLEAN DEFAULT FALSE,
+		CHECK (
+			(content IS NOT NULL AND photo_data IS NULL) OR
+			(content IS NULL AND photo_data IS NOT NULL)
+		),
+		FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+		FOREIGN KEY (sender_id) REFERENCES users(id),
+		FOREIGN KEY (original_message_id) REFERENCES messages(id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS message_status (
 			message_id INTEGER NOT NULL,

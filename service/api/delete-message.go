@@ -15,18 +15,22 @@ type DeleteMessageResponse struct {
 }
 
 func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get conversation ID
 	conversationID, err := strconv.ParseInt(ps.ByName("conversationID"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
+	//Get message ID
 	messageID, err := strconv.ParseInt(ps.ByName("messageID"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -34,6 +38,7 @@ func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps http
 	}
 	userID := reqCtx.UserID
 
+	//Delete the message from the database
 	err = rt.db.DeleteMessage(conversationID, messageID, userID)
 	if err != nil {
 		if err.Error() == "message not found or already deleted" {
@@ -44,6 +49,7 @@ func (rt *_router) deleteMessage(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	//Return the deleted message
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(DeleteMessageResponse{

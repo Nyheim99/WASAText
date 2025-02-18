@@ -13,17 +13,21 @@ import (
 
 func (rt *_router) validateAuthorization(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+		//Check for Authorization header
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
 			return
 		}
 
+		//Check that it matches the correct format
 		if !strings.HasPrefix(authHeader, "Bearer ") {
 			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
 			return
 		}
 
+		//Validate the token
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		userId, err := strconv.ParseInt(token, 10, 64)
 		if err != nil {
@@ -31,23 +35,27 @@ func (rt *_router) validateAuthorization(next httprouter.Handle) httprouter.Hand
 			return
 		}
 
+		//Check that the user exists
 		user, err := rt.db.GetUser(userId)
 		if err != nil || user == nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
+		//Create a new unique request id
 		reqUUID, err := uuid.NewV4()
 		if err != nil {
 			http.Error(w, "Failed to generate request UUID", http.StatusInternalServerError)
 			return
 		}
 
+		//Log the request and who made it
 		logger := logrus.WithFields(logrus.Fields{
 			"reqUUID": reqUUID,
 			"userId":  userId,
 		})
 
+		//Add user to the request context
 		reqCtx := &reqcontext.RequestContext{
 			ReqUUID: reqUUID,
 			Logger:  logger,

@@ -6,9 +6,11 @@ import (
 	"fmt"
 )
 
+//Checks if a private conversaiton exists, if not then creates a new one
 func (db *appdbimpl) CreatePrivateConversation(userID, recipientID int64) (int64, error) {
+	
+	//Check if a conversation already exists
 	var existingConversationID int64
-
 	err := db.c.QueryRow(`
 		SELECT c.id 
 		FROM conversations c
@@ -25,6 +27,7 @@ func (db *appdbimpl) CreatePrivateConversation(userID, recipientID int64) (int64
 		return 0, fmt.Errorf("failed to check for existing conversation: %w", err)
 	}
 
+	//If no conversation already exists, create a new one
 	result, err := db.c.Exec(`
 		INSERT INTO conversations (conversation_type) VALUES ('private')
 	`)
@@ -39,6 +42,7 @@ func (db *appdbimpl) CreatePrivateConversation(userID, recipientID int64) (int64
 		return 0, fmt.Errorf("failed to retrieve conversation ID: %w", err)
 	}
 
+	//Insert participants
 	_, err = db.c.Exec(`
 		INSERT INTO conversation_participants (conversation_id, user_id)
 		VALUES (?, ?), (?, ?)
@@ -50,7 +54,10 @@ func (db *appdbimpl) CreatePrivateConversation(userID, recipientID int64) (int64
 	return conversationID, nil
 }
 
+//Creates a new group conversation
 func (db *appdbimpl) CreateGroupConversation(creatorID int64, name, photoURL string, participants []int64) (int64, error) {
+	
+	//Create a new group conversation
 	result, err := db.c.Exec(`
 		INSERT INTO conversations (conversation_type, name, photo_url)
 		VALUES ('group', ?, ?)
@@ -64,6 +71,7 @@ func (db *appdbimpl) CreateGroupConversation(creatorID int64, name, photoURL str
 		return 0, fmt.Errorf("failed to retrieve conversation ID: %w", err)
 	}
 
+	//Insert participants
 	participantValues := ""
 	args := []interface{}{}
 	for _, participantID := range participants {
@@ -83,6 +91,7 @@ func (db *appdbimpl) CreateGroupConversation(creatorID int64, name, photoURL str
 	return conversationID, nil
 }
 
+//Updates a group's name
 func (db *appdbimpl) SetGroupName(conversationID int64, name string) error {
 	_, err := db.c.Exec(
 		`UPDATE conversations SET name = ? WHERE id = ? AND conversation_type = 'group'`,
@@ -94,6 +103,7 @@ func (db *appdbimpl) SetGroupName(conversationID int64, name string) error {
 	return nil
 }
 
+//Updates a group's photo
 func (db *appdbimpl) SetGroupPhoto(conversationID int64, photoURL string) error {
 	_, err := db.c.Exec(
 		`UPDATE conversations SET photo_url = $1 WHERE id = $2`,
@@ -119,7 +129,10 @@ type ConversationPreview struct {
 	LastMessageIsDeleted bool    `json:"last_message_is_deleted"`
 }
 
+//Get all of a user's conversations
 func (db *appdbimpl) GetMyConversations(userID int64) ([]ConversationPreview, error) {
+
+	//Fetch conversations
 	query := `
 		SELECT 
 			c.id AS conversation_id,
@@ -221,7 +234,10 @@ type ConversationDetails struct {
 	Messages         []Message `json:"messages,omitempty"`
 }
 
+//Get the details of a conversation
 func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails, error) {
+	
+	//Fetch conversation
 	var conversation ConversationDetails
 
 	err := db.c.QueryRow(`
@@ -303,6 +319,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			}
 		}
 
+		//Check if message is read by everyone
 		var readCount int
 		err = db.c.QueryRow(`
 			SELECT COUNT(*) 
@@ -329,6 +346,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 			msg.Status = "sent"
 		}
 
+		//Fetch reactions
 		reactionRows, err := db.c.Query(`
 			SELECT user_id, message_id, emoticon
 			FROM reactions
@@ -353,6 +371,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 
 	conversation.Messages = messages
 
+	//If its a group conversation, also get all participants
 	if conversation.ConversationType == "group" {
 		participantRows, err := db.c.Query(`
         SELECT id, username, photo_url 
@@ -381,6 +400,7 @@ func (db *appdbimpl) GetConversation(conversationID int64) (*ConversationDetails
 	return &conversation, nil
 }
 
+//Add new members to a group
 func (db *appdbimpl) AddToGroup(conversationID int64, newParticipants []int64) error {
 	if len(newParticipants) == 0 {
 		return fmt.Errorf("no participants to add")
@@ -418,7 +438,10 @@ func (db *appdbimpl) AddToGroup(conversationID int64, newParticipants []int64) e
 	return nil
 }
 
+//Removes the user from the group, if it leaves only 1 participant left, also delete the group
 func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
+
+	//Leave the conversation if it exists
 	var conversationType string
 	err := db.c.QueryRow(`
 		SELECT conversation_type FROM conversations WHERE id = ?
@@ -452,6 +475,7 @@ func (db *appdbimpl) LeaveGroup(conversationID int64, userID int64) error {
 		return fmt.Errorf("failed to check remaining participants: %w", err)
 	}
 
+	//If only 1 participant is left, delete the group
 	if participantCount == 1 {
 		_, err = db.c.Exec(`
 			DELETE FROM conversations WHERE id = ?

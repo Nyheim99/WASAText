@@ -18,11 +18,13 @@ import (
 
 func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
+	//Validate request
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
+	//Get conversation type
 	conversationType := r.FormValue("conversation_type")
 
 	if conversationType == "" {
@@ -30,6 +32,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -42,7 +45,11 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 	var err error
 	sendMessage := true
 
+
+	//Check if conversation is private and if its created from a forwarded message
 	if conversationType == "private" || conversationType == "new_user" {
+
+		//get recipient ID
 		recipientIDStr := r.FormValue("recipientID")
 
 		recipientID, err := strconv.ParseInt(recipientIDStr, 10, 64)
@@ -51,19 +58,24 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 			return
 		}
 
+		//Create the private conversation
 		conversationID, err = rt.db.CreatePrivateConversation(userID, recipientID)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
+		//If the conversation is being created from a forwarded message, dont send a normal message
 		if conversationType == "new_user" {
 			sendMessage = false
 		}
 
 	} else if conversationType == "group" {
+
+		//Get group name
 		groupName := r.FormValue("group_name")
 
+		//Validate group name
 		if len(groupName) < 3 || len(groupName) > 20 {
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
@@ -74,6 +86,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 			return
 		}
 
+		//Get participants
 		participantStrs := r.MultipartForm.Value["participants"]
 		var participantIDs []int64
 
@@ -86,17 +99,20 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 			participantIDs = append(participantIDs, id)
 		}
 
+		//Validate participants
 		if len(participantIDs) < 1 || len(participantIDs) > 50 {
 			http.Error(w, "Invalid number of participants", http.StatusBadRequest)
 			return
 		}
 
+		//Create the group conversation in the database
 		conversationID, err = rt.db.CreateGroupConversation(userID, groupName, "", participantIDs)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
+		//Handle the group photo if attached
 		if file, handler, err := r.FormFile("group_photo"); err == nil {
 			defer file.Close()
 			photoURL, err := rt.saveUploadedFile(file, handler, conversationID)
@@ -114,9 +130,11 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		return
 	}
 
+	//If the conversation is created normally, send the message
 	if sendMessage {
 		message := r.FormValue("message")
 
+		//Validate the message
 		if len(message) < 1 || len(message) > 1000 {
 			http.Error(w, "Invalid message length", http.StatusBadRequest)
 			return
@@ -127,6 +145,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 			return
 		}
 
+		//Send the message in the database
 		_, err = rt.db.SendMessage(conversationID, userID, &message, nil, nil, 0)
 		if err != nil {
 			http.Error(w, "Failed to send message", http.StatusInternalServerError)
@@ -134,6 +153,7 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 		}
 	}
 
+	//Return the conversation ID
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(map[string]int64{
@@ -145,6 +165,8 @@ func (rt *_router) createConversation(w http.ResponseWriter, r *http.Request, ps
 	}
 }
 
+
+//Helper function to save the optional group photo
 func (rt *_router) saveUploadedFile(file io.Reader, handler *multipart.FileHeader, conversationID int64) (string, error) {
 	fileExt := strings.ToLower(filepath.Ext(handler.Filename))
 	allowedExtensions := map[string]bool{".jpg": true, ".jpeg": true, ".png": true}

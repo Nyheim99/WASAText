@@ -9,6 +9,8 @@ import (
 )
 
 func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get conversation ID
 	conversationIDStr := ps.ByName("conversationID")
 	conversationID, err := strconv.ParseInt(conversationIDStr, 10, 64)
 	if err != nil {
@@ -16,6 +18,7 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 		return
 	}
 
+	//Get the conversation
 	conversation, err := rt.db.GetConversation(conversationID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -26,6 +29,7 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 		return
 	}
 
+	//Return the conversation
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(conversation)
 	if err != nil {

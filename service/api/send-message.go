@@ -25,6 +25,8 @@ type SendMessageResponse struct {
 }
 
 func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get conversation ID
 	conversationIDStr := ps.ByName("conversationID")
 	conversationID, err := strconv.ParseInt(conversationIDStr, 10, 64)
 	if err != nil {
@@ -32,11 +34,13 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
+	//Validate the request
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -44,12 +48,14 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 	senderID := reqCtx.UserID
 
+	//Get text message, if provided
 	message := r.FormValue("message")
 	var textContent *string
 	if message != "" {
 		textContent = &message
 	}
 
+	//Get photo data, if provided
 	var photoData *[]byte
 	var photoMimeType *string
 	file, handler, err := r.FormFile("photo")
@@ -81,6 +87,7 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
+	//Check if message is standalone or a reply
 	originalMessageIDStr := r.FormValue("original_message_id")
 	var originalMessageID int64 = 0
 	if originalMessageIDStr != "" {
@@ -91,12 +98,14 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		}
 	}
 
+	//Send the message in the database
 	messageID, err := rt.db.SendMessage(conversationID, senderID, textContent, photoData, photoMimeType, originalMessageID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	//Get sender ID
 	sender, err := rt.db.GetUser(senderID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -107,9 +116,12 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
+	//Set the message type
 	messageType := "text"
 	var content string
 	if textContent != nil {
+
+		//Validate text message
 		content = *textContent
 
 		if len(*textContent) < 1 || len(*textContent) > 1000 {
@@ -126,8 +138,10 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		messageType = "photo"
 	}
 
+	//Get current timestamp
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 
+	//Return the new message
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(SendMessageResponse{

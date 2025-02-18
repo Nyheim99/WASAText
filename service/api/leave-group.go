@@ -9,6 +9,8 @@ import (
 )
 
 func (rt *_router) leaveGroup(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get conversation ID
 	conversationIDStr := ps.ByName("conversationID")
 	conversationID, err := strconv.ParseInt(conversationIDStr, 10, 64)
 	if err != nil {
@@ -16,6 +18,7 @@ func (rt *_router) leaveGroup(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -23,6 +26,7 @@ func (rt *_router) leaveGroup(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	UserID := reqCtx.UserID
 
+	//Fetch vonersation from database
 	conversation, err := rt.db.GetConversation(conversationID)
 	if err != nil {
 		http.Error(w, "Conversation not found", http.StatusNotFound)
@@ -33,6 +37,7 @@ func (rt *_router) leaveGroup(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	//Check that the user is member of the group
 	isMember := false
 	for _, participant := range conversation.Participants {
 		if participant.ID == UserID {
@@ -45,6 +50,7 @@ func (rt *_router) leaveGroup(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	//Leave the group
 	err = rt.db.LeaveGroup(conversationID, UserID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

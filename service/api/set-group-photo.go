@@ -14,6 +14,8 @@ import (
 )
 
 func (rt *_router) setGroupPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get conversation ID
 	conversationID := ps.ByName("conversationID")
 	if conversationID == "" {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -26,6 +28,7 @@ func (rt *_router) setGroupPhoto(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	//Validate request
 	err = r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -47,6 +50,7 @@ func (rt *_router) setGroupPhoto(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	//Save the uploaded group photo
 	fileName := fmt.Sprintf("group_%d%s", convID, fileExt)
 	savePath := filepath.Join("service/photos/groups", fileName)
 
@@ -77,6 +81,7 @@ func (rt *_router) setGroupPhoto(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	//Return the new photo url
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(map[string]string{

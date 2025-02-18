@@ -14,6 +14,8 @@ import (
 )
 
 func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -22,6 +24,7 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 
 	userID := reqCtx.UserID
 
+	//Validate request
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "Invalid file upload", http.StatusBadRequest)
@@ -43,6 +46,7 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	//Save uploaded photo
 	fileName := fmt.Sprintf("user_%d%s", userID, fileExt)
 	savePath := filepath.Join("service/photos/users", fileName)
 
@@ -73,6 +77,7 @@ func (rt *_router) setMyPhoto(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	//Return the new photo url
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(map[string]string{

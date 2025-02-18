@@ -14,13 +14,16 @@ type AddToGroupRequest struct {
 }
 
 func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Fetch conversation ID
 	conversationIDStr := ps.ByName("conversationID")
 	conversationID, err := strconv.ParseInt(conversationIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-
+	
+	//Fetch user from context
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -28,6 +31,7 @@ func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	UserID := reqCtx.UserID
 
+	//Validate request
 	var request AddToGroupRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -48,6 +52,7 @@ func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	//Check that request sender is part of the group
 	isMember := false
 	for _, participant := range conversation.Participants {
 		if participant.ID == UserID {
@@ -61,6 +66,7 @@ func (rt *_router) addToGroup(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
+	//Add new user(s) to the group
 	err = rt.db.AddToGroup(conversationID, request.Participants)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

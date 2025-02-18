@@ -18,6 +18,8 @@ type loginResponse struct {
 }
 
 func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	//Validate request
 	var request loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -34,12 +36,14 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
+	//Check if username exists
 	identifier, err := rt.db.GetUserByUsername(request.Username)
 	if err != nil {
 		http.Error(w, "Failed to retrieve user from database", http.StatusInternalServerError)
 		return
 	}
 
+	//If it does not, create a new user
 	if identifier == 0 {
 		identifier, err = rt.db.CreateUser(request.Username)
 		if err != nil {
@@ -48,6 +52,7 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		}
 	}
 
+	//Return the identifier
 	response := loginResponse{Identifier: identifier}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Authorization", fmt.Sprintf("Bearer %d", identifier))

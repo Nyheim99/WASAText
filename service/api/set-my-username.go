@@ -14,6 +14,8 @@ type setMyUsernameRequest struct {
 }
 
 func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	
+	//Get user ID
 	reqCtx, ok := r.Context().Value("reqCtx").(*reqcontext.RequestContext)
 	if !ok || reqCtx == nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -22,6 +24,7 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 
 	userId := reqCtx.UserID
 
+	//Validate request
 	var req setMyUsernameRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
@@ -37,6 +40,7 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	//Check if username is already taken
 	exists, err := rt.db.DoesUsernameExist(req.Username)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -47,6 +51,7 @@ func (rt *_router) setMyUserName(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 
+	//Updates the username in the database
 	err = rt.db.SetMyUserName(userId, req.Username)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
